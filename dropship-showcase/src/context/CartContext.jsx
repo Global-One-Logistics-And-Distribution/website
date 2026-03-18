@@ -9,7 +9,7 @@ import {
 import toast from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 
-const API = import.meta.env.VITE_API_URL || "/api";
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 const GUEST_LS_KEY = "cart_items_guest";
 const CART_MAX_QUANTITY = 10;
 

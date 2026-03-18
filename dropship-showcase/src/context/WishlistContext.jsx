@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useCallback, useMemo, useState } 
 import toast from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 
-const API = import.meta.env.VITE_API_URL || "/api";
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 const GUEST_LS_KEY = "wishlist_ids_guest";
 
 const WishlistContext = createContext(null);
