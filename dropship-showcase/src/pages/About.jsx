@@ -25,12 +25,6 @@ export default function About() {
           multiple categories such as bags, shoes, sunglasses, perfumes, and wallets.
         </p>
 
-        <p className="text-slate-700 dark:text-slate-300 leading-relaxed mt-4">
-          We are a <strong>frontend-only showcase platform</strong>. This means
-          we do not handle payment processing on our website. When a customer clicks
-          “Buy Now,” they are redirected to the external supplier page where the
-          purchase is completed.
-        </p>
 
         <div className="grid md:grid-cols-3 gap-4 mt-7">
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
