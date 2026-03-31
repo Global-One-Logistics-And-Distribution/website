@@ -1,4 +1,5 @@
 import uuid
+import time
 from django.db import models
 from django.conf import settings
 
@@ -50,7 +51,10 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def _generate_order_number(self):
-        return "ORD-" + uuid.uuid4().hex[:8].upper()
+        # Better order ID: timestamp + random UUID
+        timestamp = int(time.time() * 1000)  # milliseconds
+        random_part = uuid.uuid4().hex[:6].upper()
+        return f"ORD-{timestamp}-{random_part}"
 
     def __str__(self):
         return f"{self.order_number} ({self.user.email})"
@@ -63,6 +67,7 @@ class OrderItem(models.Model):
     product_image = models.URLField(max_length=1000, blank=True, default="")
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField(default=1)
+    shoe_size = models.CharField(max_length=10, blank=True, default="")  # For shoes only
 
     class Meta:
         db_table = "order_items"
@@ -72,8 +77,50 @@ class OrderItem(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.product_name} x{self.quantity}"
+        size_str = f" (Size: {self.shoe_size})" if self.shoe_size else ""
+        return f"{self.product_name}{size_str} x{self.quantity}"
 
     @property
     def subtotal(self):
         return (self.price or 0) * (self.quantity or 0)
+
+
+class AdminLog(models.Model):
+    """Track admin actions for audit purposes"""
+    ACTION_CHOICES = [
+        ("product_create", "Product Created"),
+        ("product_update", "Product Updated"),
+        ("product_delete", "Product Deleted"),
+        ("order_create", "Order Created"),
+        ("order_update", "Order Updated"),
+        ("order_status_change", "Order Status Changed"),
+        ("user_create", "User Created"),
+        ("user_update", "User Updated"),
+        ("user_delete", "User Deleted"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admin_logs",
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    target_model = models.CharField(max_length=50, blank=True, default="")  # e.g., "Product", "Order"
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    description = models.TextField(blank=True, default="")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "admin_logs"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "timestamp"]),
+            models.Index(fields=["action", "timestamp"]),
+            models.Index(fields=["target_model", "target_id"]),
+        ]
+
+    def __str__(self):
+        user_str = self.user.email if self.user else "Unknown"
+        return f"{user_str} - {self.get_action_display()} at {self.timestamp}"

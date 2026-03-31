@@ -31,7 +31,7 @@ export default function Navbar() {
       <nav className="container-pad h-16 flex items-center justify-between">
         {/* Logo */}
         <NavLink to="/" className="text-xl font-bold">
-          <span className="text-indigo-500">G.O.L.D</span>
+          <img src="" alt="Logo" className="h-8" />
         </NavLink>
 
         {/* Desktop links */}

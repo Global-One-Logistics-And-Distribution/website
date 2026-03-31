@@ -1,13 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Order, OrderItem
+from .models import Order, OrderItem, AdminLog
 
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "get_subtotal"]
-    fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "get_subtotal"]
+    readonly_fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "shoe_size", "get_subtotal"]
+    fields = ["product_id", "product_name", "product_image_preview", "shoe_size", "price", "quantity", "get_subtotal"]
     can_delete = False
 
     def product_image_preview(self, obj):
@@ -93,8 +93,30 @@ class OrderAdmin(admin.ModelAdmin):
     status_badge.short_description = "Status"
 
     def _change_status(self, request, queryset, new_status, label):
-        count = queryset.update(status=new_status)
+        from .models import AdminLog
+        count = 0
+        for order in queryset:
+            old_status = order.status
+            if old_status != new_status:
+                order.status = new_status
+                order.save()
+                count += 1
+                # Log the status change
+                AdminLog.objects.create(
+                    user=request.user,
+                    action="order_status_change",
+                    target_model="Order",
+                    target_id=order.id,
+                    description=f"Changed order {order.order_number} status from {old_status} to {new_status}",
+                    ip_address=self._get_client_ip(request),
+                )
         self.message_user(request, f"{count} order(s) marked as {label}.")
+
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')
 
     def mark_processing(self, request, queryset):
         self._change_status(request, queryset, "processing", "Processing")
@@ -115,3 +137,35 @@ class OrderAdmin(admin.ModelAdmin):
     def mark_cancelled(self, request, queryset):
         self._change_status(request, queryset, "cancelled", "Cancelled")
     mark_cancelled.short_description = "Mark selected orders as Cancelled"
+
+
+@admin.register(AdminLog)
+class AdminLogAdmin(admin.ModelAdmin):
+    list_display = ["timestamp", "user_email", "action_display", "target_model", "target_id", "short_description"]
+    list_filter = ["action", "target_model", "timestamp"]
+    search_fields = ["user__email", "description", "target_id"]
+    readonly_fields = ["user", "action", "target_model", "target_id", "description", "timestamp", "ip_address"]
+    ordering = ["-timestamp"]
+    date_hierarchy = "timestamp"
+
+    def has_add_permission(self, request):
+        # Prevent manual addition of logs
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Only superusers can delete logs
+        return request.user.is_superuser
+
+    def user_email(self, obj):
+        return obj.user.email if obj.user else "System"
+    user_email.short_description = "User"
+    user_email.admin_order_field = "user__email"
+
+    def action_display(self, obj):
+        return obj.get_action_display()
+    action_display.short_description = "Action"
+    action_display.admin_order_field = "action"
+
+    def short_description(self, obj):
+        return obj.description[:100] + "..." if len(obj.description) > 100 else obj.description
+    short_description.short_description = "Description"

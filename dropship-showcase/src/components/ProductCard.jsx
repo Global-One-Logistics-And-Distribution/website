@@ -69,6 +69,7 @@ export default function ProductCard({ product }) {
           alt={product.name}
           loading="lazy"
           decoding="async"
+          onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
           className="h-52 w-full object-cover group-hover:scale-105 transition duration-300"
         />
       </Link>

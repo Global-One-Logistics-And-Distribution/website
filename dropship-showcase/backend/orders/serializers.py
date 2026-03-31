@@ -14,6 +14,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "product_image",
             "price",
             "quantity",
+            "shoe_size",
             "subtotal",
         ]
 
@@ -57,6 +58,7 @@ class CreateOrderItemSerializer(serializers.Serializer):
     product_image = ProductImageField(max_length=1000, required=False, allow_blank=True, default="")
     price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
     quantity = serializers.IntegerField(min_value=1, max_value=99)
+    shoe_size = serializers.CharField(max_length=10, required=False, allow_blank=True, default="")
 
 
 class CreateOrderSerializer(serializers.Serializer):

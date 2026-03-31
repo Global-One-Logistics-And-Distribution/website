@@ -91,23 +91,25 @@ export default function SignIn() {
               >
                 Email address
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.email
-                    ? "border-red-500"
-                    : "border-slate-300 dark:border-slate-700"
-                }`}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500 mt-1">{errors.email}</p>
-              )}
+              <div className="relative">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="you@example.com"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                    errors.email
+                      ? "border-red-500"
+                      : "border-slate-300 dark:border-slate-700"
+                  }`}
+                />
+                {errors.email && (
+                  <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>
+                )}
+              </div>
             </div>
 
             {/* Password */}
@@ -140,10 +142,10 @@ export default function SignIn() {
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
+                {errors.password && (
+                  <p className="absolute right-11 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.password}</p>
+                )}
               </div>
-              {errors.password && (
-                <p className="text-xs text-red-500 mt-1">{errors.password}</p>
-              )}
             </div>
 
             {/* Submit */}

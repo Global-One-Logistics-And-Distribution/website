@@ -137,7 +137,7 @@ export default function ProductDetails() {
     }
 
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(isShoe ? { ...product, selectedSize } : product, safeQty);
+    addToCart(product, safeQty, selectedSize);
     toast.success("Added to cart!");
   };
 
@@ -153,7 +153,7 @@ export default function ProductDetails() {
     }
 
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(isShoe ? { ...product, selectedSize } : product, safeQty);
+    addToCart(product, safeQty, selectedSize);
     navigate("/checkout");
   };
 
@@ -185,6 +185,7 @@ export default function ProductDetails() {
               alt={product.name}
               loading="eager"
               decoding="async"
+              onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
               className="max-h-full max-w-full object-contain"
             />
           </motion.div>
@@ -205,6 +206,7 @@ export default function ProductDetails() {
                   alt={`${product.name} ${idx + 1}`}
                   loading="lazy"
                   decoding="async"
+                  onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
                   className="h-full w-full object-contain bg-slate-100 dark:bg-slate-800"
                 />
               </button>
