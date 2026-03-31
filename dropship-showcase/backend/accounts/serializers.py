@@ -6,7 +6,7 @@ from .models import User
 
 
 class SignupSerializer(serializers.Serializer):
-    name = serializers.CharField(min_length=2, max_length=100, trim_whitespace=True)
+    name = serializers.CharField(min_length=2, max_length=100, trim_whitespace=True, required=False, allow_blank=True)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
 
@@ -30,10 +30,18 @@ class SignupSerializer(serializers.Serializer):
             raise serializers.ValidationError("Name must be at least 2 characters.")
         return stripped
 
+    def _derive_name_from_email(self, email):
+        local_part = (email or "").split("@", 1)[0]
+        candidate = re.sub(r"[^A-Za-z0-9]+", " ", local_part).strip()
+        if len(candidate) < 2:
+            return "User"
+        return candidate.title()[:100]
+
     def create(self, validated_data):
+        name = validated_data.get("name", "").strip() or self._derive_name_from_email(validated_data["email"])
         return User.objects.create_user(
             email=validated_data["email"],
-            name=validated_data["name"],
+            name=name,
             password=validated_data["password"],
         )
 

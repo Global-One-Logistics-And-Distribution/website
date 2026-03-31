@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.conf import settings
 from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework import status
@@ -16,6 +17,16 @@ from .utils import send_verification_email
 class LoginRateThrottle(AnonRateThrottle):
     rate = "10/hour"
     scope = "login"
+
+
+def _dev_verification_fallback(user, email_sent):
+    """Return debug-only verification payload when SMTP delivery fails."""
+    if settings.DEBUG and not email_sent:
+        return {
+            "dev_verification_code": user.email_verification_code,
+            "dev_note": "Email delivery failed in local mode. Use this code to verify.",
+        }
+    return {}
 
 
 def _token_response(user):
@@ -45,12 +56,18 @@ def signup(request):
         return Response({"error": "Email is already registered."}, status=status.HTTP_409_CONFLICT)
 
     user = serializer.save()
-    send_verification_email(user)
+    email_sent = send_verification_email(user)
     payload = {
         "requires_verification": True,
         "user": UserSerializer(user).data,
-        "message": "Verification code sent to your email. Please verify to finish signing up.",
+        "message": (
+            "Verification code sent to your email. Please verify to finish signing up."
+            if email_sent
+            else "Account created, but we could not send the verification email right now. Please use resend code."
+        ),
+        "email_sent": email_sent,
     }
+    payload.update(_dev_verification_fallback(user, email_sent))
     return Response(payload, status=status.HTTP_201_CREATED)
 
 
@@ -70,12 +87,25 @@ def signin(request):
         return Response({"error": "Invalid email or password."}, status=status.HTTP_401_UNAUTHORIZED)
 
     if not user.email_verified:
-        send_verification_email(user)
+        code_missing = not user.email_verification_code
+        code_expired = bool(
+            user.email_verification_expires_at
+            and timezone.now() > user.email_verification_expires_at
+        )
+        email_sent = True
+        if code_missing or code_expired:
+            email_sent = send_verification_email(user)
+
         return Response(
             {
-                "error": "Email not verified. Enter the code sent to your inbox to continue.",
+                "error": (
+                    "Email not verified. Enter the code sent to your inbox to continue."
+                    if email_sent
+                    else "Email not verified. We could not send a verification email right now. Try resend in a moment."
+                ),
                 "requires_verification": True,
                 "email": user.email,
+                "email_sent": email_sent,
             },
             status=status.HTTP_403_FORBIDDEN,
         )
@@ -92,6 +122,9 @@ def verify_email(request):
     if not email or not code:
         return Response({"error": "Email and code are required."}, status=status.HTTP_400_BAD_REQUEST)
 
+    if len(code) != 6 or not code.isdigit():
+        return Response({"error": "Verification code must be 6 digits."}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
@@ -101,19 +134,30 @@ def verify_email(request):
         return Response(_token_response(user), status=status.HTTP_200_OK)
 
     if not user.email_verification_code:
-        send_verification_email(user)
+        email_sent = send_verification_email(user)
         return Response(
-            {"error": "A new code has been sent. Please check your email."},
+            {
+                "error": "A new code has been sent. Please check your email.",
+                "email_sent": email_sent,
+                **_dev_verification_fallback(user, email_sent),
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     if user.email_verification_code != code:
-        return Response({"error": "Invalid verification code."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Invalid verification code. Use the latest code sent to your email."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     if user.email_verification_expires_at and timezone.now() > user.email_verification_expires_at:
-        send_verification_email(user)
+        email_sent = send_verification_email(user)
         return Response(
-            {"error": "Verification code expired. We've sent a new code."},
+            {
+                "error": "Verification code expired. We've sent a new code.",
+                "email_sent": email_sent,
+                **_dev_verification_fallback(user, email_sent),
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -147,8 +191,24 @@ def resend_verification(request):
     if user.email_verified:
         return Response({"message": "Email is already verified."}, status=status.HTTP_200_OK)
 
-    send_verification_email(user)
-    return Response({"message": "Verification code resent."}, status=status.HTTP_200_OK)
+    email_sent = send_verification_email(user)
+    if not email_sent:
+        debug_payload = _dev_verification_fallback(user, email_sent)
+        if debug_payload:
+            return Response(
+                {
+                    "message": "Email could not be sent in local mode; use the OTP shown below.",
+                    "email_sent": False,
+                    **debug_payload,
+                },
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"error": "Could not send verification email right now. Please try again shortly."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    return Response({"message": "Verification code resent.", "email_sent": True}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])

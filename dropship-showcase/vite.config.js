@@ -8,14 +8,14 @@ export default defineConfig({
     proxy: {
       // Forward /api/* requests to Django backend during development
       "/api": {
-        target: "https://dropship-v2.onrender.com",
+        target: "http://localhost:8000",
         changeOrigin: true,
         secure: false,
       },
       '/dropship/login/admin/': {
-        target: 'https://dropship-v2.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },

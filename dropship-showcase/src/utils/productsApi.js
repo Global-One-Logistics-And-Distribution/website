@@ -11,11 +11,27 @@ function toString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeImageUrl(url) {
+  const value = toString(url);
+  if (!value) return "";
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname === "www.myluxezone.com") {
+      parsed.hostname = "myluxezone.com";
+      return parsed.toString();
+    }
+    return value;
+  } catch {
+    return value;
+  }
+}
+
 function asStringArray(value) {
   if (Array.isArray(value)) {
-    return value.map((v) => toString(v)).filter(Boolean);
+    return value.map((v) => normalizeImageUrl(v)).filter(Boolean);
   }
-  const one = toString(value);
+  const one = normalizeImageUrl(value);
   return one ? [one] : [];
 }
 

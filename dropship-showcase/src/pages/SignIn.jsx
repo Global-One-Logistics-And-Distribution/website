@@ -52,7 +52,10 @@ export default function SignIn() {
           toast.error(data.error || "Please verify your email to continue.");
           navigate("/verify-email", {
             replace: true,
-            state: { email: form.email, redirectTo: from },
+            state: {
+              email: form.email,
+              redirectTo: from,
+            },
           });
           return;
         }

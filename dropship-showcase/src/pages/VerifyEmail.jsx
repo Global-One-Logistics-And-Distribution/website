@@ -24,6 +24,7 @@ export default function VerifyEmail() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [debugCode, setDebugCode] = useState(location.state?.devVerificationCode || "");
 
   useEffect(() => {
     setEmail(fallbackEmail);
@@ -41,7 +42,7 @@ export default function VerifyEmail() {
       toast.error("Enter a valid email.");
       return;
     }
-    if (!code || code.trim().length < 4) {
+    if (!code || code.trim().length !== 6) {
       toast.error("Enter the 6-digit code from your email.");
       return;
     }
@@ -56,6 +57,9 @@ export default function VerifyEmail() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        if (data.dev_verification_code) {
+          setDebugCode(data.dev_verification_code);
+        }
         toast.error(data.error || "Verification failed.");
         return;
       }
@@ -89,8 +93,16 @@ export default function VerifyEmail() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (data.dev_verification_code) {
+          setDebugCode(data.dev_verification_code);
+          toast.success("Use the OTP shown below (local debug mode).");
+          return;
+        }
         toast.error(data.error || "Could not resend code.");
         return;
+      }
+      if (data.dev_verification_code) {
+        setDebugCode(data.dev_verification_code);
       }
       toast.success(data.message || "Verification code sent.");
     } catch {
@@ -140,7 +152,7 @@ export default function VerifyEmail() {
                 inputMode="numeric"
                 maxLength={6}
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\\D/g, ""))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 className="w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition tracking-widest text-center font-semibold border-slate-300 dark:border-slate-700"
                 placeholder="123456"
               />
@@ -176,6 +188,13 @@ export default function VerifyEmail() {
               Back to sign in
             </Link>
           </div>
+
+          {debugCode && (
+            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+              <p className="font-semibold">Local debug OTP</p>
+              <p className="mt-1 tracking-widest font-mono text-base">{debugCode}</p>
+            </div>
+          )}
         </div>
       </motion.div>
     </section>

@@ -12,7 +12,7 @@ export default function SignUp() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -22,8 +22,6 @@ export default function SignUp() {
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim() || form.name.trim().length < 2)
-      errs.name = "Name must be at least 2 characters.";
     if (!form.email) errs.email = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = "Enter a valid email.";
     if (!form.password || form.password.length < 8)
@@ -52,21 +50,31 @@ export default function SignUp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name.trim(),
           email: form.email,
           password: form.password,
         }),
       });
-      const data = await res.json().catch(() => ({}));
+
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await res.json().catch(() => ({}))
+        : { error: await res.text().catch(() => "") };
+
       if (!res.ok) {
-        if (data.errors) {
+        if (Array.isArray(data.errors)) {
           const fieldErrors = {};
           data.errors.forEach((err) => {
             fieldErrors[err.path] = err.msg;
           });
           setErrors(fieldErrors);
         } else {
-          toast.error(data.error || "Sign up failed.");
+          const serverMessage =
+            data?.error ||
+            data?.detail ||
+            data?.message ||
+            (res.status >= 500 ? "Server error while creating account. Please try again." : "Sign up failed.");
+          setErrors({ form: serverMessage });
+          toast.error(serverMessage);
         }
         return;
       }
@@ -78,6 +86,7 @@ export default function SignUp() {
           state: {
             email: data.user?.email || form.email,
             redirectTo: "/",
+            devVerificationCode: data.dev_verification_code || "",
           },
         });
         return;
@@ -91,8 +100,10 @@ export default function SignUp() {
         toast.success("Account created. Please sign in.");
         navigate("/signin");
       }
-    } catch {
-      toast.error("Network error. Please try again.");
+    } catch (err) {
+      const message = err?.message || "Network error. Please try again.";
+      setErrors({ form: message });
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -127,33 +138,11 @@ export default function SignUp() {
             <UserPlus className="w-10 h-10 mx-auto text-indigo-500 mb-3" />
             <h1 className="text-3xl font-bold">Create an account</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-              Join G.O.L.D to save your wishlist &amp; cart
+              Sign up with email and password, then verify your email
             </p>
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            {/* Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-1.5">
-                Full Name
-              </label>
-              <div className="relative">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="John Doe"
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                    errors.name ? "border-red-500" : "border-slate-300 dark:border-slate-700"
-                  }`}
-                />
-                {errors.name && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.name}</p>}
-              </div>
-            </div>
-
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-1.5">
@@ -250,6 +239,7 @@ export default function SignUp() {
             >
               {loading ? "Creating account…" : "Create Account"}
             </motion.button>
+            {errors.form && <p className="text-xs text-red-500 text-right">{errors.form}</p>}
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
