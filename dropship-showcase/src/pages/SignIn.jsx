@@ -46,8 +46,16 @@ export default function SignIn() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email, password: form.password }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (data.requires_verification) {
+          toast.error(data.error || "Please verify your email to continue.");
+          navigate("/verify-email", {
+            replace: true,
+            state: { email: form.email, redirectTo: from },
+          });
+          return;
+        }
         toast.error(data.error || "Sign in failed.");
         return;
       }

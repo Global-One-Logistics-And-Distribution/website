@@ -18,34 +18,45 @@ def order_list(request):
         return Response({"orders": OrderSerializer(orders, many=True).data})
 
     if request.method == "POST":
-        serializer = CreateOrderSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({"errors": serializer.errors}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        if not getattr(user, "email_verified", False):
+            return Response(
+                {"error": "Please verify your email before placing an order."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            serializer = CreateOrderSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response({"errors": serializer.errors}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        data = serializer.validated_data
-        items_data = data.pop("items")
+            data = serializer.validated_data
+            items_data = data.pop("items")
 
-        total = sum(
-            Decimal(str(item["price"])) * item["quantity"] for item in items_data
-        )
+            total = sum(
+                Decimal(str(item["price"])) * item["quantity"] for item in items_data
+            )
 
-        order = Order.objects.create(
-            user=user,
-            total_amount=total,
-            **data,
-        )
+            order = Order.objects.create(
+                user=user,
+                total_amount=total,
+                **data,
+            )
 
-        for item in items_data:
-            OrderItem.objects.create(order=order, **item)
+            for item in items_data:
+                OrderItem.objects.create(order=order, **item)
 
-        # Clear cart after placing order
-        from cart.models import CartItem
-        CartItem.objects.filter(user=user).delete()
+            # Clear cart after placing order
+            from cart.models import CartItem
+            CartItem.objects.filter(user=user).delete()
 
-        return Response(
-            {"order": OrderSerializer(order).data},
-            status=status.HTTP_201_CREATED,
-        )
+            return Response(
+                {"order": OrderSerializer(order).data},
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception:
+            return Response(
+                {"error": "Unable to place order right now. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 @api_view(["GET"])

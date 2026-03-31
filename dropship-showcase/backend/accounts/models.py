@@ -21,6 +21,9 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
+    email_verified = models.BooleanField(default=False)
+    email_verification_code = models.CharField(max_length=6, blank=True, default="")
+    email_verification_expires_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
