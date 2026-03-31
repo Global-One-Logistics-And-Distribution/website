@@ -2,10 +2,52 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "htt
 
 let productsCache = null;
 let productsPromise = null;
+let productsCacheTs = 0;
 let productByIdCache = new Map();
 let productByIdPromises = new Map();
 
+const PRODUCT_LIST_CACHE_TTL_MS = 2 * 60 * 1000;
 const PRODUCT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 10000;
+
+function isRetryableError(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  return msg.includes("network") || msg.includes("timeout") || msg.includes("failed to fetch");
+}
+
+async function fetchJsonWithTimeout(url, { timeoutMs = FETCH_TIMEOUT_MS, retries = 1 } = {}) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) {
+        const err = new Error(`Request failed: ${res.status}`);
+        err.status = res.status;
+        throw err;
+      }
+      return await res.json();
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        lastError = new Error("Request timeout");
+      } else {
+        lastError = error;
+      }
+
+      const canRetry = attempt < retries && isRetryableError(lastError);
+      if (!canRetry) {
+        throw lastError;
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  throw lastError || new Error("Request failed");
+}
 
 function toString(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -57,18 +99,16 @@ export function normalizeProduct(raw) {
 }
 
 export async function fetchProducts({ useCache = true } = {}) {
-  if (useCache && productsCache) return productsCache;
+  const listCacheAlive = productsCache && Date.now() - productsCacheTs < PRODUCT_LIST_CACHE_TTL_MS;
+  if (useCache && listCacheAlive) return productsCache;
   if (useCache && productsPromise) return productsPromise;
 
-  productsPromise = fetch(`${API}/products/`)
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to load products");
-      return res.json();
-    })
+  productsPromise = fetchJsonWithTimeout(`${API}/products/`, { retries: 1 })
     .then((data) => {
       const rows = Array.isArray(data?.products) ? data.products : [];
       const normalized = rows.map(normalizeProduct).filter(Boolean);
       productsCache = normalized;
+      productsCacheTs = Date.now();
       return normalized;
     })
     .finally(() => {
@@ -89,18 +129,18 @@ export async function fetchProductById(id) {
     return productByIdPromises.get(key);
   }
 
-  const request = fetch(`${API}/products/${id}/`)
-    .then((res) => {
-      if (!res.ok) {
-        if (res.status === 404) return null;
-        throw new Error("Failed to load product details");
-      }
-      return res.json();
-    })
+  const request = fetchJsonWithTimeout(`${API}/products/${id}/`, { retries: 1 })
     .then((data) => {
       const normalized = normalizeProduct(data?.product);
       productByIdCache.set(key, { value: normalized, cachedAt: Date.now() });
       return normalized;
+    })
+    .catch((error) => {
+      if (Number(error?.status) === 404) {
+        productByIdCache.set(key, { value: null, cachedAt: Date.now() });
+        return null;
+      }
+      throw error;
     })
     .finally(() => {
       productByIdPromises.delete(key);
@@ -113,6 +153,7 @@ export async function fetchProductById(id) {
 export function clearProductsCache() {
   productsCache = null;
   productsPromise = null;
+  productsCacheTs = 0;
   productByIdCache = new Map();
   productByIdPromises = new Map();
 }

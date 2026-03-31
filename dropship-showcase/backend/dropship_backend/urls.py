@@ -8,8 +8,6 @@ def _inject_dashboard_stats(ctx, request):
     if not (request.user.is_authenticated and request.user.is_staff):
         return
     try:
-        # Deferred imports to avoid circular imports at module load time;
-        # Django models are only safe to import after apps are fully loaded.
         from orders.models import Order
         from accounts.models import User
         from products.models import Product
@@ -36,7 +34,6 @@ def _inject_dashboard_stats(ctx, request):
         pass
 
 
-# Patch the default admin site to include dashboard stats on every request
 _original_each_context = admin.AdminSite.each_context
 
 

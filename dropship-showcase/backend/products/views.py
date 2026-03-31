@@ -12,6 +12,12 @@ PRODUCT_LIST_CACHE_TTL = 120
 PRODUCT_DETAIL_CACHE_TTL = 180
 
 
+def _cached_response(payload, max_age):
+    response = Response(payload)
+    response["Cache-Control"] = f"public, max-age={max_age}, stale-while-revalidate=60"
+    return response
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def product_list(request):
@@ -22,7 +28,7 @@ def product_list(request):
     cache_key = f"products:list:{category}:{brand}:{search}"
     cached_payload = cache.get(cache_key)
     if cached_payload is not None:
-        return Response(cached_payload)
+        return _cached_response(cached_payload, PRODUCT_LIST_CACHE_TTL)
 
     products = Product.objects.filter(is_active=True).only(
         "id",
@@ -48,7 +54,7 @@ def product_list(request):
 
     payload = {"products": ProductListSerializer(products, many=True).data}
     cache.set(cache_key, payload, PRODUCT_LIST_CACHE_TTL)
-    return Response(payload)
+    return _cached_response(payload, PRODUCT_LIST_CACHE_TTL)
 
 
 @api_view(["GET"])
@@ -57,7 +63,7 @@ def product_detail(request, pk):
     cache_key = f"products:detail:{pk}"
     cached_payload = cache.get(cache_key)
     if cached_payload is not None:
-        return Response(cached_payload)
+        return _cached_response(cached_payload, PRODUCT_DETAIL_CACHE_TTL)
 
     try:
         product = Product.objects.get(pk=pk, is_active=True)
@@ -66,4 +72,4 @@ def product_detail(request, pk):
 
     payload = {"product": ProductSerializer(product).data}
     cache.set(cache_key, payload, PRODUCT_DETAIL_CACHE_TTL)
-    return Response(payload)
+    return _cached_response(payload, PRODUCT_DETAIL_CACHE_TTL)
