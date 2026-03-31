@@ -122,6 +122,7 @@ export default function Checkout() {
           product_image: image,
           price: Number(item.product?.price) || 0,
           quantity: Number(item.quantity) || 1,
+          shoe_size: item.selectedSize || item.product?.selectedSize || "",
         };
       });
 

@@ -44,7 +44,7 @@ function safeStorageRemove(key) {
   }
 }
 
-function compactProduct(product) {
+function compactProduct(product, selectedSize) {
   if (!product || typeof product !== "object") return null;
   return {
     id: product.id ?? null,
@@ -54,6 +54,7 @@ function compactProduct(product) {
     image: product.image ?? product.image_url ?? "",
     brand: product.brand ?? "",
     category: product.category ?? "",
+    selectedSize: selectedSize ?? product.selectedSize ?? "",
   };
 }
 
@@ -62,7 +63,8 @@ function compactCartItems(items) {
   return items.map((i) => ({
     productId: i?.productId,
     quantity: Number(i?.quantity) || 1,
-    product: compactProduct(i?.product),
+    selectedSize: i?.selectedSize ?? "",
+    product: compactProduct(i?.product, i?.selectedSize),
   }));
 }
 
@@ -183,7 +185,7 @@ export function CartProvider({ children }) {
   }, [user?.id, token, storageKey]);
 
   const addToCart = useCallback(
-    async (product, quantity = 1) => {
+    async (product, quantity = 1, selectedSize = "") => {
       const q = Math.max(1, Number(quantity) || 1);
       const pid = product?.id;
       if (pid == null) return;
@@ -210,11 +212,11 @@ export function CartProvider({ children }) {
         if (existingInState) {
           return prev.map((i) =>
             String(i.productId) === String(pid)
-              ? { ...i, quantity: nextQty, product: i.product || product || null }
+              ? { ...i, quantity: nextQty, selectedSize: selectedSize || i.selectedSize || "", product: i.product || product || null }
               : i
           );
         }
-        return [...prev, { productId: pid, quantity: nextQty, product: product || null }];
+        return [...prev, { productId: pid, quantity: nextQty, selectedSize, product: product || null }];
       });
 
       if (quantityToAdd < q) {

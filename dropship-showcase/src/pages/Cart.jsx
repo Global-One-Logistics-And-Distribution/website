@@ -153,6 +153,7 @@ export default function Cart() {
                     </Link>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {product?.brand || "—"} • {product?.category || "—"}
+                      {item.selectedSize && <span> • Size: {item.selectedSize}</span>}
                     </p>
 
                     {/* Delivery estimate */}

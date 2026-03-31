@@ -137,7 +137,7 @@ export default function ProductDetails() {
     }
 
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(isShoe ? { ...product, selectedSize } : product, safeQty);
+    addToCart(product, safeQty, selectedSize);
     toast.success("Added to cart!");
   };
 
@@ -153,7 +153,7 @@ export default function ProductDetails() {
     }
 
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(isShoe ? { ...product, selectedSize } : product, safeQty);
+    addToCart(product, safeQty, selectedSize);
     navigate("/checkout");
   };
 

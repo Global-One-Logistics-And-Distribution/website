@@ -6,8 +6,8 @@ from .models import Order, OrderItem
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "get_subtotal"]
-    fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "get_subtotal"]
+    readonly_fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "shoe_size", "get_subtotal"]
+    fields = ["product_id", "product_name", "product_image_preview", "shoe_size", "price", "quantity", "get_subtotal"]
     can_delete = False
 
     def product_image_preview(self, obj):

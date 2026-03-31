@@ -1,4 +1,5 @@
 import uuid
+import time
 from django.db import models
 from django.conf import settings
 
@@ -50,7 +51,10 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def _generate_order_number(self):
-        return "ORD-" + uuid.uuid4().hex[:8].upper()
+        # Better order ID: timestamp + random UUID
+        timestamp = int(time.time() * 1000)  # milliseconds
+        random_part = uuid.uuid4().hex[:6].upper()
+        return f"ORD-{timestamp}-{random_part}"
 
     def __str__(self):
         return f"{self.order_number} ({self.user.email})"
@@ -63,6 +67,7 @@ class OrderItem(models.Model):
     product_image = models.URLField(max_length=1000, blank=True, default="")
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField(default=1)
+    shoe_size = models.CharField(max_length=10, blank=True, default="")  # For shoes only
 
     class Meta:
         db_table = "order_items"
@@ -72,7 +77,8 @@ class OrderItem(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.product_name} x{self.quantity}"
+        size_str = f" (Size: {self.shoe_size})" if self.shoe_size else ""
+        return f"{self.product_name}{size_str} x{self.quantity}"
 
     @property
     def subtotal(self):
