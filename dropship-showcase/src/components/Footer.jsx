@@ -178,35 +178,7 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-
-          {/* Newsletter */}
           <div>
-            <h3 className="font-semibold text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-4">Stay Updated</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
-              Get exclusive deals, new arrivals and style tips in your inbox.
-            </p>
-            {subscribed ? (
-              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 p-4 text-sm text-emerald-700 dark:text-emerald-400 font-medium">
-                🎉 You're subscribed! Watch your inbox.
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="space-y-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
-                >
-                  Subscribe
-                </button>
-              </form>
-            )}
 
             {/* Payment methods */}
             <div className="mt-6">

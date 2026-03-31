@@ -20,9 +20,10 @@ export default function About() {
         </div>
 
         <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-          GOLD is a modern product discovery platform built for dropshipping.
-          Our website helps customers browse curated premium products across
-          multiple categories such as bags, shoes, sunglasses, perfumes, and wallets.
+          GOLD is a modern product discovery platform crafted for those who value style and quality. 
+          We curate a refined selection of premium essentials across categories like bags, shoes, sunglasses, 
+          perfumes, and wallets—bringing timeless design and everyday luxury into one seamless experience. 
+          Discover standout pieces, elevate your style, and shop with confidence—all in one place.
         </p>
 
 
@@ -35,17 +36,17 @@ export default function About() {
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <Globe2 className="w-5 h-5 mb-2 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="font-semibold">Global Supplier Links</h3>
+            <ShieldCheck className="w-5 h-5 mb-2 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="font-semibold">Secure Checkout</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              Direct redirect to supplier product pages via Buy Now.
+              Safe and seamless checkout experience.
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <ShieldCheck className="w-5 h-5 mb-2 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="font-semibold">Transparent Model</h3>
+            <Globe2 className="w-5 h-5 mb-2 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="font-semibold">Global Shipping</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-              No hidden checkout here — external purchase flow is explicit.
+              Fast delivery to customers worldwide.
             </p>
           </div>
         </div>

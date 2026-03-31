@@ -12,13 +12,16 @@ import { useProducts } from "../hooks/useProducts";
 const TRUST_BADGES = [
   { icon: ShieldCheck, label: "100% Authentic", sub: "Only verified genuine products", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30" },
   { icon: Truck, label: "Free Delivery", sub: "On all orders", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30" },
-  { icon: Headphones, label: "24/7 Support", sub: "Dedicated customer care", color: "text-rose-600 bg-rose-50 dark:bg-rose-900/30" },
+  { icon: Headphones, label: "Customer Support", sub: "Dedicated customer care", color: "text-rose-600 bg-rose-50 dark:bg-rose-900/30" },
 ];
 
 const TESTIMONIALS = [
   { name: "Priya S.", rating: 5, text: "Absolutely love my Michael Kors bag! Arrived perfectly wrapped in just 3 days. Will definitely shop again.", location: "Mumbai" },
   { name: "Rahul M.", rating: 5, text: "The quality of the watch I ordered is outstanding. G.O.L.D. is my go-to for luxury accessories.", location: "Delhi" },
   { name: "Ananya K.", rating: 4, text: "Great collection, fast shipping. The Aldo shoes were exactly as described. Very happy!", location: "Bangalore" },
+  { name: "Vikram P.", rating: 5, text: "Excellent customer service and authentic products. My Gucci sunglasses are stunning!", location: "Chennai" },
+  { name: "Sneha R.", rating: 5, text: "The wallet I bought is of great quality. Took a bit longer to arrive but worth the wait.", location: "Hyderabad" },
+  { name: "Arjun N.", rating: 4, text: "Outstanding quality and fast delivery. My Louis Vuitton backpack is amazing!", location: "Kolkata" },
 ];
 
 export default function Home() {
@@ -138,27 +141,6 @@ export default function Home() {
             ))}
           </div>
         )}
-      </section>
-
-      {/* Deals */}
-      <section className="container-pad py-8">
-        <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-indigo-700 dark:to-indigo-900 p-6 md:p-8 text-white">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-widest text-indigo-200 mb-1 block">Limited Time</span>
-              <h2 className="text-2xl font-bold">Deals &amp; Discounts</h2>
-              <p className="text-indigo-200 mt-2 max-w-md">
-                Up to 30% off on selected products. Use code <strong className="text-white">GOLD10</strong> at checkout for an extra 10% off.
-              </p>
-            </div>
-            <Link
-              to="/products"
-              className="shrink-0 inline-block px-6 py-3 rounded-xl bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition"
-            >
-              Shop Now
-            </Link>
-          </div>
-        </div>
       </section>
 
       {/* Testimonials */}

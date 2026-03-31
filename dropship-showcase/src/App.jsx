@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { Helmet } from "react-helmet-async";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -39,6 +40,11 @@ function PageFallback() {
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+      </Helmet>
       <Navbar />
       <AnimatePresence mode="wait">
         <main className="flex-1">

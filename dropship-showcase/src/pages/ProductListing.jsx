@@ -153,9 +153,6 @@ export default function ProductListing() {
           <h1 className="text-3xl font-bold">
             {selectedCategory !== "All" ? selectedCategory : "All Products"}
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{filtered.length}</span> of {products.length} products
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
