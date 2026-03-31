@@ -83,3 +83,44 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return (self.price or 0) * (self.quantity or 0)
+
+
+class AdminLog(models.Model):
+    """Track admin actions for audit purposes"""
+    ACTION_CHOICES = [
+        ("product_create", "Product Created"),
+        ("product_update", "Product Updated"),
+        ("product_delete", "Product Deleted"),
+        ("order_create", "Order Created"),
+        ("order_update", "Order Updated"),
+        ("order_status_change", "Order Status Changed"),
+        ("user_create", "User Created"),
+        ("user_update", "User Updated"),
+        ("user_delete", "User Deleted"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admin_logs",
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    target_model = models.CharField(max_length=50, blank=True, default="")  # e.g., "Product", "Order"
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    description = models.TextField(blank=True, default="")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = "admin_logs"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["user", "timestamp"]),
+            models.Index(fields=["action", "timestamp"]),
+            models.Index(fields=["target_model", "target_id"]),
+        ]
+
+    def __str__(self):
+        user_str = self.user.email if self.user else "Unknown"
+        return f"{user_str} - {self.get_action_display()} at {self.timestamp}"
