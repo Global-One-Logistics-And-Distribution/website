@@ -3,6 +3,7 @@
     "supabase": "^2.84.4"
   },
   "dependencies": {
-    "cloudinary": "^2.9.0"
+    "cloudinary": "^2.9.0",
+    "razorpay": "^2.9.6"
   }
 }

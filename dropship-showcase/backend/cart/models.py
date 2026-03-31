@@ -10,6 +10,7 @@ class CartItem(models.Model):
     )
     product_id = models.PositiveIntegerField()
     quantity = models.PositiveIntegerField(default=1)
+    selected_size = models.CharField(max_length=10, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -22,4 +23,5 @@ class CartItem(models.Model):
         ]
 
     def __str__(self):
-        return f"CartItem(user={self.user_id}, product={self.product_id}, qty={self.quantity})"
+        size_suffix = f", size={self.selected_size}" if self.selected_size else ""
+        return f"CartItem(user={self.user_id}, product={self.product_id}, qty={self.quantity}{size_suffix})"

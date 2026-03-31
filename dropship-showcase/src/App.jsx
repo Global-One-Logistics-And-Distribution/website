@@ -15,6 +15,7 @@ const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const SignIn = lazy(() => import("./pages/SignIn"));
 const SignUp = lazy(() => import("./pages/SignUp"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Account = lazy(() => import("./pages/Account"));
@@ -61,6 +62,7 @@ export default function App() {
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />

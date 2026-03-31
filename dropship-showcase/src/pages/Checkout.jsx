@@ -7,12 +7,13 @@ import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { formatINR } from "../utils/currency";
+import { normalizeImageUrl } from "../utils/productsApi";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 
 function getProductImage(product) {
   const raw = product?.image_url || product?.image;
-  return (Array.isArray(raw) ? raw[0] : raw) || "";
+  return normalizeImageUrl((Array.isArray(raw) ? raw[0] : raw) || "");
 }
 
 function parseBackendError(data) {
@@ -51,6 +52,8 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -62,7 +65,7 @@ export default function Checkout() {
     const rawPhone = form.shipping_phone.trim();
     const digits = rawPhone.startsWith("+91")
       ? rawPhone.slice(3).trim()
-      : rawPhone.startsWith("91") && rawPhone.length === 12
+      : rawPhone.startsWith("91") && rawPhone.length === 10
       ? rawPhone.slice(2)
       : rawPhone;
     if (!digits) {
@@ -123,6 +126,18 @@ export default function Checkout() {
       return;
     }
 
+    const missingSizeItem = items.find((item) => {
+      const category = String(item?.product?.category || "").toLowerCase();
+      const isShoe = category.includes("shoe");
+      const selected = String(item?.selectedSize || item?.product?.selectedSize || "").trim();
+      return isShoe && !selected;
+    });
+    if (missingSizeItem) {
+      toast.error("Please select a shoe size in your cart before placing the order.");
+      navigate("/cart");
+      return;
+    }
+
     setPlacing(true);
     try {
       const orderItems = items.map((item) => {
@@ -137,35 +152,113 @@ export default function Checkout() {
         };
       });
 
-      const res = await fetch(`${API}/orders/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ ...form, items: orderItems }),
-      });
+      const submitOrder = async (notesOverride = null) => {
+        const payload = {
+          ...form,
+          notes: notesOverride ?? form.notes,
+          items: orderItems,
+        };
+        const res = await fetch(`${API}/orders/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
-        if (res.status === 403 && errorMessage.includes("verify")) {
-          navigate("/verify-email", {
-            state: { email: user.email, redirectTo: "/checkout" },
-          });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
+          if (res.status === 403 && errorMessage.includes("verify")) {
+            navigate("/verify-email", {
+              state: { email: user.email, redirectTo: "/checkout" },
+            });
+          }
+          toast.error(parseBackendError(data));
+          return false;
         }
-        toast.error(parseBackendError(data));
+
+        cart.clearCart?.();
+        toast.success("Order placed successfully!");
+        navigate("/checkout/success", { state: { order: data.order } });
+        return true;
+      };
+
+      const loadRazorpayScript = () => {
+        if (window.Razorpay) return Promise.resolve(true);
+        return new Promise((resolve) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      if (paymentMethod === "razorpay") {
+        if (!razorpayKey) {
+          toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID to test payment.");
+          return;
+        }
+
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          toast.error("Unable to load Razorpay checkout. Please try again.");
+          return;
+        }
+
+        const amountInPaise = Math.round(totalPrice * 100);
+        if (!amountInPaise || amountInPaise <= 0) {
+          toast.error("Invalid order amount for payment.");
+          return;
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount: amountInPaise,
+          currency: "INR",
+          name: "G.O.L.D",
+          description: "Test payment",
+          prefill: {
+            name: form.shipping_name,
+            email: form.shipping_email,
+            contact: form.shipping_phone,
+          },
+          theme: {
+            color: "#4f46e5",
+          },
+          modal: {
+            ondismiss: () => {
+              toast("Payment cancelled.");
+              setPlacing(false);
+            },
+          },
+          handler: async (response) => {
+            const paymentTag = `Paid via Razorpay (test). Payment ID: ${response.razorpay_payment_id || "N/A"}`;
+            const composedNotes = form.notes ? `${form.notes}\n${paymentTag}` : paymentTag;
+            await submitOrder(composedNotes);
+            setPlacing(false);
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.on("payment.failed", (resp) => {
+          const reason = resp?.error?.description || "Payment failed.";
+          toast.error(reason);
+          setPlacing(false);
+        });
+        razorpay.open();
         return;
       }
 
-      // Cart is cleared by the backend; clear local state too
-      cart.clearCart?.();
-      toast.success("Order placed successfully!");
-      navigate("/checkout/success", { state: { order: data.order } });
+      await submitOrder();
     } catch {
       toast.error("Network error. Please try again.");
     } finally {
-      setPlacing(false);
+      if (paymentMethod !== "razorpay") {
+        setPlacing(false);
+      }
     }
   };
 
@@ -324,6 +417,39 @@ export default function Checkout() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium mb-2">Payment Method</label>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <label className={`rounded-xl border px-4 py-3 text-sm cursor-pointer transition ${paymentMethod === "cod" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"}`}>
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value="cod"
+                    checked={paymentMethod === "cod"}
+                    onChange={() => setPaymentMethod("cod")}
+                    className="mr-2"
+                  />
+                  Cash on Delivery
+                </label>
+                <label className={`rounded-xl border px-4 py-3 text-sm cursor-pointer transition ${paymentMethod === "razorpay" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"}`}>
+                  <input
+                    type="radio"
+                    name="payment_method"
+                    value="razorpay"
+                    checked={paymentMethod === "razorpay"}
+                    onChange={() => setPaymentMethod("razorpay")}
+                    className="mr-2"
+                  />
+                  Razorpay (Test)
+                </label>
+              </div>
+              {paymentMethod === "razorpay" && !razorpayKey && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.
+                </p>
+              )}
+            </div>
+
             {!user && (
               <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-xl px-4 py-3">
                 You need to{" "}
@@ -352,7 +478,7 @@ export default function Checkout() {
               {placing ? (
                 <><Loader2 size={16} className="animate-spin" /> Placing Order…</>
               ) : (
-                <>Place Order <ArrowRight size={16} /></>
+                <>{paymentMethod === "razorpay" ? "Pay & Place Order" : "Place Order"} <ArrowRight size={16} /></>
               )}
             </button>
           </motion.div>

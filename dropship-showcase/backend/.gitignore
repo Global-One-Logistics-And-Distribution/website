@@ -32,3 +32,4 @@ media/
 .vscode/
 *.swp
 *.swo
+.env.example

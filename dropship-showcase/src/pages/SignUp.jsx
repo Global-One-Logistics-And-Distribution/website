@@ -30,6 +30,10 @@ export default function SignUp() {
       errs.password = "Password must contain an uppercase letter.";
     else if (!/[0-9]/.test(form.password))
       errs.password = "Password must contain a number.";
+    else if (/^\d+$/.test(form.password))
+      errs.password = "Password cannot be entirely numeric.";
+    else if (/(password|123456|qwerty)/i.test(form.password))
+      errs.password = "Password is too common. Choose a less predictable password.";
     if (form.password !== form.confirm)
       errs.confirm = "Passwords do not match.";
     return errs;
@@ -64,9 +68,18 @@ export default function SignUp() {
         if (Array.isArray(data.errors)) {
           const fieldErrors = {};
           data.errors.forEach((err) => {
-            fieldErrors[err.path] = err.msg;
+            const key = err?.path || "form";
+            if (!fieldErrors[key]) {
+              fieldErrors[key] = err?.msg || "Invalid value.";
+            }
           });
+          const firstMsg = fieldErrors.form || fieldErrors.email || fieldErrors.password;
+          if (firstMsg) toast.error(firstMsg);
           setErrors(fieldErrors);
+        } else if (res.status === 409) {
+          const message = data?.error || "Email is already registered.";
+          setErrors({ email: message });
+          toast.error(message);
         } else {
           const serverMessage =
             data?.error ||
@@ -81,12 +94,18 @@ export default function SignUp() {
 
       if (data.requires_verification) {
         toast.success(data.message || "Verification code sent to your email.");
-        navigate("/verify-email", {
+        const query = new URLSearchParams({
+          email: data.user?.email || form.email,
+          completeProfile: "1",
+        }).toString();
+
+        navigate(`/verify-email?${query}`, {
           replace: true,
           state: {
             email: data.user?.email || form.email,
             redirectTo: "/",
             devVerificationCode: data.dev_verification_code || "",
+            postVerifyRequireName: true,
           },
         });
         return;

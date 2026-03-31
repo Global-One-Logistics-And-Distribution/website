@@ -8,6 +8,7 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "./AuthContext";
+import { normalizeImageUrl } from "../utils/productsApi";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 const GUEST_LS_KEY = "cart_items_guest";
@@ -46,12 +47,13 @@ function safeStorageRemove(key) {
 
 function compactProduct(product, selectedSize) {
   if (!product || typeof product !== "object") return null;
+  const imageUrl = normalizeImageUrl(product.image_url ?? product.image ?? "");
   return {
     id: product.id ?? null,
     name: product.name ?? "",
     price: product.price ?? 0,
-    image_url: product.image_url ?? product.image ?? "",
-    image: product.image ?? product.image_url ?? "",
+    image_url: imageUrl,
+    image: imageUrl,
     brand: product.brand ?? "",
     category: product.category ?? "",
     selectedSize: selectedSize ?? product.selectedSize ?? "",
@@ -110,6 +112,7 @@ function normalizeServerItems(payload) {
     .map((it) => ({
       productId: it.product_id ?? it.productId ?? it.id,
       quantity: Number(it.quantity) || 1,
+      selectedSize: it.selected_size ?? it.selectedSize ?? "",
       product: it.product ?? null,
     }))
     .filter((it) => it.productId != null && it.quantity > 0);
@@ -168,6 +171,7 @@ export function CartProvider({ children }) {
               return {
                 productId: s.productId,
                 quantity: s.quantity,
+                selectedSize: s.selectedSize || local?.selectedSize || "",
                 product,
               };
             })
@@ -233,7 +237,11 @@ export function CartProvider({ children }) {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ productId: pid, quantity: quantityToAdd }),
+            body: JSON.stringify({
+              productId: pid,
+              quantity: quantityToAdd,
+              selectedSize: selectedSize || existing?.selectedSize || "",
+            }),
           });
           if (!res.ok) {
             const payload = await res.json().catch(() => ({}));

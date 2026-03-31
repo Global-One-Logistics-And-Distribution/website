@@ -55,6 +55,7 @@ def cart_list(request):
 
         product_id = serializer.validated_data["productId"]
         quantity = serializer.validated_data["quantity"]
+        selected_size = (serializer.validated_data.get("selectedSize") or "").strip()
 
         product = Product.objects.filter(id=product_id, is_active=True).first()
         if not product:
@@ -70,7 +71,7 @@ def cart_list(request):
         item, created = CartItem.objects.get_or_create(
             user=user,
             product_id=product_id,
-            defaults={"quantity": quantity},
+            defaults={"quantity": quantity, "selected_size": selected_size},
         )
 
         new_quantity = quantity if created else (item.quantity + quantity)
@@ -88,7 +89,11 @@ def cart_list(request):
 
         if not created:
             item.quantity = new_quantity
-            item.save(update_fields=["quantity"])
+            if selected_size:
+                item.selected_size = selected_size
+                item.save(update_fields=["quantity", "selected_size"])
+            else:
+                item.save(update_fields=["quantity"])
 
         return Response(
             {"item": CartItemSerializer(item, context={"products_map": {product.id: product}}).data},
@@ -174,6 +179,7 @@ def cart_sync(request):
         for incoming in incoming_items:
             product_id = incoming["productId"]
             requested_quantity = incoming["quantity"]
+            selected_size = (incoming.get("selectedSize") or "").strip()
 
             product = products_map.get(product_id)
             if not product:
@@ -188,19 +194,30 @@ def cart_sync(request):
 
             if existing:
                 new_quantity = min(max_allowed, existing.quantity + bounded_quantity)
+                fields_to_update = []
                 if new_quantity != existing.quantity:
                     existing.quantity = new_quantity
+                    fields_to_update.append("quantity")
+                if selected_size and selected_size != existing.selected_size:
+                    existing.selected_size = selected_size
+                    fields_to_update.append("selected_size")
+                if fields_to_update:
                     to_update.append(existing)
             else:
                 to_create.append(
-                    CartItem(user=user, product_id=product_id, quantity=bounded_quantity)
+                    CartItem(
+                        user=user,
+                        product_id=product_id,
+                        quantity=bounded_quantity,
+                        selected_size=selected_size,
+                    )
                 )
 
         if to_create:
             CartItem.objects.bulk_create(to_create, ignore_conflicts=True)
 
         if to_update:
-            CartItem.objects.bulk_update(to_update, ["quantity"])
+            CartItem.objects.bulk_update(to_update, ["quantity", "selected_size"])
 
     final_items = list(CartItem.objects.filter(user=user))
     return Response({"items": _serialize_cart_items(final_items)})

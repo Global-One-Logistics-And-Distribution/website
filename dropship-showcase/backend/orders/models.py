@@ -51,10 +51,10 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def _generate_order_number(self):
-        # Better order ID: timestamp + random UUID
-        timestamp = int(time.time() * 1000)  # milliseconds
-        random_part = uuid.uuid4().hex[:6].upper()
-        return f"ORD-{timestamp}-{random_part}"
+        # Keep order number <= 20 chars to match field constraint.
+        timestamp = int(time.time())
+        random_part = uuid.uuid4().hex[:7].upper()
+        return f"ORD{timestamp}{random_part}"
 
     def __str__(self):
         return f"{self.order_number} ({self.user.email})"

@@ -6,6 +6,12 @@ from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
 
+try:
+    import whitenoise  # noqa: F401
+    HAS_WHITENOISE = True
+except ImportError:
+    HAS_WHITENOISE = False
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me-in-production-!@#$%")
@@ -44,7 +50,6 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.gzip.GZipMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "dropship_backend.middleware.SecurityHeadersMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -53,6 +58,10 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if HAS_WHITENOISE:
+    # Keep static file serving optimized in environments where whitenoise is installed.
+    MIDDLEWARE.insert(3, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "dropship_backend.urls"
 
@@ -202,7 +211,11 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if HAS_WHITENOISE
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
     },
 }
 
@@ -226,6 +239,10 @@ DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL",
     default=EMAIL_HOST_USER or "no-reply@dropship.local",
 )
+EMAIL_PROVIDER = config("EMAIL_PROVIDER", default="smtp").strip().lower()
+EMAIL_FALLBACK_TO_SMTP = config("EMAIL_FALLBACK_TO_SMTP", default=True, cast=bool)
+RESEND_API_KEY = config("RESEND_API_KEY", default="")
+RESEND_FROM_EMAIL = config("RESEND_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

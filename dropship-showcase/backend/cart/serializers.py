@@ -12,7 +12,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CartItem
-        fields = ["product_id", "quantity", "product"]
+        fields = ["product_id", "quantity", "selected_size", "product"]
 
     def get_product(self, obj):
         products_map = self.context.get("products_map") or {}
@@ -38,6 +38,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 class AddToCartSerializer(serializers.Serializer):
     productId = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1, max_value=CART_MAX_QUANTITY, default=1)
+    selectedSize = serializers.CharField(max_length=10, required=False, allow_blank=True, default="")
 
 
 class SyncCartSerializer(serializers.Serializer):

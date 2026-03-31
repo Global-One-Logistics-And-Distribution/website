@@ -47,9 +47,16 @@ def signup(request):
         # Flatten errors to match frontend expectations: {errors:[{path,msg}]}
         flat = []
         for field, msgs in errors.items():
+            field_name = "form" if field in ("non_field_errors", "error") else field
             for msg in msgs:
-                flat.append({"path": field, "msg": str(msg)})
-        return Response({"errors": flat}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+                flat.append({"path": field_name, "msg": str(msg)})
+        return Response(
+            {
+                "error": "Please correct the highlighted fields.",
+                "errors": flat,
+            },
+            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        )
 
     email = serializer.validated_data["email"]
     if User.objects.filter(email=email).exists():

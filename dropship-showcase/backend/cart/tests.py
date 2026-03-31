@@ -37,18 +37,43 @@ class CartTests(TestCase):
 
     def test_add_to_cart(self):
         self.create_product(1, stock=20)
-        res = self.client.post(self.list_url, {"productId": 1, "quantity": 2}, format="json")
+        res = self.client.post(
+            self.list_url,
+            {"productId": 1, "quantity": 2, "selectedSize": "9"},
+            format="json",
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["item"]["product_id"], 1)
         self.assertEqual(res.data["item"]["quantity"], 2)
+        self.assertEqual(res.data["item"]["selected_size"], "9")
 
     def test_add_same_product_increments(self):
         self.create_product(5, stock=20)
-        self.client.post(self.list_url, {"productId": 5, "quantity": 1}, format="json")
+        self.client.post(
+            self.list_url,
+            {"productId": 5, "quantity": 1, "selectedSize": "8"},
+            format="json",
+        )
         self.client.post(self.list_url, {"productId": 5, "quantity": 2}, format="json")
         res = self.client.get(self.list_url)
         item = res.data["items"][0]
         self.assertEqual(item["quantity"], 3)
+        self.assertEqual(item["selected_size"], "8")
+
+    def test_sync_cart_persists_selected_size(self):
+        self.create_product(55, stock=20)
+        sync_url = reverse("cart-sync")
+        res = self.client.post(
+            sync_url,
+            {
+                "items": [
+                    {"productId": 55, "quantity": 1, "selectedSize": "10"},
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["items"][0]["selected_size"], "10")
 
     def test_update_quantity(self):
         self.create_product(10, stock=20)

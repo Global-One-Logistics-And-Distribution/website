@@ -5,8 +5,68 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 import logging
 import smtplib
+import json
+from urllib import request as urlrequest
+from urllib.error import HTTPError, URLError
 
 logger = logging.getLogger(__name__)
+
+
+def _send_via_resend(subject, message, to_email):
+    api_key = getattr(settings, "RESEND_API_KEY", "")
+    if not api_key:
+        logger.error("RESEND_API_KEY is missing while EMAIL_PROVIDER is set to resend.")
+        return False
+
+    from_email = getattr(settings, "RESEND_FROM_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "")
+    payload = {
+        "from": from_email,
+        "to": [to_email],
+        "subject": subject,
+        "text": message,
+    }
+    req = urlrequest.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urlrequest.urlopen(req, timeout=getattr(settings, "EMAIL_TIMEOUT", 10)) as response:
+            status = getattr(response, "status", 200)
+            if status >= 400:
+                logger.error("Resend returned non-success status: %s", status)
+                return False
+            return True
+    except HTTPError as e:
+        body = ""
+        try:
+            body = e.read().decode("utf-8", errors="ignore")
+        except Exception:
+            body = ""
+        logger.error("Resend HTTP error for %s: %s %s", to_email, e.code, body)
+        return False
+    except URLError as e:
+        logger.error("Resend network error for %s: %s", to_email, str(e))
+        return False
+    except Exception as e:
+        logger.error("Resend send failed for %s: %s: %s", to_email, type(e).__name__, str(e))
+        return False
+
+
+def _send_via_smtp(subject, message, from_email, to_email):
+    send_mail(
+        subject,
+        message,
+        from_email,
+        [to_email],
+        fail_silently=False,
+    )
+    return True
 
 
 def generate_verification_code():
@@ -39,23 +99,30 @@ def send_verification_email(user):
     )
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or "no-reply@dropship.local"
     
+    provider = getattr(settings, "EMAIL_PROVIDER", "smtp").strip().lower()
     try:
         logger.info(f"Attempting to send verification email to {user.email}")
         logger.info(
-            "Email config - BACKEND: %s, HOST: %s, PORT: %s, TLS: %s",
+            "Email config - PROVIDER: %s, BACKEND: %s, HOST: %s, PORT: %s, TLS: %s",
+            provider,
             getattr(settings, "EMAIL_BACKEND", "unknown"),
             getattr(settings, "EMAIL_HOST", ""),
             getattr(settings, "EMAIL_PORT", ""),
             getattr(settings, "EMAIL_USE_TLS", ""),
         )
-        
-        send_mail(
-            subject,
-            message,
-            from_email,
-            [user.email],
-            fail_silently=False,
-        )
+
+        sent = False
+        if provider == "resend":
+            sent = _send_via_resend(subject, message, user.email)
+            if not sent and getattr(settings, "EMAIL_FALLBACK_TO_SMTP", True):
+                logger.warning("Resend failed; falling back to SMTP delivery for %s", user.email)
+                sent = _send_via_smtp(subject, message, from_email, user.email)
+        else:
+            sent = _send_via_smtp(subject, message, from_email, user.email)
+
+        if not sent:
+            raise RuntimeError("Email provider did not accept the message")
+
         logger.info(f"Verification email sent successfully to {user.email}")
         return True
     except smtplib.SMTPAuthenticationError as e:

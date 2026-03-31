@@ -12,13 +12,16 @@ export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
   const { login, user } = useAuth();
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const fallbackEmail = useMemo(() => {
-    const urlEmail = new URLSearchParams(location.search).get("email");
+    const urlEmail = params.get("email");
     return location.state?.email || urlEmail || user?.email || "";
-  }, [location.search, location.state, user?.email]);
+  }, [params, location.state, user?.email]);
 
   const redirectTo = location.state?.redirectTo || "/";
+  const postVerifyRequireName =
+    location.state?.postVerifyRequireName === true || params.get("completeProfile") === "1";
 
   const [email, setEmail] = useState(fallbackEmail);
   const [code, setCode] = useState("");
@@ -32,9 +35,18 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     if (user?.email_verified) {
+      if (postVerifyRequireName) {
+        navigate("/complete-profile", {
+          replace: true,
+          state: {
+            redirectTo,
+          },
+        });
+        return;
+      }
       navigate(redirectTo, { replace: true });
     }
-  }, [navigate, redirectTo, user?.email_verified]);
+  }, [navigate, postVerifyRequireName, redirectTo, user?.email_verified]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -67,6 +79,15 @@ export default function VerifyEmail() {
       if (data.token && data.user) {
         login(data.token, data.user);
         toast.success("Email verified!");
+        if (postVerifyRequireName) {
+          navigate("/complete-profile", {
+            replace: true,
+            state: {
+              redirectTo,
+            },
+          });
+          return;
+        }
         navigate(redirectTo, { replace: true });
       } else {
         toast.success("Email verified! You can sign in now.");

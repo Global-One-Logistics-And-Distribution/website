@@ -53,17 +53,39 @@ function toString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function normalizeImageUrl(url) {
+function isLocalNetworkHost(hostname) {
+  if (!hostname) return false;
+  const host = hostname.toLowerCase();
+  if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0") return true;
+  if (host.startsWith("10.")) return true;
+  if (host.startsWith("192.168.")) return true;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return true;
+  return false;
+}
+
+export function normalizeImageUrl(url) {
   const value = toString(url);
   if (!value) return "";
 
   try {
     const parsed = new URL(value);
+
+    // Avoid mixed-content failures from localhost/private-network image URLs.
+    if (parsed.protocol === "http:" && isLocalNetworkHost(parsed.hostname)) {
+      return "";
+    }
+
+    // Upgrade http images to https when page runs on https.
+    const pageProtocol = typeof window !== "undefined" ? window.location.protocol : "https:";
+    if (parsed.protocol === "http:" && pageProtocol === "https:") {
+      parsed.protocol = "https:";
+    }
+
     if (parsed.hostname === "www.myluxezone.com") {
       parsed.hostname = "myluxezone.com";
       return parsed.toString();
     }
-    return value;
+    return parsed.toString();
   } catch {
     return value;
   }

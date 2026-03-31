@@ -1,6 +1,68 @@
 from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from accounts.models import User
+from products.models import Product
+
+
+def get_token(user):
+    return str(RefreshToken.for_user(user).access_token)
 
 
 class OrdersTestCase(TestCase):
-    def test_placeholder(self):
-        pass
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="orders@example.com",
+            name="Orders User",
+            password="Secure123",
+            email_verified=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {get_token(self.user)}")
+        self.orders_url = reverse("order-list")
+
+        self.shoe_product = Product.objects.create(
+            id=900,
+            name="Luxury Sneaker",
+            category="Luxury Shoes",
+            price="3499.00",
+            stock=10,
+            is_active=True,
+        )
+
+    def _base_payload(self):
+        return {
+            "shipping_name": "Orders User",
+            "shipping_email": "orders@example.com",
+            "shipping_phone": "9876543210",
+            "shipping_address": "123 Main Street",
+            "shipping_city": "Bengaluru",
+            "shipping_pincode": "560001",
+            "shipping_state": "Karnataka",
+            "items": [
+                {
+                    "product_id": self.shoe_product.id,
+                    "product_name": self.shoe_product.name,
+                    "product_image": "",
+                    "price": "3499.00",
+                    "quantity": 1,
+                    "shoe_size": "",
+                }
+            ],
+        }
+
+    def test_order_rejects_shoe_without_size(self):
+        payload = self._base_payload()
+        res = self.client.post(self.orders_url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("items", res.data["errors"])
+
+    def test_order_accepts_shoe_with_valid_size(self):
+        payload = self._base_payload()
+        payload["items"][0]["shoe_size"] = "9"
+        res = self.client.post(self.orders_url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["order"]["items"][0]["shoe_size"], "9")
