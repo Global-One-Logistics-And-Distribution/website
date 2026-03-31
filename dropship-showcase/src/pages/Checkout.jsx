@@ -16,6 +16,8 @@ function getProductImage(product) {
 }
 
 function parseBackendError(data) {
+  if (typeof data === "string") return data;
+  if (typeof data?.detail === "string") return data.detail;
   if (data?.error && typeof data.error === "string") return data.error;
   if (Array.isArray(data?.errors)) {
     return data.errors
@@ -32,6 +34,7 @@ export default function Checkout() {
   const cart = useCart() || {};
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const isVerified = user?.email_verified !== false;
   const items = Array.isArray(cart.items) ? cart.items : [];
   const totalPrice = Number(cart.totalPrice) || 0;
   const totalItems = Number(cart.totalItems) || 0;
@@ -105,6 +108,14 @@ export default function Checkout() {
       return;
     }
 
+    if (!isVerified) {
+      toast.error("Verify your email to place orders.");
+      navigate("/verify-email", {
+        state: { email: user.email, redirectTo: "/checkout" },
+      });
+      return;
+    }
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -135,8 +146,14 @@ export default function Checkout() {
         body: JSON.stringify({ ...form, items: orderItems }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
+        if (res.status === 403 && errorMessage.includes("verify")) {
+          navigate("/verify-email", {
+            state: { email: user.email, redirectTo: "/checkout" },
+          });
+        }
         toast.error(parseBackendError(data));
         return;
       }
@@ -314,10 +331,22 @@ export default function Checkout() {
                 to place an order.
               </p>
             )}
+            {user && !isVerified && (
+              <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                <span>Please verify your email before placing an order.</span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/verify-email", { state: { email: user.email, redirectTo: "/checkout" } })}
+                  className="text-indigo-600 dark:text-indigo-400 underline font-medium"
+                >
+                  Verify now
+                </button>
+              </p>
+            )}
 
             <button
               type="submit"
-              disabled={placing || !user}
+              disabled={placing || !user || !isVerified}
               className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 disabled:opacity-60 transition text-sm"
             >
               {placing ? (
@@ -391,4 +420,3 @@ export default function Checkout() {
     </section>
   );
 }
-

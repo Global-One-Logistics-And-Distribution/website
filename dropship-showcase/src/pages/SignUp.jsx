@@ -57,7 +57,7 @@ export default function SignUp() {
           password: form.password,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (data.errors) {
           const fieldErrors = {};
@@ -70,9 +70,27 @@ export default function SignUp() {
         }
         return;
       }
-      login(data.token, data.user);
-      toast.success(`Welcome, ${data.user.name}!`);
-      navigate("/");
+
+      if (data.requires_verification) {
+        toast.success(data.message || "Verification code sent to your email.");
+        navigate("/verify-email", {
+          replace: true,
+          state: {
+            email: data.user?.email || form.email,
+            redirectTo: "/",
+          },
+        });
+        return;
+      }
+
+      if (data.token && data.user) {
+        login(data.token, data.user);
+        toast.success(`Welcome, ${data.user.name}!`);
+        navigate("/");
+      } else {
+        toast.success("Account created. Please sign in.");
+        navigate("/signin");
+      }
     } catch {
       toast.error("Network error. Please try again.");
     } finally {

@@ -49,7 +49,7 @@ class SigninSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "email", "created_at"]
+        fields = ["id", "name", "email", "email_verified", "created_at"]
 
 
 class UpdateProfileSerializer(serializers.Serializer):
