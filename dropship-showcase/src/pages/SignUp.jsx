@@ -119,19 +119,21 @@ export default function SignUp() {
               <label htmlFor="name" className="block text-sm font-medium mb-1.5">
                 Full Name
               </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="John Doe"
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.name ? "border-red-500" : "border-slate-300 dark:border-slate-700"
-                }`}
-              />
-              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+              <div className="relative">
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="John Doe"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                    errors.name ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+                  }`}
+                />
+                {errors.name && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.name}</p>}
+              </div>
             </div>
 
             {/* Email */}
@@ -139,19 +141,21 @@ export default function SignUp() {
               <label htmlFor="email" className="block text-sm font-medium mb-1.5">
                 Email address
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.email ? "border-red-500" : "border-slate-300 dark:border-slate-700"
-                }`}
-              />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+              <div className="relative">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="you@example.com"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                    errors.email ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+                  }`}
+                />
+                {errors.email && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>}
+              </div>
             </div>
 
             {/* Password */}
@@ -202,19 +206,21 @@ export default function SignUp() {
               <label htmlFor="confirm" className="block text-sm font-medium mb-1.5">
                 Confirm Password
               </label>
-              <input
-                id="confirm"
-                name="confirm"
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-                value={form.confirm}
-                onChange={handleChange}
-                placeholder="Repeat your password"
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.confirm ? "border-red-500" : "border-slate-300 dark:border-slate-700"
-                }`}
-              />
-              {errors.confirm && <p className="text-xs text-red-500 mt-1">{errors.confirm}</p>}
+              <div className="relative">
+                <input
+                  id="confirm"
+                  name="confirm"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={form.confirm}
+                  onChange={handleChange}
+                  placeholder="Repeat your password"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                    errors.confirm ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+                  }`}
+                />
+                {errors.confirm && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
+              </div>
             </div>
 
             {/* Submit */}
