@@ -25,3 +25,9 @@ class CartItem(models.Model):
     def __str__(self):
         size_suffix = f", size={self.selected_size}" if self.selected_size else ""
         return f"CartItem(user={self.user_id}, product={self.product_id}, qty={self.quantity}{size_suffix})"
+
+    def save(self, *args, **kwargs):
+        # Guard against legacy callers that may pass None for selected_size.
+        if self.selected_size is None:
+            self.selected_size = ""
+        super().save(*args, **kwargs)

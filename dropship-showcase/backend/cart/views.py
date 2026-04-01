@@ -74,6 +74,9 @@ def cart_list(request):
             defaults={"quantity": quantity, "selected_size": selected_size},
         )
 
+        if item.selected_size is None:
+            item.selected_size = ""
+
         new_quantity = quantity if created else (item.quantity + quantity)
         if new_quantity > max_allowed:
             return Response(
@@ -91,6 +94,9 @@ def cart_list(request):
             item.quantity = new_quantity
             if selected_size:
                 item.selected_size = selected_size
+                item.save(update_fields=["quantity", "selected_size"])
+            elif item.selected_size is None:
+                item.selected_size = ""
                 item.save(update_fields=["quantity", "selected_size"])
             else:
                 item.save(update_fields=["quantity"])

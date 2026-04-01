@@ -28,18 +28,18 @@ export default function Contact() {
         {/* Phone */}
         <div className="flex flex-col">
           <h2 className="font-semibold text-lg mb-1">Phone</h2>
-          <a href="tel:+919876543210" className="hover:underline flex items-center">
+          <a href="tel:+917208999095" className="hover:underline flex items-center">
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.21c1.21.49 2.53.76 3.88.76a1 1 0 011 1v3.5a1 1 0 01-1 1C9.5 22 2 14.5 2 5a1 1 0 011-1h3.5a1 1 0 011 1c0 1.35.26 2.67.76 3.88a1 1 0 01-.21 1.11l-2.2 2.2z"/>
             </svg>
-            No Number Yet!!
+            Contact No. +91 7208999095
           </a>
         </div>
 
         <div>
   <h2 className="font-semibold text-lg mb-1">WhatsApp</h2>
   <a
-    href="https://wa.me/91?text=Hi%20I%20have%20a%20question%20about%20a%20product"
+    href="https://wa.me/917208999095?text=Hi%20I%20have%20a%20question%20about%20a%20product"
     target="_blank"
     rel="noopener noreferrer"
     className="inline-flex items-center mt-1 px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
