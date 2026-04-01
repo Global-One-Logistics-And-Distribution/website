@@ -233,7 +233,7 @@ STORAGES = {
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL",
-    default="no-reply@dropship.local",
+    default="no-reply@elitedrop.net.in",
 )
 ZEPTOMAIL_API_URL = config("ZEPTOMAIL_API_URL", default="https://api.zeptomail.in/v1.1/email")
 ZEPTOMAIL_API_KEY = config("ZEPTOMAIL_API_KEY", default="")
