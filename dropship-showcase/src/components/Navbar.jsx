@@ -28,10 +28,18 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800">
-      <nav className="container-pad h-16 flex items-center justify-between">
+      <nav className="container-pad h-20 flex items-center justify-between">
         {/* Logo */}
-        <NavLink to="/" className="text-xl font-bold">
-          <img src="" alt="Logo" className="h-8" />
+        <NavLink to="/" className="leading-tight select-none">
+          <span
+            className="block text-xl md:text-2xl font-extrabold tracking-tight"
+            style={{ color: "oklch(0.511 0.262 276.966)" }}
+          >
+            EliteDrop
+          </span>
+          <span className="block text-[10px] md:text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400 font-semibold">
+            By G.O.L.D.
+          </span>
         </NavLink>
 
         {/* Desktop links */}
