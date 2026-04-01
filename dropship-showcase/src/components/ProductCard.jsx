@@ -5,6 +5,7 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import { formatINR } from "../utils/currency";
 import { getDiscount, getMRP, getReviewCount } from "../utils/product";
+import { getProductSlug } from "../utils/slug";
 
 /** Stock label from product.stock. */
 function stockInfo(stock) {
@@ -31,6 +32,7 @@ export default function ProductCard({ product }) {
   const { label: stockLabel, cls: stockCls } = stockInfo(product.stock);
   const inStock = stockLabel !== "Out of Stock";
   const inWishlist = isInWishlist(product.id);
+  const productPath = `/products/${getProductSlug(product)}`;
 
   return (
     <motion.article
@@ -60,7 +62,7 @@ export default function ProductCard({ product }) {
       </motion.button>
 
       <Link
-        to={`/products/${product.id}`}
+        to={productPath}
         state={{ from: location.pathname + location.search }}
         className="block overflow-hidden"
       >
@@ -134,7 +136,7 @@ export default function ProductCard({ product }) {
           )}
 
           <Link
-            to={`/products/${product.id}`}
+            to={productPath}
             state={{ from: location.pathname + location.search }}
             className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition"
           >

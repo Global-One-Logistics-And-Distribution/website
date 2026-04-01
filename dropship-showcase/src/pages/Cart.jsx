@@ -5,6 +5,7 @@ import { Trash2, Plus, Minus, ShoppingCart, Truck, ChevronRight, ShieldCheck } f
 import { useCart } from "../context/CartContext";
 import { formatINR } from "../utils/currency";
 import { getMRP } from "../utils/product";
+import { getProductSlug } from "../utils/slug";
 
 /** Delivery date = today + 3-5 business days */
 function estimatedDelivery() {
@@ -125,6 +126,7 @@ export default function Cart() {
               const image =
                 (Array.isArray(rawImage) ? rawImage[0] : rawImage) ||
                 "https://placehold.co/120x120?text=No+Image";
+              const productPath = `/products/${getProductSlug(product)}`;
 
               return (
                 <motion.div
@@ -136,7 +138,7 @@ export default function Cart() {
                   transition={{ duration: 0.25 }}
                   className="flex gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm"
                 >
-                  <Link to={`/products/${productId}`} className="shrink-0">
+                  <Link to={productPath} className="shrink-0">
                     <img
                       src={image}
                       alt={product?.name || "Product"}
@@ -146,7 +148,7 @@ export default function Cart() {
 
                   <div className="flex-1 min-w-0">
                     <Link
-                      to={`/products/${productId}`}
+                      to={productPath}
                       className="font-semibold leading-snug hover:text-indigo-600 dark:hover:text-indigo-400 transition line-clamp-2"
                     >
                       {product?.name || `Product #${productId}`}

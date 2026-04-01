@@ -1,10 +1,8 @@
 from datetime import timedelta
 from django.conf import settings
-from django.core.mail import get_connection, send_mail
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 import logging
-import smtplib
 import json
 from urllib import request as urlrequest
 from urllib.error import HTTPError, URLError
@@ -12,25 +10,32 @@ from urllib.error import HTTPError, URLError
 logger = logging.getLogger(__name__)
 
 
-def _send_via_resend(subject, message, to_email):
-    api_key = getattr(settings, "RESEND_API_KEY", "")
+def _send_via_zeptomail(subject, message, to_email):
+    api_key = getattr(settings, "ZEPTOMAIL_API_KEY", "")
     if not api_key:
-        logger.error("RESEND_API_KEY is missing while EMAIL_PROVIDER is set to resend.")
+        logger.error("ZEPTOMAIL_API_KEY is missing.")
         return False
 
-    from_email = getattr(settings, "RESEND_FROM_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "")
+    from_email = getattr(settings, "ZEPTOMAIL_FROM_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "")
+    from_name = getattr(settings, "ZEPTOMAIL_FROM_NAME", "G.O.L.D")
+    api_url = getattr(settings, "ZEPTOMAIL_API_URL", "https://api.zeptomail.in/v1.1/email")
+    if not from_email:
+        logger.error("ZEPTOMAIL_FROM_EMAIL or DEFAULT_FROM_EMAIL must be set.")
+        return False
+
     payload = {
-        "from": from_email,
-        "to": [to_email],
+        "from": {"address": from_email, "name": from_name},
+        "to": [{"email_address": {"address": to_email}}],
         "subject": subject,
-        "text": message,
+        "textbody": message,
     }
     req = urlrequest.Request(
-        "https://api.resend.com/emails",
+        api_url,
         data=json.dumps(payload).encode("utf-8"),
         headers={
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Zoho-enczapikey {api_key}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
         },
         method="POST",
     )
@@ -39,7 +44,7 @@ def _send_via_resend(subject, message, to_email):
         with urlrequest.urlopen(req, timeout=getattr(settings, "EMAIL_TIMEOUT", 10)) as response:
             status = getattr(response, "status", 200)
             if status >= 400:
-                logger.error("Resend returned non-success status: %s", status)
+                logger.error("ZeptoMail returned non-success status: %s", status)
                 return False
             return True
     except HTTPError as e:
@@ -48,25 +53,14 @@ def _send_via_resend(subject, message, to_email):
             body = e.read().decode("utf-8", errors="ignore")
         except Exception:
             body = ""
-        logger.error("Resend HTTP error for %s: %s %s", to_email, e.code, body)
+        logger.error("ZeptoMail HTTP error for %s: %s %s", to_email, e.code, body)
         return False
     except URLError as e:
-        logger.error("Resend network error for %s: %s", to_email, str(e))
+        logger.error("ZeptoMail network error for %s: %s", to_email, str(e))
         return False
     except Exception as e:
-        logger.error("Resend send failed for %s: %s: %s", to_email, type(e).__name__, str(e))
+        logger.error("ZeptoMail send failed for %s: %s: %s", to_email, type(e).__name__, str(e))
         return False
-
-
-def _send_via_smtp(subject, message, from_email, to_email):
-    send_mail(
-        subject,
-        message,
-        from_email,
-        [to_email],
-        fail_silently=False,
-    )
-    return True
 
 
 def generate_verification_code():
@@ -97,63 +91,23 @@ def send_verification_email(user):
         f"Your verification code is {code}. It expires in 10 minutes.\n\n"
         "If you did not request this, you can ignore this email."
     )
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "") or "no-reply@dropship.local"
-    
-    provider = getattr(settings, "EMAIL_PROVIDER", "smtp").strip().lower()
+    from_email = getattr(settings, "ZEPTOMAIL_FROM_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "")
+
     try:
         logger.info(f"Attempting to send verification email to {user.email}")
         logger.info(
-            "Email config - PROVIDER: %s, BACKEND: %s, HOST: %s, PORT: %s, TLS: %s",
-            provider,
-            getattr(settings, "EMAIL_BACKEND", "unknown"),
-            getattr(settings, "EMAIL_HOST", ""),
-            getattr(settings, "EMAIL_PORT", ""),
-            getattr(settings, "EMAIL_USE_TLS", ""),
+            "Email config - PROVIDER: zeptomail, URL: %s, FROM: %s",
+            getattr(settings, "ZEPTOMAIL_API_URL", "https://api.zeptomail.in/v1.1/email"),
+            from_email,
         )
 
-        sent = False
-        if provider == "resend":
-            sent = _send_via_resend(subject, message, user.email)
-            if not sent and getattr(settings, "EMAIL_FALLBACK_TO_SMTP", True):
-                logger.warning("Resend failed; falling back to SMTP delivery for %s", user.email)
-                sent = _send_via_smtp(subject, message, from_email, user.email)
-        else:
-            sent = _send_via_smtp(subject, message, from_email, user.email)
+        sent = _send_via_zeptomail(subject, message, user.email)
 
         if not sent:
             raise RuntimeError("Email provider did not accept the message")
 
         logger.info(f"Verification email sent successfully to {user.email}")
         return True
-    except smtplib.SMTPAuthenticationError as e:
-        error_msg = f"Failed to send verification email to {user.email}: {type(e).__name__}: {str(e)}"
-        logger.error(error_msg)
-        if getattr(settings, "DEBUG", False):
-            logger.warning(
-                "SMTP auth failed in DEBUG. Falling back to console email backend. OTP for %s is %s",
-                user.email,
-                code,
-            )
-            try:
-                console_connection = get_connection("django.core.mail.backends.console.EmailBackend")
-                send_mail(
-                    subject,
-                    message,
-                    from_email,
-                    [user.email],
-                    fail_silently=False,
-                    connection=console_connection,
-                )
-                return True
-            except Exception as fallback_error:
-                logger.error(
-                    "Console email fallback failed for %s: %s: %s",
-                    user.email,
-                    type(fallback_error).__name__,
-                    str(fallback_error),
-                )
-                return False
-        return False
     except Exception as e:
         error_msg = f"Failed to send verification email to {user.email}: {type(e).__name__}: {str(e)}"
         logger.error(error_msg)

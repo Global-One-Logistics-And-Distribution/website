@@ -219,30 +219,16 @@ STORAGES = {
     },
 }
 
-# ── Email ─────────────────────────────────────────────────────────────────────
-# ── Email ─────────────────────────────────────────────────────────────────────
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.smtp.EmailBackend",
-)
-if DEBUG and config("EMAIL_FORCE_CONSOLE_IN_DEBUG", default=True, cast=bool):
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-EMAIL_HOST = config("EMAIL_HOST", default="smtp-mail.outlook.com")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
-EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
+# ── Email (ZeptoMail API) ─────────────────────────────────────────────────────
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL",
-    default=EMAIL_HOST_USER or "no-reply@dropship.local",
+    default="no-reply@dropship.local",
 )
-EMAIL_PROVIDER = config("EMAIL_PROVIDER", default="smtp").strip().lower()
-EMAIL_FALLBACK_TO_SMTP = config("EMAIL_FALLBACK_TO_SMTP", default=True, cast=bool)
-RESEND_API_KEY = config("RESEND_API_KEY", default="")
-RESEND_FROM_EMAIL = config("RESEND_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
+ZEPTOMAIL_API_URL = config("ZEPTOMAIL_API_URL", default="https://api.zeptomail.in/v1.1/email")
+ZEPTOMAIL_API_KEY = config("ZEPTOMAIL_API_KEY", default="")
+ZEPTOMAIL_FROM_EMAIL = config("ZEPTOMAIL_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
+ZEPTOMAIL_FROM_NAME = config("ZEPTOMAIL_FROM_NAME", default="G.O.L.D")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

@@ -9,9 +9,10 @@ import { useCart } from "../context/CartContext";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import { formatINR } from "../utils/currency";
 import { useProduct } from "../hooks/useProducts";
+import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
 
 export default function ProductDetails() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const from = location.state?.from || "/products";
@@ -19,8 +20,20 @@ export default function ProductDetails() {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
 
-  const { product, loading } = useProduct(id);
+  const productId = getProductIdFromSlug(slug);
+  const { product, loading } = useProduct(productId);
   const fallbackImage = "https://via.placeholder.com/1000x700?text=No+Image";
+
+  useEffect(() => {
+    if (!product || !slug) return;
+    const canonicalSlug = getProductSlug(product);
+    if (slug !== canonicalSlug) {
+      navigate(`/products/${canonicalSlug}`, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [product, slug, navigate, location.state]);
 
   const hasVariants = Array.isArray(product?.variants) && product.variants.length > 0;
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);

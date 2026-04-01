@@ -10,6 +10,7 @@ import { formatINR } from "../utils/currency";
 import { useCart } from "../context/CartContext";
 import { getDiscount, getMRP } from "../utils/product";
 import { useProducts } from "../hooks/useProducts";
+import { getProductSlug } from "../utils/slug";
 
 function ListProductCard({ product }) {
   const { addToCart } = useCart();
@@ -20,6 +21,7 @@ function ListProductCard({ product }) {
   const inStock = stock > 0;
   const mrp = getMRP(price, product.id);
   const discount = getDiscount(product.id);
+  const productPath = `/products/${getProductSlug(product)}`;
 
   return (
     <motion.div
@@ -27,12 +29,12 @@ function ListProductCard({ product }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm"
     >
-      <Link to={`/products/${product.id}`} className="shrink-0">
+      <Link to={productPath} className="shrink-0">
         <img src={imageUrl} alt={product.name} className="w-28 h-28 object-cover rounded-xl bg-slate-100 dark:bg-slate-800" />
       </Link>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-slate-500 dark:text-slate-400">{product.brand} • {product.category}</p>
-        <Link to={`/products/${product.id}`} className="font-semibold leading-snug hover:text-indigo-600 dark:hover:text-indigo-400 transition line-clamp-2 text-sm mt-0.5 block">
+        <Link to={productPath} className="font-semibold leading-snug hover:text-indigo-600 dark:hover:text-indigo-400 transition line-clamp-2 text-sm mt-0.5 block">
           {product.name}
         </Link>
         <div className="flex items-center gap-1.5 mt-1">
@@ -66,7 +68,7 @@ function ListProductCard({ product }) {
           </span>
         )}
         <Link
-          to={`/products/${product.id}`}
+          to={productPath}
           className="text-center px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition"
         >
           Details

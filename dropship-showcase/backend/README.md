@@ -70,10 +70,11 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `DB_PORT` | Database port | `5432` |
 | `JWT_LIFETIME_DAYS` | JWT access token lifetime in days | `7` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins | `http://localhost:5173` |
-| `EMAIL_PROVIDER` | Email delivery provider: `smtp` or `resend` | `smtp` |
-| `EMAIL_FALLBACK_TO_SMTP` | Fallback to SMTP when API provider fails | `True` |
-| `RESEND_API_KEY` | API key used when `EMAIL_PROVIDER=resend` | — |
-| `RESEND_FROM_EMAIL` | Sender identity for Resend | `DEFAULT_FROM_EMAIL` |
+| `EMAIL_TIMEOUT` | Timeout (seconds) for email API calls | `10` |
+| `ZEPTOMAIL_API_URL` | ZeptoMail API endpoint | `https://api.zeptomail.in/v1.1/email` |
+| `ZEPTOMAIL_API_KEY` | ZeptoMail API key (`Zoho-enczapikey` value) | — |
+| `ZEPTOMAIL_FROM_EMAIL` | Verified sender email in ZeptoMail | `DEFAULT_FROM_EMAIL` |
+| `ZEPTOMAIL_FROM_NAME` | Sender display name | `G.O.L.D` |
 | `RAZORPAY_KEY_ID` | Razorpay public key id for server-side order APIs | — |
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret (keep backend-only) | — |
 
@@ -83,19 +84,18 @@ Django Admin panel at `http://localhost:8000/admin/`.
 - Never put `RAZORPAY_KEY_SECRET` in frontend code, frontend env, logs, or screenshots.
 - Keep `RAZORPAY_KEY_SECRET` only in backend env variables (for example, Render service secrets).
 
-### Production Email Fix (Outlook Basic Auth Disabled)
+### Email Delivery (ZeptoMail)
 
-If Microsoft SMTP returns `535 Authentication unsuccessful, basic authentication is disabled`,
-switch to Resend API delivery:
+Configure ZeptoMail in your environment:
 
 ```bash
-EMAIL_PROVIDER=resend
-RESEND_API_KEY=re_xxx
-RESEND_FROM_EMAIL=onboarding@your-verified-domain.com
-EMAIL_FALLBACK_TO_SMTP=False
+DEFAULT_FROM_EMAIL=your-verified-sender@elitedrop.net.in
+ZEPTOMAIL_API_KEY=Zoho-enczapikey-value
+ZEPTOMAIL_FROM_EMAIL=your-verified-sender@elitedrop.net.in
+ZEPTOMAIL_FROM_NAME=EliteDrop
 ```
 
-Keep `DEFAULT_FROM_EMAIL` aligned with your verified sender identity.
+Keep sender identity aligned with a verified ZeptoMail domain/sender.
 
 ## API Endpoints
 
