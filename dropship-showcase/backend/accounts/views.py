@@ -28,16 +28,6 @@ class LoginRateThrottle(AnonRateThrottle):
     scope = "login"
 
 
-def _dev_verification_fallback(user, email_sent):
-    """Return debug-only verification payload when SMTP delivery fails."""
-    if settings.DEBUG and not email_sent:
-        return {
-            "dev_verification_code": user.email_verification_code,
-            "dev_note": "Email delivery failed in local mode. Use this code to verify.",
-        }
-    return {}
-
-
 def _token_response(user):
     """Return {token, user} payload used by frontend."""
     return _token_response_with_remember(user, remember_me=True)
@@ -123,7 +113,6 @@ def signup(request):
         ),
         "email_sent": email_sent,
     }
-    payload.update(_dev_verification_fallback(user, email_sent))
     return Response(payload, status=status.HTTP_201_CREATED)
 
 
@@ -261,7 +250,6 @@ def verify_email(request):
             {
                 "error": "A new code has been sent. Please check your email.",
                 "email_sent": email_sent,
-                **_dev_verification_fallback(user, email_sent),
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -278,7 +266,6 @@ def verify_email(request):
             {
                 "error": "Verification code expired. We've sent a new code.",
                 "email_sent": email_sent,
-                **_dev_verification_fallback(user, email_sent),
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
@@ -315,16 +302,6 @@ def resend_verification(request):
 
     email_sent = send_verification_email(user)
     if not email_sent:
-        debug_payload = _dev_verification_fallback(user, email_sent)
-        if debug_payload:
-            return Response(
-                {
-                    "message": "Email could not be sent in local mode; use the OTP shown below.",
-                    "email_sent": False,
-                    **debug_payload,
-                },
-                status=status.HTTP_200_OK,
-            )
         return Response(
             {"error": "Could not send verification email right now. Please try again shortly."},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,

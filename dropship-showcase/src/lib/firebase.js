@@ -51,3 +51,30 @@ export async function signInWithGoogleFirebase() {
     name: credential.user.displayName || "",
   };
 }
+
+export function getFirebaseAuthErrorMessage(error) {
+  const code = String(error?.code || "").toLowerCase();
+  const fallback = "Google sign in failed. Please try again.";
+
+  if (code.includes("auth/unauthorized-domain")) {
+    return "This domain is not authorized in Firebase Auth. Add your production domain under Firebase Authentication > Settings > Authorized domains.";
+  }
+  if (code.includes("auth/operation-not-allowed")) {
+    return "Google sign-in is not enabled in Firebase Authentication. Enable the Google provider in Firebase Console.";
+  }
+  if (code.includes("auth/popup-blocked")) {
+    return "Popup was blocked by the browser. Allow popups for this site and try again.";
+  }
+  if (code.includes("auth/popup-closed-by-user") || code.includes("auth/cancelled-popup-request")) {
+    return "Google sign-in was cancelled before completion.";
+  }
+  if (code.includes("auth/network-request-failed")) {
+    return "Network error while contacting Firebase. Check your internet connection and try again.";
+  }
+  if (code.includes("auth/invalid-api-key") || code.includes("auth/app-not-authorized")) {
+    return "Firebase web app configuration is invalid for this domain. Verify your Firebase config values and authorized domains.";
+  }
+
+  const msg = String(error?.message || "").trim();
+  return msg || fallback;
+}

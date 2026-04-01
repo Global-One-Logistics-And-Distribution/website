@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
-import { isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
+import { getFirebaseAuthErrorMessage, isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 
@@ -141,15 +141,15 @@ export default function SignUp() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || "Firebase Google sign up failed.");
+        toast.error(data.detail || data.error || "Firebase Google sign up failed.");
         return;
       }
 
       login(data.token, data.user, { rememberMe: true });
       toast.success(`Welcome, ${data.user.name}!`);
       navigate("/");
-    } catch {
-      toast.error("Google sign up failed. Please try again.");
+    } catch (error) {
+      toast.error(getFirebaseAuthErrorMessage(error));
     } finally {
       setLoading(false);
     }

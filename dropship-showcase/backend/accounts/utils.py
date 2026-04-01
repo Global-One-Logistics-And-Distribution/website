@@ -10,14 +10,21 @@ from urllib.error import HTTPError, URLError
 logger = logging.getLogger(__name__)
 
 
+def _normalize_zeptomail_api_key(raw_key):
+    value = str(raw_key or "").strip()
+    if value.lower().startswith("zoho-enczapikey "):
+        return value.split(" ", 1)[1].strip()
+    return value
+
+
 def _send_via_zeptomail(subject, message, to_email):
-    api_key = getattr(settings, "ZEPTOMAIL_API_KEY", "")
+    api_key = _normalize_zeptomail_api_key(getattr(settings, "ZEPTOMAIL_API_KEY", ""))
     if not api_key:
         logger.error("ZEPTOMAIL_API_KEY is missing.")
         return False
 
     from_email = getattr(settings, "ZEPTOMAIL_FROM_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "")
-    from_name = getattr(settings, "ZEPTOMAIL_FROM_NAME", "G.O.L.D")
+    from_name = getattr(settings, "ZEPTOMAIL_FROM_NAME", "EliteDrop")
     api_url = getattr(settings, "ZEPTOMAIL_API_URL", "https://api.zeptomail.in/v1.1/email")
     if not from_email:
         logger.error("ZEPTOMAIL_FROM_EMAIL or DEFAULT_FROM_EMAIL must be set.")
@@ -53,7 +60,13 @@ def _send_via_zeptomail(subject, message, to_email):
             body = e.read().decode("utf-8", errors="ignore")
         except Exception:
             body = ""
-        logger.error("ZeptoMail HTTP error for %s: %s %s", to_email, e.code, body)
+        logger.error(
+            "ZeptoMail HTTP error for %s: status=%s reason=%s body=%s",
+            to_email,
+            e.code,
+            getattr(e, "reason", ""),
+            body,
+        )
         return False
     except URLError as e:
         logger.error("ZeptoMail network error for %s: %s", to_email, str(e))
@@ -74,8 +87,9 @@ def send_verification_email(user):
     Returns True if email sent successfully, False otherwise.
     """
     code = generate_verification_code()
+    valid_minutes = int(getattr(settings, "EMAIL_VERIFICATION_EXPIRY_MINUTES", 10))
     user.email_verification_code = code
-    user.email_verification_expires_at = timezone.now() + timedelta(minutes=10)
+    user.email_verification_expires_at = timezone.now() + timedelta(minutes=valid_minutes)
     user.email_verified = False
     user.save(
         update_fields=[
@@ -85,11 +99,19 @@ def send_verification_email(user):
         ]
     )
 
-    subject = "Verify your email for G.O.L.D"
+    company_name = getattr(settings, "COMPANY_NAME", "EliteDrop")
+    brand_name = getattr(settings, "BRAND_NAME", company_name)
+    support_email = getattr(settings, "SUPPORT_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "support@example.com")
+
+    subject = f"{company_name} verification code"
     message = (
-        f"Hi {user.name},\n\n"
-        f"Your verification code is {code}. It expires in 10 minutes.\n\n"
-        "If you did not request this, you can ignore this email."
+        "Verification code\n\n"
+        f"Enter the below one time password to verify your {company_name} account:\n\n"
+        f"{code}\n\n"
+        f"The verification code expires in {valid_minutes} minutes.\n\n"
+        f"If you have further questions, write to us at {support_email} and our team will get back to you.\n\n"
+        "Have a great day!\n\n"
+        f"Team {brand_name}"
     )
     from_email = getattr(settings, "ZEPTOMAIL_FROM_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "")
 
@@ -111,8 +133,5 @@ def send_verification_email(user):
     except Exception as e:
         error_msg = f"Failed to send verification email to {user.email}: {type(e).__name__}: {str(e)}"
         logger.error(error_msg)
-        if getattr(settings, "DEBUG", False):
-            logger.warning("Debug OTP for %s is %s", user.email, code)
-        # Don't crash signup - let user verify with code even if email didn't send
-        # In development, they can see the code in admin panel
+        # Don't crash signup flow; caller can show retry guidance to user.
         return False
