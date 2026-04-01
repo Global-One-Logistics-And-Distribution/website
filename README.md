@@ -1,4 +1,4 @@
-# G.O.L.D — Dropship Showcase
+# EliteDrop — Dropship Showcase
 
 A full-stack dropshipping storefront built with **React + Vite** (frontend) and **Django + PostgreSQL** (backend).
 

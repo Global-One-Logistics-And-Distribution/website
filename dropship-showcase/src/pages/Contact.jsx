@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 export default function Contact() {
   return (
     <section className="container-pad py-10">
-      <Helmet><title>GOLD | Contact</title></Helmet>
+      <Helmet><title>EliteDrop | Contact</title></Helmet>
 
       <h1 className="text-3xl font-bold mb-6">Contact</h1>
 
@@ -17,11 +17,11 @@ export default function Contact() {
         {/* Email */}
         <div className="flex flex-col">
           <h2 className="font-semibold text-lg mb-1">Email</h2>
-          <a href="mailto:support@goldstore.com" className="hover:underline flex items-center">
+          <a href="mailto:support@elitedrop.net.in" className="hover:underline flex items-center">
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M4 4h16v16H4V4zm2 2v2l6 3.5L18 8V6H6zm0 4v8h12v-8l-6 3.5L6 10z"/>
             </svg>
-             No Email Yet!!
+             support@elitedrop.net.in
           </a>
         </div>
 

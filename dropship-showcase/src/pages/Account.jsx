@@ -24,7 +24,7 @@ export default function Account() {
     return (
       <section className="container-pad py-16 text-center">
         <Helmet>
-          <title>Account | G.O.L.D</title>
+          <title>Account | EliteDrop</title>
         </Helmet>
         <p className="text-slate-500 dark:text-slate-400 mb-4">
           Please sign in to view your account.
@@ -103,7 +103,7 @@ export default function Account() {
   return (
     <section className="container-pad py-10 max-w-2xl mx-auto">
       <Helmet>
-        <title>Account | G.O.L.D</title>
+        <title>Account | EliteDrop</title>
       </Helmet>
 
       <motion.h1

@@ -1,6 +1,6 @@
 # Dropship — Django Backend
 
-Django + PostgreSQL REST API backend for the G.O.L.D Dropship Showcase.
+Django + PostgreSQL REST API backend for the ELITE Dropship Showcase.
 
 ## Quick Start
 
@@ -82,7 +82,7 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `ZEPTOMAIL_API_URL` | ZeptoMail API endpoint | `https://api.zeptomail.in/v1.1/email` |
 | `ZEPTOMAIL_API_KEY` | ZeptoMail API key (`Zoho-enczapikey` value) | — |
 | `ZEPTOMAIL_FROM_EMAIL` | Verified sender email in ZeptoMail | `DEFAULT_FROM_EMAIL` |
-| `ZEPTOMAIL_FROM_NAME` | Sender display name | `G.O.L.D` |
+| `ZEPTOMAIL_FROM_NAME` | Sender display name | `EliteDrop` |
 | `RAZORPAY_KEY_ID` | Razorpay public key id for server-side order APIs | — |
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret (keep backend-only) | — |
 

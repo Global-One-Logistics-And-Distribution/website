@@ -153,7 +153,7 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <>
-        <Helmet><title>Loading Product | G.O.L.D</title></Helmet>
+        <Helmet><title>Loading Product | EliteDrop</title></Helmet>
         <ProductDetailsSkeleton />
       </>
     );
@@ -162,7 +162,7 @@ export default function ProductDetails() {
   if (!product) {
     return (
       <section className="container-pad py-12">
-        <Helmet><title>Product Not Found | G.O.L.D</title></Helmet>
+        <Helmet><title>Product Not Found | EliteDrop</title></Helmet>
         <h1 className="text-2xl font-bold">Product not found</h1>
         <Link to="/products" className="inline-block mt-5 px-4 py-2 rounded-lg bg-slate-900 text-white">
           Back to Products
@@ -206,16 +206,16 @@ export default function ProductDetails() {
   return (
     <section className="container-pad py-10">
       <Helmet>
-        <title>{product.name} | G.O.L.D</title>
+        <title>{product.name} | EliteDrop</title>
         <meta name="description" content={seoDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:type" content="product" />
-        <meta property="og:title" content={`${product.name} | G.O.L.D`} />
+        <meta property="og:title" content={`${product.name} | EliteDrop`} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={seoImage} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} | G.O.L.D`} />
+        <meta name="twitter:title" content={`${product.name} | EliteDrop`} />
         <meta name="twitter:description" content={seoDescription} />
         <meta name="twitter:image" content={seoImage} />
         <script type="application/ld+json">
@@ -229,7 +229,7 @@ export default function ProductDetails() {
             description: seoDescription,
             brand: {
               "@type": "Brand",
-              name: product.brand || "G.O.L.D",
+              name: product.brand || "EliteDrop",
             },
             category: product.category,
             sku: String(product.id),

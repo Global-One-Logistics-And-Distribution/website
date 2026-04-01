@@ -60,7 +60,7 @@ export default function CompleteProfile() {
   return (
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
-        <title>Complete Profile | G.O.L.D</title>
+        <title>Complete Profile | EliteDrop</title>
       </Helmet>
 
       <motion.div

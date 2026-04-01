@@ -17,7 +17,7 @@ const TRUST_BADGES = [
 
 const TESTIMONIALS = [
   { name: "Priya S.", rating: 5, text: "Absolutely love my Michael Kors bag! Arrived perfectly wrapped in just 3 days. Will definitely shop again.", location: "Mumbai" },
-  { name: "Rahul M.", rating: 5, text: "The quality of the watch I ordered is outstanding. G.O.L.D. is my go-to for luxury accessories.", location: "Delhi" },
+  { name: "Rahul M.", rating: 5, text: "The quality of the watch I ordered is outstanding. EliteDrop is my go-to for luxury accessories.", location: "Delhi" },
   { name: "Ananya K.", rating: 4, text: "Great collection, fast shipping. The Aldo shoes were exactly as described. Very happy!", location: "Bangalore" },
   { name: "Vikram P.", rating: 5, text: "Excellent customer service and authentic products. My Gucci sunglasses are stunning!", location: "Chennai" },
   { name: "Sneha R.", rating: 5, text: "The wallet I bought is of great quality. Took a bit longer to arrive but worth the wait.", location: "Hyderabad" },
@@ -46,7 +46,7 @@ export default function Home() {
     "Shop premium handbags, watches, shoes and accessories at EliteDrop. Discover curated collections with secure checkout and fast delivery.";
 
   const contacts = [
-    { id: 1, name: "GOLD", role: "Customer Service", phone: "+91 98765 43210", email: "gold@example.com", accent: "from-indigo-500 to-blue-500" },
+    { id: 1, name: "EliteDrop", role: "Customer Service", phone: "+91 7208999095", email: "support@elitedrop.net.in", accent: "from-indigo-500 to-blue-500" },
   ];
 
   const goToCategory = (category) => navigate(`/products?category=${encodeURIComponent(category)}`);

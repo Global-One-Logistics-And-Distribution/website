@@ -136,7 +136,7 @@ export default function VerifyEmail() {
   return (
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
-        <title>Verify Email | G.O.L.D</title>
+        <title>Verify Email | EliteDrop</title>
       </Helmet>
 
       <motion.div

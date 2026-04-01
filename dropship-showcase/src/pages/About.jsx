@@ -6,10 +6,10 @@ export default function About() {
   return (
     <section className="container-pad py-10">
       <Helmet>
-        <title>GOLD | About</title>
+        <title>EliteDrop | About</title>
         <meta
           name="description"
-          content="Learn about GOLD."
+          content="Learn about EliteDrop."
         />
       </Helmet>
 
@@ -20,7 +20,7 @@ export default function About() {
         </div>
 
         <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-          GOLD is a modern product discovery platform crafted for those who value style and quality. 
+          EliteDrop is a modern product discovery platform crafted for those who value style and quality. 
           We curate a refined selection of premium essentials across categories like bags, shoes, sunglasses, 
           perfumes, and wallets—bringing timeless design and everyday luxury into one seamless experience. 
           Discover standout pieces, elevate your style, and shop with confidence—all in one place.

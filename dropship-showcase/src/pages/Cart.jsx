@@ -42,7 +42,7 @@ export default function Cart() {
     return (
       <section className="container-pad py-16 text-center">
         <Helmet>
-          <title>Cart | G.O.L.D</title>
+          <title>Cart | EliteDrop</title>
         </Helmet>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -68,7 +68,7 @@ export default function Cart() {
   return (
     <section className="container-pad py-10">
       <Helmet>
-        <title>{`Cart (${totalItems}) | G.O.L.D`}</title>
+        <title>{`Cart (${totalItems}) | EliteDrop`}</title>
       </Helmet>
 
       <motion.h1

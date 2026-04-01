@@ -94,7 +94,7 @@ export default function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-2 space-y-4">
             <Link to="/" className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 tracking-tight">
-              G.O.L.D
+              EliteDrop
             </Link>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs">
               Your premium destination for authentic luxury goods — handbags, watches, shoes, and accessories delivered straight to your door.
@@ -102,14 +102,14 @@ export default function Footer() {
 
             {/* Contact info */}
             <div className="space-y-2">
-              <a href="tel:+919876543210" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                <Phone size={14} /> +91 98765 43210
+              <a href="tel:+917208999095" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                <Phone size={14} /> +91 7208999095
               </a>
-              <a href="mailto:support@gold.in" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-                <Mail size={14} /> support@gold.in
+              <a href="mailto:support@elitedrop.net.in" className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition">
+                <Mail size={14} /> support@elitedrop.net.in
               </a>
               <p className="flex items-start gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <MapPin size={14} className="mt-0.5 shrink-0" /> Mumbai, Maharashtra, India – 400001
+                <MapPin size={14} className="mt-0.5 shrink-0" /> Mumbai, Maharashtra, India – 400706
               </p>
             </div>
 
@@ -209,7 +209,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-slate-100 dark:border-slate-800">
         <div className="container-pad py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 dark:text-slate-500">
-          <p>© {new Date().getFullYear()} G.O.L.D. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} EliteDrop. All rights reserved.</p>
           <div className="flex gap-4">
             <Link to="/about" className="hover:text-indigo-500 transition">Privacy Policy</Link>
             <Link to="/about" className="hover:text-indigo-500 transition">Terms of Service</Link>

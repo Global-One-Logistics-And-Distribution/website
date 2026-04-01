@@ -10,7 +10,7 @@ export default function CheckoutSuccess() {
   return (
     <section className="container-pad py-20 flex justify-center">
       <Helmet>
-        <title>Order Confirmed | G.O.L.D</title>
+        <title>Order Confirmed | EliteDrop</title>
       </Helmet>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}

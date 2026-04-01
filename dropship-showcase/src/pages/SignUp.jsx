@@ -170,7 +170,7 @@ export default function SignUp() {
   return (
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
-        <title>Sign Up | G.O.L.D</title>
+        <title>Sign Up | EliteDrop</title>
       </Helmet>
 
       <motion.div

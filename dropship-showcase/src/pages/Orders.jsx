@@ -202,7 +202,7 @@ export default function Orders() {
   if (!user) {
     return (
       <section className="container-pad py-16 text-center">
-        <Helmet><title>My Orders | G.O.L.D</title></Helmet>
+        <Helmet><title>My Orders | EliteDrop</title></Helmet>
         <p className="text-slate-500 dark:text-slate-400 mb-4">Please sign in to view your orders.</p>
         <button
           onClick={() => navigate("/signin")}
@@ -225,7 +225,7 @@ export default function Orders() {
   if (orders.length === 0) {
     return (
       <section className="container-pad py-16 text-center">
-        <Helmet><title>My Orders | G.O.L.D</title></Helmet>
+        <Helmet><title>My Orders | EliteDrop</title></Helmet>
         <Package className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
         <h1 className="text-2xl font-bold mb-2">No orders yet</h1>
         <p className="text-slate-500 dark:text-slate-400 mb-6">Place your first order to see it here.</p>
@@ -241,7 +241,7 @@ export default function Orders() {
 
   return (
     <section className="container-pad py-10">
-      <Helmet><title>My Orders | G.O.L.D</title></Helmet>
+      <Helmet><title>My Orders | EliteDrop</title></Helmet>
       <motion.h1
         initial={{ opacity: 0, x: -16 }}
         animate={{ opacity: 1, x: 0 }}

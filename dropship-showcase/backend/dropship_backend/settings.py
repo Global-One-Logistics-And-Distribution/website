@@ -238,7 +238,7 @@ DEFAULT_FROM_EMAIL = config(
 ZEPTOMAIL_API_URL = config("ZEPTOMAIL_API_URL", default="https://api.zeptomail.in/v1.1/email")
 ZEPTOMAIL_API_KEY = config("ZEPTOMAIL_API_KEY", default="")
 ZEPTOMAIL_FROM_EMAIL = config("ZEPTOMAIL_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
-ZEPTOMAIL_FROM_NAME = config("ZEPTOMAIL_FROM_NAME", default="G.O.L.D")
+ZEPTOMAIL_FROM_NAME = config("ZEPTOMAIL_FROM_NAME", default="EliteDrop Support")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

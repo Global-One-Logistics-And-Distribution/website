@@ -101,7 +101,7 @@ def send_verification_email(user):
 
     company_name = getattr(settings, "COMPANY_NAME", "EliteDrop")
     brand_name = getattr(settings, "BRAND_NAME", company_name)
-    support_email = getattr(settings, "SUPPORT_EMAIL", "") or getattr(settings, "DEFAULT_FROM_EMAIL", "support@example.com")
+    support_email = getattr(settings, "SUPPORT_EMAIL", "support@elitedrop.net.in") or getattr(settings, "DEFAULT_FROM_EMAIL", "support@example.com")
 
     subject = f"{company_name} verification code"
     message = (
