@@ -34,6 +34,16 @@ export default function Home() {
   );
   const categories = useMemo(() => [...new Set(products.map((p) => p.category))], [products]);
   const navigate = useNavigate();
+  const siteUrl = useMemo(() => {
+    const envSite = import.meta.env.VITE_SITE_URL;
+    if (typeof envSite === "string" && envSite.trim()) return envSite.trim().replace(/\/$/, "");
+    if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+    return "https://www.elitedrop.net.in";
+  }, []);
+  const canonicalUrl = `${siteUrl}/`;
+  const seoTitle = "EliteDrop | Premium Bags, Shoes, Wallets & Watches";
+  const seoDescription =
+    "Shop premium handbags, watches, shoes and accessories at EliteDrop. Discover curated collections with secure checkout and fast delivery.";
 
   const contacts = [
     { id: 1, name: "GOLD", role: "Customer Service", phone: "+91 98765 43210", email: "gold@example.com", accent: "from-indigo-500 to-blue-500" },
@@ -44,8 +54,18 @@ export default function Home() {
   return (
     <>
       <Helmet>
-        <title>G.O.L.D | Home</title>
-        <meta name="description" content="Modern frontend-only dropshipping product showcase website." />
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={`${siteUrl}/android-chrome-512x512.png`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={`${siteUrl}/android-chrome-512x512.png`} />
       </Helmet>
 
       {/* Ad / Promo Slider */}

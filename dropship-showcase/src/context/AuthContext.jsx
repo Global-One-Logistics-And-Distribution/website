@@ -4,9 +4,13 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "htt
 
 const AuthContext = createContext(null);
 
+function getStoredToken() {
+  return sessionStorage.getItem("token") || localStorage.getItem("token");
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [token, setToken] = useState(getStoredToken);
   const [loading, setLoading] = useState(true);
 
   // Verify stored token on mount
@@ -28,6 +32,7 @@ export function AuthProvider({ children }) {
       })
       .then(({ user: u }) => setUser(u))
       .catch(() => {
+        sessionStorage.removeItem("token");
         localStorage.removeItem("token");
         setToken(null);
         setUser(null);
@@ -35,13 +40,21 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, [token]);
 
-  const login = useCallback((newToken, newUser) => {
-    localStorage.setItem("token", newToken);
+  const login = useCallback((newToken, newUser, options = {}) => {
+    const rememberMe = options.rememberMe !== false;
+    if (rememberMe) {
+      localStorage.setItem("token", newToken);
+      sessionStorage.removeItem("token");
+    } else {
+      sessionStorage.setItem("token", newToken);
+      localStorage.removeItem("token");
+    }
     setToken(newToken);
     setUser(newUser);
   }, []);
 
   const logout = useCallback(() => {
+    sessionStorage.removeItem("token");
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);

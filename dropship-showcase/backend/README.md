@@ -69,7 +69,15 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `DB_HOST` | Database host | `localhost` |
 | `DB_PORT` | Database port | `5432` |
 | `JWT_LIFETIME_DAYS` | JWT access token lifetime in days | `7` |
+| `JWT_SESSION_LIFETIME_HOURS` | Access token lifetime when remember me is OFF | `12` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins | `http://localhost:5173` |
+| `GOOGLE_CLIENT_ID` | Google OAuth web client ID used for token verification | — |
+| `FIREBASE_PROJECT_ID` | Firebase project ID for verifying Firebase ID tokens | — |
+| `FIREBASE_CLIENT_EMAIL` | Firebase Admin service account client email | — |
+| `FIREBASE_PRIVATE_KEY` | Firebase Admin private key (use escaped `\\n`) | — |
+| `FIREBASE_PRIVATE_KEY_ID` | Firebase Admin private key id | — |
+| `FIREBASE_CLIENT_ID` | Firebase Admin service account client id | — |
+| `FIREBASE_CLIENT_X509_CERT_URL` | Firebase Admin service account cert URL | — |
 | `EMAIL_TIMEOUT` | Timeout (seconds) for email API calls | `10` |
 | `ZEPTOMAIL_API_URL` | ZeptoMail API endpoint | `https://api.zeptomail.in/v1.1/email` |
 | `ZEPTOMAIL_API_KEY` | ZeptoMail API key (`Zoho-enczapikey` value) | — |
@@ -104,6 +112,8 @@ Keep sender identity aligned with a verified ZeptoMail domain/sender.
 |---|---|---|---|
 | POST | `/signup/` | — | Register a new user |
 | POST | `/signin/` | — | Sign in, returns JWT |
+| POST | `/social/google/` | — | Continue with Google (ID token exchange) |
+| POST | `/social/firebase/` | — | Continue with Firebase providers (Google popup token exchange) |
 | GET | `/me/` | ✓ Bearer | Get current user |
 | PATCH | `/me/update/` | ✓ Bearer | Update profile |
 | POST | `/me/delete/` | ✓ Bearer | Delete account |

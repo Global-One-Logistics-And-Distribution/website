@@ -8,7 +8,7 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import { formatINR } from "../utils/currency";
-import { useProduct } from "../hooks/useProducts";
+import { useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
 
 export default function ProductDetails() {
@@ -20,8 +20,30 @@ export default function ProductDetails() {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
 
-  const productId = getProductIdFromSlug(slug);
-  const { product, loading } = useProduct(productId);
+  const { products, loading } = useProducts();
+  const product = useMemo(
+    () => products.find((p) => getProductSlug(p) === slug) || null,
+    [products, slug]
+  );
+  const legacyProductId = useMemo(() => getProductIdFromSlug(slug), [slug]);
+  const legacyProduct = useMemo(() => {
+    if (!legacyProductId) return null;
+    return products.find((p) => Number(p.id) === legacyProductId) || null;
+  }, [products, legacyProductId]);
+
+  const siteUrl = useMemo(() => {
+    const envSite = import.meta.env.VITE_SITE_URL;
+    if (typeof envSite === "string" && envSite.trim()) return envSite.trim().replace(/\/$/, "");
+    if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+    return "https://www.elitedrop.net.in";
+  }, []);
+
+  const canonicalUrl = product ? `${siteUrl}/products/${getProductSlug(product)}` : `${siteUrl}/products`;
+  const seoDescription =
+    product?.shortDescription || product?.short_description || product?.description ||
+    "Explore authentic premium products with fast delivery and secure checkout.";
+  const seoImage =
+    product?.image_url || product?.image || "https://www.elitedrop.net.in/android-chrome-512x512.png";
   const fallbackImage = "https://via.placeholder.com/1000x700?text=No+Image";
 
   useEffect(() => {
@@ -34,6 +56,17 @@ export default function ProductDetails() {
       });
     }
   }, [product, slug, navigate, location.state]);
+
+  useEffect(() => {
+    if (product || !legacyProduct || !slug) return;
+    const canonicalSlug = getProductSlug(legacyProduct);
+    if (canonicalSlug && slug !== canonicalSlug) {
+      navigate(`/products/${canonicalSlug}`, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [product, legacyProduct, slug, navigate, location.state]);
 
   const hasVariants = Array.isArray(product?.variants) && product.variants.length > 0;
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
@@ -174,6 +207,43 @@ export default function ProductDetails() {
     <section className="container-pad py-10">
       <Helmet>
         <title>{product.name} | G.O.L.D</title>
+        <meta name="description" content={seoDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={`${product.name} | G.O.L.D`} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={seoImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${product.name} | G.O.L.D`} />
+        <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={seoImage} />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            image: Array.isArray(product.gallery_urls) && product.gallery_urls.length
+              ? product.gallery_urls
+              : [seoImage],
+            description: seoDescription,
+            brand: {
+              "@type": "Brand",
+              name: product.brand || "G.O.L.D",
+            },
+            category: product.category,
+            sku: String(product.id),
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "INR",
+              price: Number(product.price || 0),
+              availability: Number(product.stock || 0) > 0
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+              url: canonicalUrl,
+            },
+          })}
+        </script>
       </Helmet>
 
       <motion.button

@@ -158,6 +158,16 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
 }
 
+JWT_SESSION_LIFETIME_HOURS = config("JWT_SESSION_LIFETIME_HOURS", default=12, cast=int)
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+FIREBASE_PROJECT_ID = config("FIREBASE_PROJECT_ID", default="")
+FIREBASE_CLIENT_EMAIL = config("FIREBASE_CLIENT_EMAIL", default="")
+FIREBASE_PRIVATE_KEY = config("FIREBASE_PRIVATE_KEY", default="")
+FIREBASE_PRIVATE_KEY_ID = config("FIREBASE_PRIVATE_KEY_ID", default="")
+FIREBASE_CLIENT_ID = config("FIREBASE_CLIENT_ID", default="")
+FIREBASE_CLIENT_X509_CERT_URL = config("FIREBASE_CLIENT_X509_CERT_URL", default="")
+FIREBASE_CLOCK_SKEW_SECONDS = config("FIREBASE_CLOCK_SKEW_SECONDS", default=60, cast=int)
+
 # ── CORS ──────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",

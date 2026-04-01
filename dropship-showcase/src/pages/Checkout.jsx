@@ -31,6 +31,50 @@ function parseBackendError(data) {
   return "Failed to place order. Please try again.";
 }
 
+function buildOrderFailureNotice({ message, statusCode, paymentMethod }) {
+  const text = String(message || "").toLowerCase();
+  const reasons = [];
+
+  if (text.includes("verify")) {
+    reasons.push("Your account email is not verified yet.");
+  }
+  if (text.includes("unavailable") || text.includes("out of stock")) {
+    reasons.push("One or more items became unavailable while you were checking out.");
+  }
+  if (text.includes("shoe size")) {
+    reasons.push("A required shoe size is missing or invalid for at least one item.");
+  }
+  if (statusCode === 422) {
+    reasons.push("Some shipping or order details are invalid. Please review your form fields.");
+  }
+  if (statusCode === 500) {
+    reasons.push("The order service is temporarily unavailable.");
+  }
+  if (paymentMethod === "razorpay") {
+    reasons.push("Payment authorization may have failed or was cancelled before order confirmation.");
+  }
+  if (!reasons.length) {
+    reasons.push("Your request could not be processed right now.");
+  }
+
+  return {
+    title: "We couldn't place your order",
+    message: message || "Please try again after checking the details below.",
+    reasons,
+    terms: [
+  "Payments may fail due to insufficient balance, incorrect card/UPI details, or expired cards.",
+  "Bank or network issues (including UPI downtime or OTP delays) can interrupt transactions.",
+  "Payment failures can occur if the user does not complete authentication (OTP/UPI approval) in time.",
+  "Transactions may be declined by the bank due to security checks or exceeded limits.",
+  "Technical issues on the payment gateway or website (timeouts, connectivity problems) may cause failures.",
+  "Incorrect payment configuration or interrupted sessions can lead to unsuccessful transactions.",
+  "In rare cases, payments may appear failed due to delayed confirmation; users are advised to check transaction status before retrying.",
+  "If any amount is deducted despite a failed transaction, it will be automatically refunded to the original payment method within 5–7 business days.",
+  "For any payment-related issues or delays, users can contact our customer support team for quick assistance and resolution."
+],
+  };
+}
+
 export default function Checkout() {
   const cart = useCart() || {};
   const { user, token } = useAuth();
@@ -53,6 +97,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
 
   const set = (field) => (e) => {
@@ -88,7 +133,7 @@ export default function Checkout() {
     return (
       <section className="container-pad py-16 text-center">
         <Helmet>
-          <title>Checkout | G.O.L.D</title>
+          <title>Checkout | EliteDrop</title>
         </Helmet>
         <ShoppingCart className="w-14 h-14 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
@@ -175,10 +220,19 @@ export default function Checkout() {
               state: { email: user.email, redirectTo: "/checkout" },
             });
           }
-          toast.error(parseBackendError(data));
+          const parsedMessage = parseBackendError(data);
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message: parsedMessage,
+              statusCode: res.status,
+              paymentMethod,
+            })
+          );
+          toast.error(parsedMessage);
           return false;
         }
 
+        setOrderFailure(null);
         cart.clearCart?.();
         toast.success("Order placed successfully!");
         navigate("/checkout/success", { state: { order: data.order } });
@@ -218,7 +272,7 @@ export default function Checkout() {
           key: razorpayKey,
           amount: amountInPaise,
           currency: "INR",
-          name: "G.O.L.D",
+          name: "EliteDrop",
           description: "Test payment",
           prefill: {
             name: form.shipping_name,
@@ -245,6 +299,13 @@ export default function Checkout() {
         const razorpay = new window.Razorpay(options);
         razorpay.on("payment.failed", (resp) => {
           const reason = resp?.error?.description || "Payment failed.";
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message: reason,
+              statusCode: 402,
+              paymentMethod,
+            })
+          );
           toast.error(reason);
           setPlacing(false);
         });
@@ -254,7 +315,15 @@ export default function Checkout() {
 
       await submitOrder();
     } catch {
-      toast.error("Network error. Please try again.");
+      const message = "Network error. Please try again.";
+      setOrderFailure(
+        buildOrderFailureNotice({
+          message,
+          statusCode: 0,
+          paymentMethod,
+        })
+      );
+      toast.error(message);
     } finally {
       if (paymentMethod !== "razorpay") {
         setPlacing(false);
@@ -265,7 +334,7 @@ export default function Checkout() {
   return (
     <section className="container-pad py-10">
       <Helmet>
-        <title>Checkout | G.O.L.D</title>
+        <title>Checkout | EliteDrop</title>
       </Helmet>
 
       <motion.h1
@@ -468,6 +537,29 @@ export default function Checkout() {
                   Verify now
                 </button>
               </p>
+            )}
+
+            {orderFailure && (
+              <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm">
+                <p className="font-semibold text-red-700 dark:text-red-300">{orderFailure.title}</p>
+                <p className="mt-1 text-red-700 dark:text-red-300">{orderFailure.message}</p>
+                <div className="mt-2 text-red-700 dark:text-red-300">
+                  <p className="font-medium">Possible reasons:</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    {orderFailure.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-2 text-red-700 dark:text-red-300">
+                  <p className="font-medium">Important terms:</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    {orderFailure.terms.map((term) => (
+                      <li key={term}>{term}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             )}
 
             <button

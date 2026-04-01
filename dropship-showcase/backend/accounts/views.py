@@ -2,16 +2,25 @@ from django.contrib.auth import authenticate
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils import timezone
+from django.utils.crypto import get_random_string
+from datetime import timedelta
+import logging
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 
 from .models import User
 from .serializers import SignupSerializer, SigninSerializer, UserSerializer, UpdateProfileSerializer
 from .utils import send_verification_email
+from .firebase_auth import verify_firebase_id_token
+
+
+logger = logging.getLogger(__name__)
 
 
 class LoginRateThrottle(AnonRateThrottle):
@@ -31,11 +40,51 @@ def _dev_verification_fallback(user, email_sent):
 
 def _token_response(user):
     """Return {token, user} payload used by frontend."""
+    return _token_response_with_remember(user, remember_me=True)
+
+
+def _token_response_with_remember(user, remember_me=True):
+    """Return token payload with lifetime based on remember_me."""
     refresh = RefreshToken.for_user(user)
+    access = refresh.access_token
+
+    if remember_me:
+        access_lifetime_days = settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME", timedelta(days=7))
+        access.set_exp(lifetime=access_lifetime_days)
+    else:
+        session_hours = int(getattr(settings, "JWT_SESSION_LIFETIME_HOURS", 12) or 12)
+        access.set_exp(lifetime=timedelta(hours=session_hours))
+
     return {
-        "token": str(refresh.access_token),
+        "token": str(access),
         "user": UserSerializer(user).data,
+        "remember_me": bool(remember_me),
     }
+
+
+def _upsert_social_user(email, name):
+    user = User.objects.filter(email=email).first()
+    if user is None:
+        user = User.objects.create_user(
+            email=email,
+            name=name or "User",
+            password=get_random_string(48),
+        )
+    elif name and user.name != name:
+        user.name = name
+        user.save(update_fields=["name"])
+
+    if not user.email_verified:
+        user.email_verified = True
+        user.email_verification_code = ""
+        user.email_verification_expires_at = None
+        user.save(update_fields=["email_verified", "email_verification_code", "email_verification_expires_at"])
+
+    return user
+
+
+def _parse_remember_me(request):
+    return bool(request.data.get("remember_me", True))
 
 
 @api_view(["POST"])
@@ -88,6 +137,7 @@ def signin(request):
 
     email = serializer.validated_data["email"]
     password = serializer.validated_data["password"]
+    remember_me = _parse_remember_me(request)
 
     user = authenticate(request, username=email, password=password)
     if user is None:
@@ -117,7 +167,72 @@ def signin(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
-    return Response(_token_response(user))
+    return Response(_token_response_with_remember(user, remember_me=remember_me))
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
+def google_signin(request):
+    raw_token = str(request.data.get("id_token", "")).strip()
+    remember_me = _parse_remember_me(request)
+    if not raw_token:
+        return Response({"error": "Google token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    client_id = getattr(settings, "GOOGLE_CLIENT_ID", "")
+    if not client_id:
+        return Response(
+            {"error": "Google sign in is not configured on the server."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    try:
+        info = google_id_token.verify_oauth2_token(raw_token, google_requests.Request(), client_id)
+    except ValueError:
+        return Response({"error": "Invalid Google token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    email = str(info.get("email", "")).lower().strip()
+    if not email:
+        return Response({"error": "Google account email is missing."}, status=status.HTTP_400_BAD_REQUEST)
+
+    name = str(info.get("name", "")).strip() or email.split("@", 1)[0].title()
+    user = _upsert_social_user(email=email, name=name)
+    return Response(_token_response_with_remember(user, remember_me=remember_me))
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
+def firebase_signin(request):
+    raw_token = str(request.data.get("id_token", "")).strip()
+    remember_me = _parse_remember_me(request)
+    if not raw_token:
+        return Response({"error": "Firebase token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        info = verify_firebase_id_token(raw_token)
+    except RuntimeError:
+        return Response(
+            {"error": "Firebase sign in is not configured on the server."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    except Exception as exc:
+        logger.warning("Firebase token verification failed: %s", exc)
+        payload = {"error": "Invalid Firebase token."}
+        if settings.DEBUG:
+            payload["detail"] = str(exc)
+        return Response(payload, status=status.HTTP_401_UNAUTHORIZED)
+
+    email = str(info.get("email", "")).lower().strip()
+    if not email:
+        return Response({"error": "Firebase account email is missing."}, status=status.HTTP_400_BAD_REQUEST)
+
+    name = str(request.data.get("name", "")).strip() or str(info.get("name", "")).strip()
+    if not name:
+        name = email.split("@", 1)[0].title()
+
+    user = _upsert_social_user(email=email, name=name)
+    return Response(_token_response_with_remember(user, remember_me=remember_me))
 
 
 @api_view(["POST"])

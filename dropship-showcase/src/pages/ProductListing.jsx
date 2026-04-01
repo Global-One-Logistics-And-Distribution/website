@@ -82,6 +82,12 @@ export default function ProductListing() {
   const { products, loading } = useProducts();
   const [searchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
+  const siteUrl = useMemo(() => {
+    const envSite = import.meta.env.VITE_SITE_URL;
+    if (typeof envSite === "string" && envSite.trim()) return envSite.trim().replace(/\/$/, "");
+    if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+    return "https://www.elitedrop.net.in";
+  }, []);
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -143,10 +149,26 @@ export default function ProductListing() {
     setMinRating(0);
   };
 
+  const seoTitle = selectedCategory !== "All"
+    ? `${selectedCategory} | EliteDrop Products`
+    : "All Products | EliteDrop";
+  const seoDescription = selectedCategory !== "All"
+    ? `Browse ${selectedCategory} at EliteDrop. Premium quality products with secure checkout and fast delivery.`
+    : "Explore all premium products at EliteDrop, including bags, watches, shoes, wallets, and accessories.";
+  const canonicalUrl = selectedCategory !== "All"
+    ? `${siteUrl}/products?category=${encodeURIComponent(selectedCategory)}`
+    : `${siteUrl}/products`;
+
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container-pad py-10">
       <Helmet>
-        <title>GOLD | Products</title>
+        <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
       </Helmet>
 
       {/* Header */}

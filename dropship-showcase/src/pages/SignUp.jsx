@@ -5,12 +5,14 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import { isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 
 export default function SignUp() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const hasFirebaseAuth = isFirebaseAuthConfigured();
 
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -123,6 +125,31 @@ export default function SignUp() {
       const message = err?.message || "Network error. Please try again.";
       setErrors({ form: message });
       toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    try {
+      const payload = await signInWithGoogleFirebase();
+      const res = await fetch(`${API}/auth/social/firebase/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: payload.idToken, name: payload.name, remember_me: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Firebase Google sign up failed.");
+        return;
+      }
+
+      login(data.token, data.user, { rememberMe: true });
+      toast.success(`Welcome, ${data.user.name}!`);
+      navigate("/");
+    } catch {
+      toast.error("Google sign up failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -258,6 +285,32 @@ export default function SignUp() {
             >
               {loading ? "Creating account…" : "Create Account"}
             </motion.button>
+
+            <div className="relative py-1">
+              <div className="h-px bg-slate-200 dark:bg-slate-700" />
+              <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white dark:bg-slate-900 px-2 text-xs text-slate-500">
+                OR
+              </span>
+            </div>
+
+            {hasFirebaseAuth ? (
+              <button
+                type="button"
+                onClick={handleGoogleSignup}
+                disabled={loading}
+                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 transition"
+              >
+                Continue with Google
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-400"
+              >
+                Continue with Google (Firebase not configured)
+              </button>
+            )}
             {errors.form && <p className="text-xs text-red-500 text-right">{errors.form}</p>}
           </form>
 

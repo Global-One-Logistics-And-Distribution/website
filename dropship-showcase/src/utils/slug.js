@@ -10,8 +10,7 @@ export function slugify(value) {
 
 export function getProductSlug(product) {
   const base = slugify(product?.name || "product");
-  const id = String(product?.id || "").trim();
-  return id ? `${base || "product"}-${id}` : base || "product";
+  return base || "product";
 }
 
 export function getProductIdFromSlug(slugOrId) {

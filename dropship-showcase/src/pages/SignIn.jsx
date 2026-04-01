@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import { isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
 
@@ -13,10 +14,12 @@ export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/";
+  const hasFirebaseAuth = isFirebaseAuthConfigured();
 
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", rememberMe: true });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) =>
@@ -44,7 +47,11 @@ export default function SignIn() {
       const res = await fetch(`${API}/auth/signin/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, password: form.password }),
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          remember_me: form.rememberMe,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -62,7 +69,7 @@ export default function SignIn() {
         toast.error(data.error || "Sign in failed.");
         return;
       }
-      login(data.token, data.user);
+      login(data.token, data.user, { rememberMe: form.rememberMe });
       toast.success(`Welcome back, ${data.user.name}!`);
       navigate(from, { replace: true });
     } catch {
@@ -72,10 +79,39 @@ export default function SignIn() {
     }
   };
 
+  const handleGoogleSignin = async () => {
+    setSocialLoading(true);
+    try {
+      const payload = await signInWithGoogleFirebase();
+      const res = await fetch(`${API}/auth/social/firebase/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: payload.idToken,
+          name: payload.name,
+          remember_me: form.rememberMe,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Firebase Google sign in failed.");
+        return;
+      }
+
+      login(data.token, data.user, { rememberMe: form.rememberMe });
+      toast.success(`Welcome, ${data.user.name}!`);
+      navigate(from, { replace: true });
+    } catch {
+      toast.error("Google sign in failed. Please try again.");
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
   return (
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
-        <title>Sign In | G.O.L.D</title>
+        <title>Sign In | EliteDrop</title>
       </Helmet>
 
       <motion.div
@@ -89,7 +125,7 @@ export default function SignIn() {
             <LogIn className="w-10 h-10 mx-auto text-indigo-500 mb-3" />
             <h1 className="text-3xl font-bold">Welcome back</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-              Sign in to your G.O.L.D account
+              Sign in to your EliteDrop account
             </p>
           </div>
 
@@ -162,12 +198,48 @@ export default function SignIn() {
             {/* Submit */}
             <motion.button
               type="submit"
-              disabled={loading}
+              disabled={loading || socialLoading}
               whileTap={{ scale: 0.97 }}
               className="w-full py-3 rounded-xl bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 disabled:opacity-60 transition"
             >
               {loading ? "Signing in…" : "Sign In"}
             </motion.button>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={form.rememberMe}
+                onChange={(e) => setForm((prev) => ({ ...prev, rememberMe: e.target.checked }))}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              Keep me logged in
+            </label>
+
+            <div className="relative py-1">
+              <div className="h-px bg-slate-200 dark:bg-slate-700" />
+              <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white dark:bg-slate-900 px-2 text-xs text-slate-500">
+                OR
+              </span>
+            </div>
+
+            {hasFirebaseAuth ? (
+              <button
+                type="button"
+                onClick={handleGoogleSignin}
+                disabled={socialLoading}
+                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 transition"
+              >
+                Continue with Google
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-400"
+              >
+                Continue with Google (Firebase not configured)
+              </button>
+            )}
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
