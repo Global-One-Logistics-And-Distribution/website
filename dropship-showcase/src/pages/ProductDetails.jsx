@@ -409,6 +409,25 @@ export default function ProductDetails() {
             </div>
           )}
 
+          {/* Description */}
+          {product.description && (
+            <p className="mt-5 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+              {product.description}
+            </p>
+          )}
+
+          {/* Features */}
+          {Array.isArray(product.features) && product.features.length > 0 && (
+            <ul className="mt-4 space-y-1">
+              {product.features.map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <CheckCircle2 size={14} className="text-indigo-500 shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+          )}
+
           {/* Size selector for shoes */}
           {isShoe && (
             <div className="mt-5">
