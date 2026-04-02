@@ -54,9 +54,11 @@ class ProductImageField(serializers.CharField):
 
 class CreateOrderItemSerializer(serializers.Serializer):
     product_id = serializers.IntegerField(min_value=1)
-    product_name = serializers.CharField(max_length=255)
+    # Kept optional for backward compatibility; server trusts DB values only.
+    product_name = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     product_image = ProductImageField(max_length=1000, required=False, allow_blank=True, default="")
-    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0)
+    # Kept optional for backward compatibility; server calculates trusted prices.
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, default=0)
     quantity = serializers.IntegerField(min_value=1, max_value=99)
     shoe_size = serializers.CharField(max_length=10, required=False, allow_blank=True, default="")
 

@@ -235,7 +235,11 @@ export default function Checkout() {
         setOrderFailure(null);
         cart.clearCart?.();
         toast.success("Order placed successfully!");
-        navigate("/checkout/success", { state: { order: data.order } });
+        const orderNumber = data?.order?.order_number;
+        const successPath = orderNumber
+          ? `/checkout/success?order=${encodeURIComponent(orderNumber)}`
+          : "/checkout/success";
+        navigate(successPath, { state: { order: data.order } });
         return true;
       };
 

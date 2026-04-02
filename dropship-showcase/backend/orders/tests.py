@@ -45,9 +45,6 @@ class OrdersTestCase(TestCase):
             "items": [
                 {
                     "product_id": self.shoe_product.id,
-                    "product_name": self.shoe_product.name,
-                    "product_image": "",
-                    "price": "3499.00",
                     "quantity": 1,
                     "shoe_size": "",
                 }
@@ -66,3 +63,23 @@ class OrdersTestCase(TestCase):
         res = self.client.post(self.orders_url, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res.data["order"]["items"][0]["shoe_size"], "9")
+
+    def test_order_ignores_tampered_item_price(self):
+        payload = self._base_payload()
+        payload["items"][0]["shoe_size"] = "10"
+        payload["items"][0]["price"] = "1.00"
+        payload["items"][0]["product_name"] = "Tampered"
+
+        res = self.client.post(self.orders_url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["order"]["items"][0]["price"], "3499.00")
+        self.assertEqual(res.data["order"]["items"][0]["product_name"], "Luxury Sneaker")
+
+    def test_order_binds_shipping_email_to_authenticated_user(self):
+        payload = self._base_payload()
+        payload["items"][0]["shoe_size"] = "8"
+        payload["shipping_email"] = "attacker@example.com"
+
+        res = self.client.post(self.orders_url, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["order"]["shipping_email"], self.user.email)

@@ -1,6 +1,8 @@
 from decimal import Decimal
 import logging
 from django.conf import settings
+from django.db import transaction
+from django.db.models import F
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -41,62 +43,100 @@ def order_list(request):
 
             data = serializer.validated_data
             items_data = data.pop("items")
-
+            data["shipping_email"] = user.email
             product_ids = [item["product_id"] for item in items_data]
-            products = Product.objects.filter(id__in=product_ids, is_active=True).only("id", "category")
-            products_by_id = {product.id: product for product in products}
 
-            for item in items_data:
-                product_id = item["product_id"]
-                product = products_by_id.get(product_id)
-                if not product:
+            with transaction.atomic():
+                products = (
+                    Product.objects.select_for_update()
+                    .filter(id__in=product_ids, is_active=True)
+                    .only("id", "category", "name", "price", "image_url", "stock")
+                )
+                products_by_id = {product.id: product for product in products}
+
+                missing_ids = sorted({product_id for product_id in product_ids if product_id not in products_by_id})
+                if missing_ids:
                     return Response(
-                        {"errors": {"items": [f"Product {product_id} is unavailable."]}},
+                        {"errors": {"items": [f"Product {pid} is unavailable." for pid in missing_ids]}},
                         status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     )
 
-                shoe_size = str(item.get("shoe_size", "")).strip()
-                item["shoe_size"] = shoe_size
-                if _is_shoe_category(product.category):
-                    if not shoe_size:
+                requested_quantities = {}
+                normalized_items = []
+                for item in items_data:
+                    product_id = item["product_id"]
+                    quantity = item["quantity"]
+                    requested_quantities[product_id] = requested_quantities.get(product_id, 0) + quantity
+
+                    product = products_by_id[product_id]
+                    shoe_size = str(item.get("shoe_size", "")).strip()
+                    if _is_shoe_category(product.category):
+                        if not shoe_size:
+                            return Response(
+                                {
+                                    "errors": {
+                                        "items": [
+                                            f"Shoe size is required for product {product_id}."
+                                        ]
+                                    }
+                                },
+                                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            )
+                        if shoe_size not in SHOE_SIZES:
+                            return Response(
+                                {
+                                    "errors": {
+                                        "items": [
+                                            f"Invalid shoe size '{shoe_size}' for product {product_id}."
+                                        ]
+                                    }
+                                },
+                                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            )
+
+                    normalized_items.append(
+                        {
+                            "product_id": product.id,
+                            "product_name": product.name,
+                            "product_image": product.image_url or "",
+                            "price": product.price,
+                            "quantity": quantity,
+                            "shoe_size": shoe_size,
+                        }
+                    )
+
+                for product_id, quantity in requested_quantities.items():
+                    product = products_by_id[product_id]
+                    if product.stock < quantity:
                         return Response(
                             {
                                 "errors": {
                                     "items": [
-                                        f"Shoe size is required for product {product_id}."
+                                        f"Only {product.stock} unit(s) left for product {product_id}."
                                     ]
                                 }
                             },
                             status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                         )
-                    if shoe_size not in SHOE_SIZES:
-                        return Response(
-                            {
-                                "errors": {
-                                    "items": [
-                                        f"Invalid shoe size '{shoe_size}' for product {product_id}."
-                                    ]
-                                }
-                            },
-                            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        )
 
-            total = sum(
-                Decimal(str(item["price"])) * item["quantity"] for item in items_data
-            )
+                total = sum((item["price"] * item["quantity"] for item in normalized_items), Decimal("0"))
 
-            order = Order.objects.create(
-                user=user,
-                total_amount=total,
-                **data,
-            )
+                order = Order.objects.create(
+                    user=user,
+                    total_amount=total,
+                    **data,
+                )
 
-            for item in items_data:
-                OrderItem.objects.create(order=order, **item)
+                for item in normalized_items:
+                    OrderItem.objects.create(order=order, **item)
 
-            # Clear cart after placing order
-            from cart.models import CartItem
-            CartItem.objects.filter(user=user).delete()
+                for product_id, quantity in requested_quantities.items():
+                    Product.objects.filter(id=product_id).update(stock=F("stock") - quantity)
+
+                # Clear cart after placing order
+                from cart.models import CartItem
+
+                CartItem.objects.filter(user=user).delete()
 
             return Response(
                 {"order": OrderSerializer(order).data},
