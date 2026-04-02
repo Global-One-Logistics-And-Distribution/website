@@ -99,12 +99,35 @@ function asStringArray(value) {
   return one ? [one] : [];
 }
 
+function cleanText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeFeatures(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => cleanText(item))
+      .filter(Boolean);
+  }
+
+  const text = cleanText(value);
+  if (!text) return [];
+
+  return text
+    .split(/\r?\n|[,;|]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export function normalizeProduct(raw) {
   if (!raw || typeof raw !== "object") return null;
 
   const gallery = asStringArray(raw.gallery_urls || raw.gallery);
   const imageValues = asStringArray(raw.image_url || raw.image);
   const image = imageValues.length ? imageValues[0] : gallery[0] || "";
+
+  const shortDescription = cleanText(raw.shortDescription) || cleanText(raw.short_description);
+  const description = cleanText(raw.description);
 
   return {
     ...raw,
@@ -113,8 +136,10 @@ export function normalizeProduct(raw) {
     image,
     gallery_urls: gallery.length ? gallery : (image ? [image] : []),
     gallery: gallery.length ? gallery : (image ? [image] : []),
-    short_description: raw.short_description || raw.shortDescription || "",
-    shortDescription: raw.shortDescription || raw.short_description || "",
+    short_description: shortDescription,
+    shortDescription,
+    description,
+    features: normalizeFeatures(raw.features),
     product_code: raw.product_code || raw.productCode || "",
     productCode: raw.productCode || raw.product_code || "",
   };

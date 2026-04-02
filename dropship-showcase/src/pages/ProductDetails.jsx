@@ -8,7 +8,7 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import { formatINR } from "../utils/currency";
-import { useProducts } from "../hooks/useProducts";
+import { useProduct, useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
 
 export default function ProductDetails() {
@@ -30,6 +30,9 @@ export default function ProductDetails() {
     if (!legacyProductId) return null;
     return products.find((p) => Number(p.id) === legacyProductId) || null;
   }, [products, legacyProductId]);
+  const productId = product?.id || legacyProduct?.id || null;
+  const { product: detailedProduct } = useProduct(productId);
+  const hydratedProduct = detailedProduct || product || legacyProduct || null;
 
   const siteUrl = useMemo(() => {
     const envSite = import.meta.env.VITE_SITE_URL;
@@ -38,24 +41,27 @@ export default function ProductDetails() {
     return "https://www.elitedrop.net.in";
   }, []);
 
-  const canonicalUrl = product ? `${siteUrl}/products/${getProductSlug(product)}` : `${siteUrl}/products`;
+  const canonicalUrl = hydratedProduct ? `${siteUrl}/products/${getProductSlug(hydratedProduct)}` : `${siteUrl}/products`;
+  const shortDescription = hydratedProduct?.shortDescription || hydratedProduct?.short_description || "";
+  const description = hydratedProduct?.description || "";
+  const features = Array.isArray(hydratedProduct?.features) ? hydratedProduct.features : [];
   const seoDescription =
-    product?.shortDescription || product?.short_description || product?.description ||
+    shortDescription || description ||
     "Explore authentic premium products with fast delivery and secure checkout.";
   const seoImage =
-    product?.image_url || product?.image || "https://www.elitedrop.net.in/android-chrome-512x512.png";
+    hydratedProduct?.image_url || hydratedProduct?.image || "https://www.elitedrop.net.in/android-chrome-512x512.png";
   const fallbackImage = "https://via.placeholder.com/1000x700?text=No+Image";
 
   useEffect(() => {
-    if (!product || !slug) return;
-    const canonicalSlug = getProductSlug(product);
+    if (!hydratedProduct || !slug) return;
+    const canonicalSlug = getProductSlug(hydratedProduct);
     if (slug !== canonicalSlug) {
       navigate(`/products/${canonicalSlug}`, {
         replace: true,
         state: location.state,
       });
     }
-  }, [product, slug, navigate, location.state]);
+  }, [hydratedProduct, slug, navigate, location.state]);
 
   useEffect(() => {
     if (product || !legacyProduct || !slug) return;
@@ -68,11 +74,11 @@ export default function ProductDetails() {
     }
   }, [product, legacyProduct, slug, navigate, location.state]);
 
-  const hasVariants = Array.isArray(product?.variants) && product.variants.length > 0;
+  const hasVariants = Array.isArray(hydratedProduct?.variants) && hydratedProduct.variants.length > 0;
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const selectedVariant = hasVariants ? product.variants[selectedVariantIndex] : null;
+  const selectedVariant = hasVariants ? hydratedProduct.variants[selectedVariantIndex] : null;
 
-  const isShoe = product?.category === "Luxury Shoes";
+  const isShoe = hydratedProduct?.category === "Luxury Shoes";
   const shoeSizes = [7, 8, 9, 10, 11];
   const [selectedSize, setSelectedSize] = useState(null);
 
@@ -110,27 +116,27 @@ export default function ProductDetails() {
   };
 
   // Fake MRP (mark up the price by 20-25%)
-  const hasFakeDiscount = product?.price && Number(product.price) > 0;
+  const hasFakeDiscount = hydratedProduct?.price && Number(hydratedProduct.price) > 0;
   const fakeDiscountPct = useMemo(() => (hasFakeDiscount ? (Math.floor(Math.random() * 6) + 18) : 0), [hasFakeDiscount]);
   const fakeMRP = useMemo(
-    () => (hasFakeDiscount ? Math.round(Number(product.price) * (1 + fakeDiscountPct / 100)) : 0),
-    [hasFakeDiscount, product?.price, fakeDiscountPct]
+    () => (hasFakeDiscount ? Math.round(Number(hydratedProduct.price) * (1 + fakeDiscountPct / 100)) : 0),
+    [hasFakeDiscount, hydratedProduct?.price, fakeDiscountPct]
   );
 
   const images = useMemo(() => {
-    if (!product) return [fallbackImage];
+    if (!hydratedProduct) return [fallbackImage];
     if (hasVariants) {
       if (selectedVariant?.images?.length) return selectedVariant.images;
       if (selectedVariant?.image) return [selectedVariant.image];
     }
     // Support both JSON (gallery/image) and backend (gallery_urls/image_url) field names
-    const gallery = product.gallery_urls || product.gallery;
-    const mainImage = product.image_url || product.image;
+    const gallery = hydratedProduct.gallery_urls || hydratedProduct.gallery;
+    const mainImage = hydratedProduct.image_url || hydratedProduct.image;
     if (Array.isArray(gallery) && gallery.length) return gallery.filter(Boolean);
     if (Array.isArray(mainImage) && mainImage.length) return mainImage.filter(Boolean);
     if (mainImage) return [mainImage];
     return [fallbackImage];
-  }, [product, hasVariants, selectedVariant]);
+  }, [hydratedProduct, hasVariants, selectedVariant]);
 
   const [activeImage, setActiveImage] = useState(images[0]);
 
@@ -138,7 +144,7 @@ export default function ProductDetails() {
     setActiveImage(images[0]);
   }, [images]);
 
-  const stock = Number(product?.stock);
+  const stock = Number(hydratedProduct?.stock);
   const maxSelectableQty = Number.isFinite(stock) && stock >= 0 ? Math.min(10, stock) : 10;
   const isOutOfStock = maxSelectableQty < 1;
 
@@ -159,7 +165,7 @@ export default function ProductDetails() {
     );
   }
 
-  if (!product) {
+  if (!hydratedProduct) {
     return (
       <section className="container-pad py-12">
         <Helmet><title>Product Not Found | EliteDrop</title></Helmet>
@@ -183,7 +189,7 @@ export default function ProductDetails() {
     }
 
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(product, safeQty, selectedSize);
+    addToCart(hydratedProduct, safeQty, selectedSize);
     toast.success("Added to cart!");
   };
 
@@ -199,45 +205,45 @@ export default function ProductDetails() {
     }
 
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(product, safeQty, selectedSize);
+    addToCart(hydratedProduct, safeQty, selectedSize);
     navigate("/checkout");
   };
 
   return (
     <section className="container-pad py-10">
       <Helmet>
-        <title>{product.name} | EliteDrop</title>
+        <title>{hydratedProduct.name} | EliteDrop</title>
         <meta name="description" content={seoDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:type" content="product" />
-        <meta property="og:title" content={`${product.name} | EliteDrop`} />
+        <meta property="og:title" content={`${hydratedProduct.name} | EliteDrop`} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={seoImage} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} | EliteDrop`} />
+        <meta name="twitter:title" content={`${hydratedProduct.name} | EliteDrop`} />
         <meta name="twitter:description" content={seoDescription} />
         <meta name="twitter:image" content={seoImage} />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Product",
-            name: product.name,
-            image: Array.isArray(product.gallery_urls) && product.gallery_urls.length
-              ? product.gallery_urls
+            name: hydratedProduct.name,
+            image: Array.isArray(hydratedProduct.gallery_urls) && hydratedProduct.gallery_urls.length
+              ? hydratedProduct.gallery_urls
               : [seoImage],
             description: seoDescription,
             brand: {
               "@type": "Brand",
-              name: product.brand || "EliteDrop",
+              name: hydratedProduct.brand || "EliteDrop",
             },
-            category: product.category,
-            sku: String(product.id),
+            category: hydratedProduct.category,
+            sku: String(hydratedProduct.id),
             offers: {
               "@type": "Offer",
               priceCurrency: "INR",
-              price: Number(product.price || 0),
-              availability: Number(product.stock || 0) > 0
+              price: Number(hydratedProduct.price || 0),
+              availability: Number(hydratedProduct.stock || 0) > 0
                 ? "https://schema.org/InStock"
                 : "https://schema.org/OutOfStock",
               url: canonicalUrl,
@@ -265,7 +271,7 @@ export default function ProductDetails() {
           >
             <img
               src={activeImage || fallbackImage}
-              alt={product.name}
+              alt={hydratedProduct.name}
               loading="eager"
               decoding="async"
               onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
@@ -286,7 +292,7 @@ export default function ProductDetails() {
               >
                 <img
                   src={img}
-                  alt={`${product.name} ${idx + 1}`}
+                  alt={`${hydratedProduct.name} ${idx + 1}`}
                   loading="lazy"
                   decoding="async"
                   onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
@@ -304,22 +310,22 @@ export default function ProductDetails() {
           transition={{ duration: 0.35 }}
         >
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {product.brand} • {product.category}
+            {hydratedProduct.brand} • {hydratedProduct.category}
           </p>
-          <h1 className="text-3xl font-bold mt-1">{product.name}</h1>
+          <h1 className="text-3xl font-bold mt-1">{hydratedProduct.name}</h1>
 
           {/* Rating */}
-          {product.rating && (
+          {hydratedProduct.rating && (
             <div className="flex items-center gap-1.5 mt-3 text-amber-500">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
                   size={16}
-                  fill={i < Math.round(product.rating) ? "currentColor" : "none"}
+                  fill={i < Math.round(hydratedProduct.rating) ? "currentColor" : "none"}
                 />
               ))}
               <span className="text-slate-600 dark:text-slate-400 text-sm ml-1">
-                {product.rating}
+                {hydratedProduct.rating}
               </span>
             </div>
           )}
@@ -329,7 +335,7 @@ export default function ProductDetails() {
             {hasFakeDiscount ? (
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {formatINR(product.price)}
+                  {formatINR(hydratedProduct.price)}
                 </span>
                 <span className="text-lg text-slate-400 line-through">
                   {formatINR(fakeMRP)}
@@ -385,7 +391,7 @@ export default function ProductDetails() {
                 </span>
               </p>
               <div className="flex items-center gap-2 flex-wrap">
-                {product.variants.map((variant, idx) => (
+                {hydratedProduct.variants.map((variant, idx) => (
                   <motion.button
                     key={variant.id || `${variant.color}-${idx}`}
                     type="button"
@@ -410,19 +416,26 @@ export default function ProductDetails() {
           )}
 
           {/* Description */}
-          {product.description && (
+          {shortDescription && (
+            <p className="mt-5 text-slate-700 dark:text-slate-300 text-sm font-medium leading-relaxed">
+              {shortDescription}
+            </p>
+          )}
+
+          {/* Description */}
+          {description && (
             <p className="mt-5 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-              {product.description}
+              {description}
             </p>
           )}
 
           {/* Features */}
-          {Array.isArray(product.features) && product.features.length > 0 && (
+          {features.length > 0 && (
             <ul className="mt-4 space-y-1">
-              {product.features.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              {features.map((f, idx) => (
+                <li key={`${f}-${idx}`} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                   <CheckCircle2 size={14} className="text-indigo-500 shrink-0" />
-                  {f}
+                  {f || `Feature ${idx + 1}`}
                 </li>
               ))}
             </ul>
@@ -455,25 +468,6 @@ export default function ProductDetails() {
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Description */}
-          {product.description && (
-            <p className="mt-5 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-              {product.description}
-            </p>
-          )}
-
-          {/* Features */}
-          {Array.isArray(product.features) && product.features.length > 0 && (
-            <ul className="mt-4 space-y-1">
-              {product.features.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <CheckCircle2 size={14} className="text-indigo-500 shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
           )}
 
           {/* Quantity selector */}
@@ -533,15 +527,15 @@ export default function ProductDetails() {
 
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={() => toggleWishlist(product)}
+              onClick={() => toggleWishlist(hydratedProduct)}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
               <Heart
                 size={18}
-                fill={isInWishlist(product.id) ? "currentColor" : "none"}
-                className={isInWishlist(product.id) ? "text-red-500" : ""}
+                fill={isInWishlist(hydratedProduct.id) ? "currentColor" : "none"}
+                className={isInWishlist(hydratedProduct.id) ? "text-red-500" : ""}
               />
-              {isInWishlist(product.id) ? "In Wishlist" : "Add to Wishlist"}
+              {isInWishlist(hydratedProduct.id) ? "In Wishlist" : "Add to Wishlist"}
             </motion.button>
           </div>
 
