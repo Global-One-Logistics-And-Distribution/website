@@ -28,7 +28,9 @@ def _inject_dashboard_stats(ctx, request):
             "active_products": Product.objects.filter(is_active=True).count(),
         }
         ctx["recent_orders"] = (
-            Order.objects.order_by("-created_at").select_related("user")[:8]
+            Order.objects.order_by("-created_at")
+            .select_related("user")
+            .prefetch_related("items")[:8]
         )
     except Exception:
         pass

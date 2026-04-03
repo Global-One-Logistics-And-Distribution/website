@@ -86,12 +86,20 @@ WSGI_APPLICATION = "dropship_backend.wsgi.application"
 # ── Database ──────────────────────────────────────────────────────────────────
 # Uses DATABASE_URL env var for PostgreSQL; falls back to SQLite for development
 DATABASE_URL = config("DATABASE_URL", default=None)
+DB_CONN_MAX_AGE = config("DB_CONN_MAX_AGE", default=600, cast=int)
+DB_CONN_HEALTH_CHECKS = config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool)
 
 if DATABASE_URL:
     import dj_database_url
     DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=DB_CONN_MAX_AGE,
+            conn_health_checks=DB_CONN_HEALTH_CHECKS,
+        )
     }
+    if config("PGBOUNCER_TRANSACTION_POOLING", default=False, cast=bool):
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
     # Allow individual env vars for PostgreSQL; fall back to SQLite for quick dev setup
     _pg_name = config("DB_NAME", default="")
@@ -104,11 +112,15 @@ else:
                 "PASSWORD": config("DB_PASSWORD", default="EliteDrop@2026"),
                 "HOST": config("DB_HOST", default="db.uhicntqrshlkvvxtmdqy.supabase.co"),
                 "PORT": config("DB_PORT", default="5432"),
+                "CONN_MAX_AGE": DB_CONN_MAX_AGE,
+                "CONN_HEALTH_CHECKS": DB_CONN_HEALTH_CHECKS,
                 'OPTIONS': {
                           'sslmode': 'require',  # needed for Supabase
                  },
             }
         }
+        if config("PGBOUNCER_TRANSACTION_POOLING", default=False, cast=bool):
+            DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
     else:
         DATABASES = {
             "default": {
@@ -217,8 +229,12 @@ SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=not DEBUG, cast=bool
 SECURE_REFERRER_POLICY = config("SECURE_REFERRER_POLICY", default="strict-origin-when-cross-origin")
 
 # ── Static ────────────────────────────────────────────────────────────────────
-STATIC_URL = "/static/"
+STATIC_HOST = config("STATIC_HOST", default="").rstrip("/")
+MEDIA_HOST = config("MEDIA_HOST", default="").rstrip("/")
+STATIC_URL = f"{STATIC_HOST}/static/" if STATIC_HOST else "/static/"
+MEDIA_URL = f"{MEDIA_HOST}/media/" if MEDIA_HOST else "/media/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_ROOT = BASE_DIR / "media"
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -242,6 +258,7 @@ ZEPTOMAIL_API_URL = config("ZEPTOMAIL_API_URL", default="https://api.zeptomail.i
 ZEPTOMAIL_API_KEY = config("ZEPTOMAIL_API_KEY", default="")
 ZEPTOMAIL_FROM_EMAIL = config("ZEPTOMAIL_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
 ZEPTOMAIL_FROM_NAME = config("ZEPTOMAIL_FROM_NAME", default="EliteDrop Support")
+TURNSTILE_SECRET_KEY = config("TURNSTILE_SECRET_KEY", default="")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

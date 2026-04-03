@@ -68,6 +68,12 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `DB_PASSWORD` | Database password | — |
 | `DB_HOST` | Database host | `localhost` |
 | `DB_PORT` | Database port | `5432` |
+| `DB_CONN_MAX_AGE` | Persistent DB connections max age in seconds | `600` |
+| `DB_CONN_HEALTH_CHECKS` | Enable connection health checks | `True` |
+| `PGBOUNCER_TRANSACTION_POOLING` | Enable pgBouncer transaction-pooling compatibility | `False` |
+| `STATIC_HOST` | CDN host for static files (for example `https://cdn.example.com`) | — |
+| `MEDIA_HOST` | CDN host for media files | — |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key for server-side verification | — |
 | `JWT_LIFETIME_DAYS` | JWT access token lifetime in days | `7` |
 | `JWT_SESSION_LIFETIME_HOURS` | Access token lifetime when remember me is OFF | `12` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins | `http://localhost:5173` |
@@ -104,6 +110,10 @@ ZEPTOMAIL_FROM_NAME=EliteDrop
 ```
 
 Keep sender identity aligned with a verified ZeptoMail domain/sender.
+
+### Turnstile
+
+Auth endpoints (`signup`, `signin`, `social/google`, `social/firebase`) verify Turnstile when `TURNSTILE_SECRET_KEY` is configured.
 
 ## API Endpoints
 

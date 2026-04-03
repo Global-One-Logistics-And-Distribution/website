@@ -27,7 +27,11 @@ def order_list(request):
     user = request.user
 
     if request.method == "GET":
-        orders = Order.objects.filter(user=user).prefetch_related("items")
+        orders = (
+            Order.objects.filter(user=user)
+            .select_related("user")
+            .prefetch_related("items")
+        )
         return Response({"orders": OrderSerializer(orders, many=True).data})
 
     if request.method == "POST":
@@ -157,7 +161,7 @@ def order_list(request):
 @permission_classes([IsAuthenticated])
 def order_detail(request, order_number):
     try:
-        order = Order.objects.prefetch_related("items").get(
+        order = Order.objects.select_related("user").prefetch_related("items").get(
             user=request.user, order_number=order_number
         )
     except Order.DoesNotExist:

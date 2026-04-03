@@ -6,7 +6,7 @@ from django.conf import settings
 
 class Order(models.Model):
     STATUS_CHOICES = [
-        ("pending", "Pending"),
+        ("pending", "Order Placed"),
         ("processing", "Processing"),
         ("shipped", "Shipped"),
         ("out_for_delivery", "Out for Delivery"),
@@ -16,17 +16,19 @@ class Order(models.Model):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="orders",
     )
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     # Shipping address
     shipping_name = models.CharField(max_length=200)
-    shipping_email = models.EmailField()
-    shipping_phone = models.CharField(max_length=20, blank=True, default="")
+    shipping_email = models.EmailField(db_index=True)
+    shipping_phone = models.CharField(max_length=20, blank=True, default="", db_index=True)
     shipping_address = models.TextField()
     shipping_city = models.CharField(max_length=100)
     shipping_pincode = models.CharField(max_length=10)
@@ -57,7 +59,8 @@ class Order(models.Model):
         return f"ORD{timestamp}{random_part}"
 
     def __str__(self):
-        return f"{self.order_number} ({self.user.email})"
+        customer = self.user.email if self.user else self.shipping_email
+        return f"{self.order_number} ({customer})"
 
 
 class OrderItem(models.Model):

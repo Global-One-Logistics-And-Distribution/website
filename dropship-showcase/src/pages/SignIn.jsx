@@ -6,6 +6,7 @@ import { Eye, EyeOff, LogIn } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { getFirebaseAuthErrorMessage, isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
 
@@ -21,6 +22,9 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReady, setTurnstileReady] = useState(true);
+  const [turnstileError, setTurnstileError] = useState("");
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -41,6 +45,17 @@ export default function SignIn() {
       return;
     }
     setErrors({});
+
+    if (!turnstileReady) {
+      toast.error(turnstileError || "Security verification is temporarily unavailable. Please retry.");
+      return;
+    }
+
+    if (!turnstileToken) {
+      toast.error("Please complete Turnstile verification.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -51,6 +66,7 @@ export default function SignIn() {
           email: form.email,
           password: form.password,
           remember_me: form.rememberMe,
+          turnstile_token: turnstileToken,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -82,6 +98,16 @@ export default function SignIn() {
   const handleGoogleSignin = async () => {
     setSocialLoading(true);
     try {
+      if (!turnstileReady) {
+        toast.error(turnstileError || "Security verification is temporarily unavailable. Please retry.");
+        return;
+      }
+
+      if (!turnstileToken) {
+        toast.error("Please complete Turnstile verification.");
+        return;
+      }
+
       const payload = await signInWithGoogleFirebase();
       const res = await fetch(`${API}/auth/social/firebase/`, {
         method: "POST",
@@ -90,6 +116,7 @@ export default function SignIn() {
           id_token: payload.idToken,
           name: payload.name,
           remember_me: form.rememberMe,
+          turnstile_token: turnstileToken,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -214,6 +241,19 @@ export default function SignIn() {
               />
               Keep me logged in
             </label>
+
+            <TurnstileWidget
+              onToken={(token) => {
+                setTurnstileToken(token);
+                if (token) setTurnstileError("");
+              }}
+              onExpire={() => setTurnstileToken("")}
+              onAvailabilityChange={(isReady) => setTurnstileReady(isReady)}
+              onServiceError={(message) => setTurnstileError(message)}
+            />
+            {turnstileError && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 text-center">{turnstileError}</p>
+            )}
 
             <div className="relative py-1">
               <div className="h-px bg-slate-200 dark:bg-slate-700" />

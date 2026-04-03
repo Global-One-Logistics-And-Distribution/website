@@ -18,9 +18,22 @@ from .models import User
 from .serializers import SignupSerializer, SigninSerializer, UserSerializer, UpdateProfileSerializer
 from .utils import send_verification_email
 from .firebase_auth import verify_firebase_id_token
+from .turnstile import is_turnstile_enabled, verify_turnstile_token
 
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_turnstile(request):
+    if not is_turnstile_enabled():
+        return None
+
+    token = request.data.get("turnstile_token")
+    remoteip = request.META.get("REMOTE_ADDR", "")
+    ok, message = verify_turnstile_token(token, remoteip=remoteip)
+    if ok:
+        return None
+    return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginRateThrottle(AnonRateThrottle):
@@ -80,6 +93,10 @@ def _parse_remember_me(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def signup(request):
+    turnstile_error = _validate_turnstile(request)
+    if turnstile_error is not None:
+        return turnstile_error
+
     serializer = SignupSerializer(data=request.data)
     if not serializer.is_valid():
         errors = serializer.errors
@@ -120,6 +137,10 @@ def signup(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def signin(request):
+    turnstile_error = _validate_turnstile(request)
+    if turnstile_error is not None:
+        return turnstile_error
+
     serializer = SigninSerializer(data=request.data)
     if not serializer.is_valid():
         return Response({"error": "Invalid email or password."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
@@ -163,6 +184,10 @@ def signin(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def google_signin(request):
+    turnstile_error = _validate_turnstile(request)
+    if turnstile_error is not None:
+        return turnstile_error
+
     raw_token = str(request.data.get("id_token", "")).strip()
     remember_me = _parse_remember_me(request)
     if not raw_token:
@@ -193,6 +218,10 @@ def google_signin(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def firebase_signin(request):
+    turnstile_error = _validate_turnstile(request)
+    if turnstile_error is not None:
+        return turnstile_error
+
     raw_token = str(request.data.get("id_token", "")).strip()
     remember_me = _parse_remember_me(request)
     if not raw_token:

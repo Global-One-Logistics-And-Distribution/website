@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, ShoppingCart, Truck, ChevronRight, ShieldCheck } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import RazorpayPaymentButton from "../components/RazorpayPaymentButton";
 import { formatINR } from "../utils/currency";
 import { getMRP } from "../utils/product";
 import { getProductSlug } from "../utils/slug";
@@ -266,6 +267,10 @@ export default function Cart() {
             Proceed to Checkout
             <ChevronRight size={16} />
           </Link>
+
+          <div className="mt-3 flex justify-center">
+            <RazorpayPaymentButton />
+          </div>
 
           <Link
             to="/products"

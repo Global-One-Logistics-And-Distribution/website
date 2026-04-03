@@ -6,6 +6,14 @@ from django.core.cache import cache
 
 from .models import Product
 from .serializers import ProductSerializer, ProductListSerializer
+from .services import (
+    TOP_CATEGORIES_CACHE_KEY,
+    TOP_CATEGORIES_CACHE_TTL,
+    TOP_PRODUCTS_CACHE_KEY,
+    TOP_PRODUCTS_CACHE_TTL,
+    build_top_categories_payload,
+    build_top_products_payload,
+)
 
 
 PRODUCT_LIST_CACHE_TTL = 120
@@ -73,3 +81,27 @@ def product_detail(request, pk):
     payload = {"product": ProductSerializer(product).data}
     cache.set(cache_key, payload, PRODUCT_DETAIL_CACHE_TTL)
     return _cached_response(payload, PRODUCT_DETAIL_CACHE_TTL)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def top_products(request):
+    cached_payload = cache.get(TOP_PRODUCTS_CACHE_KEY)
+    if cached_payload is not None:
+        return _cached_response(cached_payload, TOP_PRODUCTS_CACHE_TTL)
+
+    payload = build_top_products_payload()
+    cache.set(TOP_PRODUCTS_CACHE_KEY, payload, TOP_PRODUCTS_CACHE_TTL)
+    return _cached_response(payload, TOP_PRODUCTS_CACHE_TTL)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def top_categories(request):
+    cached_payload = cache.get(TOP_CATEGORIES_CACHE_KEY)
+    if cached_payload is not None:
+        return _cached_response(cached_payload, TOP_CATEGORIES_CACHE_TTL)
+
+    payload = build_top_categories_payload()
+    cache.set(TOP_CATEGORIES_CACHE_KEY, payload, TOP_CATEGORIES_CACHE_TTL)
+    return _cached_response(payload, TOP_CATEGORIES_CACHE_TTL)

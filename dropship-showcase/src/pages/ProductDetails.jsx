@@ -1,12 +1,13 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Star, Heart, ArrowLeft, ShoppingCart, CreditCard, Minus, Plus, Eye, Clock, Tag, CheckCircle2, Shield } from "lucide-react";
+import { Star, Heart, ArrowLeft, ShoppingCart, Minus, Plus, Eye, Clock, Tag, CheckCircle2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
+import RazorpayPaymentButton from "../components/RazorpayPaymentButton";
 import { formatINR } from "../utils/currency";
 import { useProduct, useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
@@ -191,22 +192,6 @@ export default function ProductDetails() {
     const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
     addToCart(hydratedProduct, safeQty, selectedSize);
     toast.success("Added to cart!");
-  };
-
-  const handleBuyNow = () => {
-    if (isShoe && !selectedSize) {
-      toast.error("Please select a size before buying.");
-      return;
-    }
-
-    if (isOutOfStock) {
-      toast.error("This product is out of stock");
-      return;
-    }
-
-    const safeQty = Math.min(maxSelectableQty, Math.max(1, quantity));
-    addToCart(hydratedProduct, safeQty, selectedSize);
-    navigate("/checkout");
   };
 
   return (
@@ -515,15 +500,7 @@ export default function ProductDetails() {
               Add to Cart
             </motion.button>
 
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={handleBuyNow}
-              disabled={isOutOfStock}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <CreditCard size={18} />
-              Buy Now
-            </motion.button>
+            {!isOutOfStock && <RazorpayPaymentButton className="inline-flex" />}
 
             <motion.button
               whileTap={{ scale: 0.97 }}

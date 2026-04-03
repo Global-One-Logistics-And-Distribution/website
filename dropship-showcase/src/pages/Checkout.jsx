@@ -6,6 +6,7 @@ import { ShoppingCart, MapPin, User, Mail, Phone, ArrowRight, Loader2 } from "lu
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import RazorpayPaymentButton from "../components/RazorpayPaymentButton";
 import { formatINR } from "../utils/currency";
 import { normalizeImageUrl } from "../utils/productsApi";
 
@@ -96,7 +97,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
 
@@ -107,16 +108,16 @@ export default function Checkout() {
 
   const validate = () => {
     const errs = {};
-    const rawPhone = form.shipping_phone.trim();
+    const rawPhone = form.shipping_phone.trim().replace(/\s+/g, "");
     const digits = rawPhone.startsWith("+91")
-      ? rawPhone.slice(3).trim()
-      : rawPhone.startsWith("91") && rawPhone.length === 10
+      ? rawPhone.slice(3)
+      : rawPhone.startsWith("91") && rawPhone.length === 12
       ? rawPhone.slice(2)
       : rawPhone;
     if (!digits) {
       errs.shipping_phone = "Phone number is required.";
-    } else if (!/^\d{10}$/.test(digits)) {
-      errs.shipping_phone = "Enter a valid 10-digit mobile number (e.g. 98765 43210).";
+    } else if (!/^[6-9]\d{9}$/.test(digits)) {
+      errs.shipping_phone = "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.";
     }
     if (!form.shipping_pincode.trim()) {
       errs.shipping_pincode = "Pincode is required.";
@@ -492,31 +493,13 @@ export default function Checkout() {
 
             <div>
               <label className="block text-sm font-medium mb-2">Payment Method</label>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <label className={`rounded-xl border px-4 py-3 text-sm cursor-pointer transition ${paymentMethod === "cod" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"}`}>
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    value="cod"
-                    checked={paymentMethod === "cod"}
-                    onChange={() => setPaymentMethod("cod")}
-                    className="mr-2"
-                  />
-                  Cash on Delivery
-                </label>
-                <label className={`rounded-xl border px-4 py-3 text-sm cursor-pointer transition ${paymentMethod === "razorpay" ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"}`}>
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    value="razorpay"
-                    checked={paymentMethod === "razorpay"}
-                    onChange={() => setPaymentMethod("razorpay")}
-                    className="mr-2"
-                  />
-                  Razorpay (Test)
-                </label>
+              <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/20 px-4 py-3 text-sm">
+                Razorpay (Online Payment Only)
               </div>
-              {paymentMethod === "razorpay" && !razorpayKey && (
+              <div className="mt-3 flex justify-center">
+                <RazorpayPaymentButton />
+              </div>
+              {!razorpayKey && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                   Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.
                 </p>
@@ -574,7 +557,7 @@ export default function Checkout() {
               {placing ? (
                 <><Loader2 size={16} className="animate-spin" /> Placing Order…</>
               ) : (
-                <>{paymentMethod === "razorpay" ? "Pay & Place Order" : "Place Order"} <ArrowRight size={16} /></>
+                <>Pay & Place Order <ArrowRight size={16} /></>
               )}
             </button>
           </motion.div>

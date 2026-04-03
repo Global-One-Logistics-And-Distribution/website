@@ -74,6 +74,19 @@ class CreateOrderSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True, default="")
     items = CreateOrderItemSerializer(many=True)
 
+    def validate_shipping_phone(self, value):
+        raw = str(value or "").strip().replace(" ", "")
+        if raw.startswith("+91"):
+            raw = raw[3:]
+        elif raw.startswith("91") and len(raw) == 12:
+            raw = raw[2:]
+
+        if raw and (not raw.isdigit() or len(raw) != 10 or raw[0] not in "6789"):
+            raise serializers.ValidationError(
+                "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9."
+            )
+        return raw
+
     def validate_items(self, value):
         if not value:
             raise serializers.ValidationError("Order must have at least one item.")

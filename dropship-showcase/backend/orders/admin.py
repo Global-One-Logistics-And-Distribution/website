@@ -1,14 +1,78 @@
 from django.contrib import admin
+from django import forms
 from django.utils.html import format_html
+from decimal import Decimal
 from .models import Order, OrderItem, AdminLog
+from products.models import Product
+
+
+class OrderItemInlineForm(forms.ModelForm):
+    product = forms.ModelChoiceField(
+        queryset=Product.objects.none(),
+        required=False,
+        help_text="Select a product to auto-fill item details.",
+    )
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            "product",
+            "product_id",
+            "product_name",
+            "product_image",
+            "shoe_size",
+            "price",
+            "quantity",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["product"].queryset = Product.objects.filter(is_active=True).order_by("name")
+
+        if self.instance and self.instance.product_id:
+            selected = Product.objects.filter(id=self.instance.product_id, is_active=True).first()
+            if selected:
+                self.fields["product"].initial = selected
+
+    def clean(self):
+        cleaned = super().clean()
+        product = cleaned.get("product")
+
+        has_manual_row_data = any(
+            cleaned.get(field)
+            for field in ["product_id", "product_name", "quantity", "price", "shoe_size"]
+        )
+
+        if product:
+            cleaned["product_id"] = product.id
+            cleaned["product_name"] = product.name
+            cleaned["product_image"] = product.image_url or ""
+            cleaned["price"] = product.price
+        elif not self.instance.pk and has_manual_row_data:
+            self.add_error("product", "Select a product from the list.")
+
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        product = self.cleaned_data.get("product")
+        if product:
+            instance.product_id = product.id
+            instance.product_name = product.name
+            instance.product_image = product.image_url or ""
+            instance.price = product.price
+        if commit:
+            instance.save()
+        return instance
 
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
-    extra = 0
-    readonly_fields = ["product_id", "product_name", "product_image_preview", "price", "quantity", "shoe_size", "get_subtotal"]
-    fields = ["product_id", "product_name", "product_image_preview", "shoe_size", "price", "quantity", "get_subtotal"]
-    can_delete = False
+    form = OrderItemInlineForm
+    extra = 1
+    readonly_fields = ["product_id", "product_name", "product_image_preview", "price", "get_subtotal"]
+    fields = ["product", "product_id", "product_name", "product_image_preview", "shoe_size", "price", "quantity", "get_subtotal"]
+    can_delete = True
 
     def product_image_preview(self, obj):
         if obj.product_image:
@@ -39,7 +103,7 @@ class OrderAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status", "created_at", "shipping_state"]
     search_fields = ["order_number", "user__email", "shipping_name", "shipping_email", "shipping_phone"]
-    readonly_fields = ["order_number", "user", "created_at", "updated_at", "total_amount"]
+    readonly_fields = ["order_number", "total_amount", "created_at", "updated_at"]
     ordering = ["-created_at"]
     inlines = [OrderItemInline]
     actions = [
@@ -70,8 +134,27 @@ class OrderAdmin(admin.ModelAdmin):
         }),
     )
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user").prefetch_related("items")
+
+    def save_model(self, request, obj, form, change):
+        if not obj.user and obj.shipping_email:
+            from accounts.models import User
+
+            obj.user = User.objects.filter(email__iexact=obj.shipping_email).first()
+        super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        order = form.instance
+        computed_total = sum((item.subtotal for item in order.items.all()), Decimal("0"))
+        order.total_amount = computed_total
+        order.save(update_fields=["total_amount", "updated_at"])
+
     def user_email(self, obj):
-        return obj.user.email
+        if obj.user:
+            return obj.user.email
+        return obj.shipping_email
     user_email.short_description = "Customer Email"
     user_email.admin_order_field = "user__email"
 
