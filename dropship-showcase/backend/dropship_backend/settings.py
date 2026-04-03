@@ -23,7 +23,7 @@ if not DEBUG and SECRET_KEY == "django-insecure-change-me-in-production-!@#$%":
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1,dropship-v2.onrender.com,elitedrop.net.in,www.elitedrop.net.in",
+    default="localhost,127.0.0.1,elitedrop-admin.onrender.com,elitedrop.net.in,www.elitedrop.net.in",
     cast=Csv(),
 )
 
@@ -99,11 +99,14 @@ else:
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.postgresql",
-                "NAME": config("DB_NAME", default="dropship"),
-                "USER": config("DB_USER", default="dropship"),
-                "PASSWORD": config("DB_PASSWORD", default="dropship123"),
-                "HOST": config("DB_HOST", default="localhost"),
+                "NAME": config("DB_NAME", default="EliteDrop"),
+                "USER": config("DB_USER", default="EliteDrop"),
+                "PASSWORD": config("DB_PASSWORD", default="EliteDrop@2026"),
+                "HOST": config("DB_HOST", default="db.uhicntqrshlkvvxtmdqy.supabase.co"),
                 "PORT": config("DB_PORT", default="5432"),
+                'OPTIONS': {
+                          'sslmode': 'require',  # needed for Supabase
+                 },
             }
         }
     else:

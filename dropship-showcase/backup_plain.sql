@@ -1,0 +1,2155 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict MgnNaSQ0eeLChz9Ek9yaahnu2UM5GMajoW2IYrnU6TC71PTecQTUEAKz40aO5zD
+
+-- Dumped from database version 18.3 (Debian 18.3-1.pgdg12+1)
+-- Dumped by pg_dump version 18.3
+
+-- Started on 2026-04-03 11:54:04
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+ALTER TABLE ONLY public.wishlist_items DROP CONSTRAINT wishlist_items_user_id_fb64a501_fk_users_id;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissions_user_id_92473840_fk_users_id;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissio_permission_id_6d08dcd2_fk_auth_perm;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_user_id_f500bee5_fk_users_id;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_group_id_2f3517aa_fk_auth_group_id;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_user_id_7e2523fb_fk_users_id;
+ALTER TABLE ONLY public.order_items DROP CONSTRAINT order_items_order_id_412ad78b_fk_orders_id;
+ALTER TABLE ONLY public.django_admin_log DROP CONSTRAINT django_admin_log_user_id_c564eba6_fk_users_id;
+ALTER TABLE ONLY public.django_admin_log DROP CONSTRAINT django_admin_log_content_type_id_c4bce8eb_fk_django_co;
+ALTER TABLE ONLY public.cart_items DROP CONSTRAINT cart_items_user_id_74745f54_fk_users_id;
+ALTER TABLE ONLY public.auth_permission DROP CONSTRAINT auth_permission_content_type_id_2f476e4b_fk_django_co;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissions_group_id_b120cbf9_fk_auth_group_id;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissio_permission_id_84c5c92e_fk_auth_perm;
+ALTER TABLE ONLY public.admin_logs DROP CONSTRAINT admin_logs_user_id_7cc6dd52_fk_users_id;
+DROP INDEX public.wishlist_items_user_id_fb64a501;
+DROP INDEX public.wishlist_it_user_id_b5f68a_idx;
+DROP INDEX public.wishlist_it_product_282ecb_idx;
+DROP INDEX public.users_user_permissions_user_id_92473840;
+DROP INDEX public.users_user_permissions_permission_id_6d08dcd2;
+DROP INDEX public.users_groups_user_id_f500bee5;
+DROP INDEX public.users_groups_group_id_2f3517aa;
+DROP INDEX public.users_email_0ea73cca_like;
+DROP INDEX public.products_product_code_de3ca32c_like;
+DROP INDEX public.products_product_code_de3ca32c;
+DROP INDEX public.products_is_active_4d0bbafa;
+DROP INDEX public.products_is_acti_d5bdcf_idx;
+DROP INDEX public.products_is_acti_c9c3a3_idx;
+DROP INDEX public.products_is_acti_08ec1e_idx;
+DROP INDEX public.products_category_ed47a042_like;
+DROP INDEX public.products_category_ed47a042;
+DROP INDEX public.products_brand_d3f3629a_like;
+DROP INDEX public.products_brand_d3f3629a;
+DROP INDEX public.orders_user_id_7e2523fb;
+DROP INDEX public.orders_user_id_51663a_idx;
+DROP INDEX public.orders_user_id_17dbdf_idx;
+DROP INDEX public.orders_status_11db6c_idx;
+DROP INDEX public.orders_order_number_fdca857f_like;
+DROP INDEX public.order_items_product_a53db1_idx;
+DROP INDEX public.order_items_order_id_412ad78b;
+DROP INDEX public.order_items_order_i_26ad88_idx;
+DROP INDEX public.django_session_session_key_c0390e0f_like;
+DROP INDEX public.django_session_expire_date_a5c62663;
+DROP INDEX public.django_admin_log_user_id_c564eba6;
+DROP INDEX public.django_admin_log_content_type_id_c4bce8eb;
+DROP INDEX public.cart_items_user_id_fe143f_idx;
+DROP INDEX public.cart_items_user_id_74745f54;
+DROP INDEX public.cart_items_product_6a1de7_idx;
+DROP INDEX public.auth_permission_content_type_id_2f476e4b;
+DROP INDEX public.auth_group_permissions_permission_id_84c5c92e;
+DROP INDEX public.auth_group_permissions_group_id_b120cbf9;
+DROP INDEX public.auth_group_name_a6ea08ec_like;
+DROP INDEX public.admin_logs_user_id_916751_idx;
+DROP INDEX public.admin_logs_user_id_7cc6dd52;
+DROP INDEX public.admin_logs_target__42fc56_idx;
+DROP INDEX public.admin_logs_action_cc36f2_idx;
+ALTER TABLE ONLY public.wishlist_items DROP CONSTRAINT wishlist_items_user_id_product_id_258ffff0_uniq;
+ALTER TABLE ONLY public.wishlist_items DROP CONSTRAINT wishlist_items_pkey;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissions_user_id_permission_id_3b86cbdf_uniq;
+ALTER TABLE ONLY public.users_user_permissions DROP CONSTRAINT users_user_permissions_pkey;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_pkey;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_user_id_group_id_fc7788e8_uniq;
+ALTER TABLE ONLY public.users_groups DROP CONSTRAINT users_groups_pkey;
+ALTER TABLE ONLY public.users DROP CONSTRAINT users_email_key;
+ALTER TABLE ONLY public.products DROP CONSTRAINT products_pkey;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_pkey;
+ALTER TABLE ONLY public.orders DROP CONSTRAINT orders_order_number_key;
+ALTER TABLE ONLY public.order_items DROP CONSTRAINT order_items_pkey;
+ALTER TABLE ONLY public.django_session DROP CONSTRAINT django_session_pkey;
+ALTER TABLE ONLY public.django_migrations DROP CONSTRAINT django_migrations_pkey;
+ALTER TABLE ONLY public.django_content_type DROP CONSTRAINT django_content_type_pkey;
+ALTER TABLE ONLY public.django_content_type DROP CONSTRAINT django_content_type_app_label_model_76bd3d3b_uniq;
+ALTER TABLE ONLY public.django_admin_log DROP CONSTRAINT django_admin_log_pkey;
+ALTER TABLE ONLY public.cart_items DROP CONSTRAINT cart_items_user_id_product_id_e4319647_uniq;
+ALTER TABLE ONLY public.cart_items DROP CONSTRAINT cart_items_pkey;
+ALTER TABLE ONLY public.auth_permission DROP CONSTRAINT auth_permission_pkey;
+ALTER TABLE ONLY public.auth_permission DROP CONSTRAINT auth_permission_content_type_id_codename_01ab375a_uniq;
+ALTER TABLE ONLY public.auth_group DROP CONSTRAINT auth_group_pkey;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissions_pkey;
+ALTER TABLE ONLY public.auth_group_permissions DROP CONSTRAINT auth_group_permissions_group_id_permission_id_0cd325b0_uniq;
+ALTER TABLE ONLY public.auth_group DROP CONSTRAINT auth_group_name_key;
+ALTER TABLE ONLY public.admin_logs DROP CONSTRAINT admin_logs_pkey;
+DROP TABLE public.wishlist_items;
+DROP TABLE public.users_user_permissions;
+DROP TABLE public.users_groups;
+DROP TABLE public.users;
+DROP TABLE public.products;
+DROP TABLE public.orders;
+DROP TABLE public.order_items;
+DROP TABLE public.django_session;
+DROP TABLE public.django_migrations;
+DROP TABLE public.django_content_type;
+DROP TABLE public.django_admin_log;
+DROP TABLE public.cart_items;
+DROP TABLE public.auth_permission;
+DROP TABLE public.auth_group_permissions;
+DROP TABLE public.auth_group;
+DROP TABLE public.admin_logs;
+-- *not* dropping schema, since initdb creates it
+--
+-- TOC entry 5 (class 2615 OID 2200)
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+-- Data Pos: 0
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 249 (class 1259 OID 16726)
+-- Dependencies: 5
+-- Name: admin_logs; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.admin_logs (
+    id bigint NOT NULL,
+    action character varying(50) NOT NULL,
+    target_model character varying(50) NOT NULL,
+    target_id integer,
+    description text NOT NULL,
+    "timestamp" timestamp with time zone NOT NULL,
+    ip_address inet,
+    user_id bigint,
+    CONSTRAINT admin_logs_target_id_check CHECK ((target_id >= 0))
+);
+
+
+--
+-- TOC entry 248 (class 1259 OID 16725)
+-- Dependencies: 249 5
+-- Name: admin_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.admin_logs ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.admin_logs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 226 (class 1259 OID 16433)
+-- Dependencies: 5
+-- Name: auth_group; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.auth_group (
+    id integer NOT NULL,
+    name character varying(150) NOT NULL
+);
+
+
+--
+-- TOC entry 225 (class 1259 OID 16432)
+-- Dependencies: 226 5
+-- Name: auth_group_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.auth_group ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_group_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 228 (class 1259 OID 16443)
+-- Dependencies: 5
+-- Name: auth_group_permissions; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.auth_group_permissions (
+    id bigint NOT NULL,
+    group_id integer NOT NULL,
+    permission_id integer NOT NULL
+);
+
+
+--
+-- TOC entry 227 (class 1259 OID 16442)
+-- Dependencies: 5 228
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.auth_group_permissions ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_group_permissions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 224 (class 1259 OID 16423)
+-- Dependencies: 5
+-- Name: auth_permission; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.auth_permission (
+    id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    content_type_id integer NOT NULL,
+    codename character varying(100) NOT NULL
+);
+
+
+--
+-- TOC entry 223 (class 1259 OID 16422)
+-- Dependencies: 224 5
+-- Name: auth_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.auth_permission ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.auth_permission_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 238 (class 1259 OID 16570)
+-- Dependencies: 5
+-- Name: cart_items; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.cart_items (
+    id bigint NOT NULL,
+    product_id integer NOT NULL,
+    quantity integer NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    user_id bigint NOT NULL,
+    selected_size character varying(10) NOT NULL,
+    CONSTRAINT cart_items_product_id_check CHECK ((product_id >= 0)),
+    CONSTRAINT cart_items_quantity_check CHECK ((quantity >= 0))
+);
+
+
+--
+-- TOC entry 237 (class 1259 OID 16569)
+-- Dependencies: 5 238
+-- Name: cart_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.cart_items ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.cart_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 236 (class 1259 OID 16543)
+-- Dependencies: 5
+-- Name: django_admin_log; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.django_admin_log (
+    id integer NOT NULL,
+    action_time timestamp with time zone NOT NULL,
+    object_id text,
+    object_repr character varying(200) NOT NULL,
+    action_flag smallint NOT NULL,
+    change_message text NOT NULL,
+    content_type_id integer,
+    user_id bigint NOT NULL,
+    CONSTRAINT django_admin_log_action_flag_check CHECK ((action_flag >= 0))
+);
+
+
+--
+-- TOC entry 235 (class 1259 OID 16542)
+-- Dependencies: 236 5
+-- Name: django_admin_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.django_admin_log ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.django_admin_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 222 (class 1259 OID 16411)
+-- Dependencies: 5
+-- Name: django_content_type; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.django_content_type (
+    id integer NOT NULL,
+    app_label character varying(100) NOT NULL,
+    model character varying(100) NOT NULL
+);
+
+
+--
+-- TOC entry 221 (class 1259 OID 16410)
+-- Dependencies: 5 222
+-- Name: django_content_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.django_content_type ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.django_content_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 220 (class 1259 OID 16399)
+-- Dependencies: 5
+-- Name: django_migrations; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.django_migrations (
+    id bigint NOT NULL,
+    app character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    applied timestamp with time zone NOT NULL
+);
+
+
+--
+-- TOC entry 219 (class 1259 OID 16398)
+-- Dependencies: 5 220
+-- Name: django_migrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.django_migrations ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.django_migrations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 245 (class 1259 OID 16670)
+-- Dependencies: 5
+-- Name: django_session; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.django_session (
+    session_key character varying(40) NOT NULL,
+    session_data text NOT NULL,
+    expire_date timestamp with time zone NOT NULL
+);
+
+
+--
+-- TOC entry 242 (class 1259 OID 16616)
+-- Dependencies: 5
+-- Name: order_items; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.order_items (
+    id bigint NOT NULL,
+    product_id integer NOT NULL,
+    product_name character varying(255) NOT NULL,
+    product_image character varying(1000) NOT NULL,
+    price numeric(10,2) NOT NULL,
+    quantity integer NOT NULL,
+    order_id bigint NOT NULL,
+    shoe_size character varying(10) NOT NULL,
+    CONSTRAINT order_items_product_id_check CHECK ((product_id >= 0)),
+    CONSTRAINT order_items_quantity_check CHECK ((quantity >= 0))
+);
+
+
+--
+-- TOC entry 241 (class 1259 OID 16615)
+-- Dependencies: 5 242
+-- Name: order_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.order_items ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.order_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 240 (class 1259 OID 16591)
+-- Dependencies: 5
+-- Name: orders; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.orders (
+    id bigint NOT NULL,
+    order_number character varying(20) NOT NULL,
+    status character varying(20) NOT NULL,
+    total_amount numeric(12,2) NOT NULL,
+    shipping_name character varying(200) NOT NULL,
+    shipping_email character varying(254) NOT NULL,
+    shipping_phone character varying(20) NOT NULL,
+    shipping_address text NOT NULL,
+    shipping_city character varying(100) NOT NULL,
+    shipping_pincode character varying(10) NOT NULL,
+    shipping_state character varying(100) NOT NULL,
+    notes text NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    user_id bigint NOT NULL
+);
+
+
+--
+-- TOC entry 239 (class 1259 OID 16590)
+-- Dependencies: 5 240
+-- Name: orders_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.orders ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.orders_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 244 (class 1259 OID 16646)
+-- Dependencies: 5
+-- Name: products; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.products (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    description text NOT NULL,
+    short_description character varying(500) NOT NULL,
+    price numeric(10,2) NOT NULL,
+    category character varying(100) NOT NULL,
+    brand character varying(100) NOT NULL,
+    product_code character varying(100) NOT NULL,
+    image_url character varying(1000) NOT NULL,
+    gallery_urls jsonb NOT NULL,
+    features jsonb NOT NULL,
+    stock integer NOT NULL,
+    rating numeric(3,1) NOT NULL,
+    is_active boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    CONSTRAINT products_stock_check CHECK ((stock >= 0))
+);
+
+
+--
+-- TOC entry 243 (class 1259 OID 16645)
+-- Dependencies: 244 5
+-- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.products ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 230 (class 1259 OID 16480)
+-- Dependencies: 5
+-- Name: users; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.users (
+    id bigint NOT NULL,
+    password character varying(128) NOT NULL,
+    last_login timestamp with time zone,
+    is_superuser boolean NOT NULL,
+    name character varying(100) NOT NULL,
+    email character varying(254) NOT NULL,
+    is_active boolean NOT NULL,
+    is_staff boolean NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    email_verification_code character varying(6) NOT NULL,
+    email_verification_expires_at timestamp with time zone,
+    email_verified boolean NOT NULL
+);
+
+
+--
+-- TOC entry 232 (class 1259 OID 16496)
+-- Dependencies: 5
+-- Name: users_groups; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.users_groups (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    group_id integer NOT NULL
+);
+
+
+--
+-- TOC entry 231 (class 1259 OID 16495)
+-- Dependencies: 232 5
+-- Name: users_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.users_groups ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.users_groups_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 229 (class 1259 OID 16479)
+-- Dependencies: 5 230
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.users ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 234 (class 1259 OID 16505)
+-- Dependencies: 5
+-- Name: users_user_permissions; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.users_user_permissions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    permission_id integer NOT NULL
+);
+
+
+--
+-- TOC entry 233 (class 1259 OID 16504)
+-- Dependencies: 5 234
+-- Name: users_user_permissions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.users_user_permissions ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.users_user_permissions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 247 (class 1259 OID 16683)
+-- Dependencies: 5
+-- Name: wishlist_items; Type: TABLE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE TABLE public.wishlist_items (
+    id bigint NOT NULL,
+    product_id integer NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    user_id bigint NOT NULL,
+    CONSTRAINT wishlist_items_product_id_check CHECK ((product_id >= 0))
+);
+
+
+--
+-- TOC entry 246 (class 1259 OID 16682)
+-- Dependencies: 5 247
+-- Name: wishlist_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE public.wishlist_items ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.wishlist_items_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 3595 (class 0 OID 16726)
+-- Dependencies: 249
+-- Data for Name: admin_logs; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 53381
+--
+
+COPY public.admin_logs (id, action, target_model, target_id, description, "timestamp", ip_address, user_id) FROM stdin;
+1	product_create	Product	47	Created product: KODAK CHARMERA Digital Camera Keychain (BLIND BOX) (ID: None)	2026-04-02 08:16:06.001201+00	49.36.111.10	1
+2	product_update	Product	47	Updated product: KODAK CHARMERA Digital Camera Keychain (BLIND BOX) (ID: 47)	2026-04-02 08:17:10.956065+00	49.36.111.10	1
+3	product_update	Product	45	Updated product: Gucci GG Supreme Kingsnake Print Wallet (ID: 45)	2026-04-02 08:21:54.287422+00	49.36.111.10	1
+4	product_update	Product	45	Updated product: GG Supreme Kingsnake Print (ID: 45)	2026-04-02 08:22:38.219376+00	49.36.111.10	1
+5	product_update	Product	46	Updated product: Burberry Monogram Print Wallet (ID: 46)	2026-04-02 09:16:08.971279+00	49.36.111.10	1
+6	product_update	Product	44	Updated product: Men's Black Logo Print Leather Bifold Wallet (ID: 44)	2026-04-02 09:22:16.519267+00	49.36.111.10	1
+7	product_update	Product	43	Updated product: Louis Vuitton Wallet (ID: 43)	2026-04-02 09:32:49.457893+00	49.36.111.10	1
+8	product_update	Product	42	Updated product: Hudson Bi-Fold Wallet 3 in 1 Admiral Multi Cllection (ID: 42)	2026-04-02 09:41:08.110691+00	49.36.111.10	1
+9	product_update	Product	41	Updated product: GG Supreme Bee Long Wallet (ID: 41)	2026-04-02 09:44:18.142176+00	49.36.111.10	1
+10	product_update	Product	40	Updated product: Gucci Bi-fold Men's Wwallet (ID: 40)	2026-04-02 09:54:03.68701+00	49.36.111.10	1
+11	product_update	Product	27	Updated product: Ray-Ban Sunglasses Model 3670 (Full Black Glass) (ID: 27)	2026-04-02 09:58:02.656353+00	49.36.111.10	1
+12	product_update	Product	26	Updated product: Lacoste Sunglasses Model 143 (Gold Black) (ID: 26)	2026-04-02 09:59:51.68396+00	49.36.111.10	1
+13	product_update	Product	26	Updated product: Lacoste Sunglasses Model 143 (Gold Black) (ID: 26)	2026-04-02 10:08:07.665119+00	49.36.111.10	1
+14	product_update	Product	25	Updated product: Gucci Sunglasses Model 0256 (Black) (ID: 25)	2026-04-02 10:17:56.68123+00	49.36.111.10	1
+15	product_update	Product	24	Updated product: Dita Sunglasses Model H2852 (Black) (ID: 24)	2026-04-02 10:20:50.945337+00	49.36.111.10	1
+16	product_update	Product	23	Updated product: Versace Sunglasses Jacques Marie Mage Molino style (ID: 23)	2026-04-02 10:28:19.821614+00	49.36.111.10	1
+17	product_update	Product	2	Updated product: Gigi Large Empire Signature Logo Tote Bag (ID: 2)	2026-04-02 10:31:52.269632+00	49.36.111.10	1
+18	product_update	Product	1	Updated product: Heather Large Logo Shoulder Bag (With Original Box) (ID: 1)	2026-04-02 10:33:28.203315+00	49.36.111.10	1
+19	product_update	Product	3	Updated product: Coach Juliet Shoulder Bag in Signature Canvas (ID: 3)	2026-04-02 10:37:17.015417+00	49.36.111.10	1
+20	product_update	Product	17	Updated product: Dior B23 High Top Sneakers (Black and White) Oblique Canvas (ID: 17)	2026-04-02 10:41:46.090174+00	49.36.111.10	1
+21	product_create	Product	48	Created product: Gabrielle Paris (ID: None)	2026-04-02 10:54:39.013924+00	49.36.111.10	1
+22	product_create	Product	49	Created product: Airpods Max - With ANC (ID: None)	2026-04-02 11:06:29.582451+00	49.36.111.10	1
+23	product_update	Product	49	Updated product: Airpods Max - With ANC (ID: 49)	2026-04-02 11:19:18.222471+00	49.36.111.10	1
+\.
+
+
+--
+-- TOC entry 3572 (class 0 OID 16433)
+-- Dependencies: 226
+-- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 54354
+--
+
+COPY public.auth_group (id, name) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3574 (class 0 OID 16443)
+-- Dependencies: 228
+-- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 54383
+--
+
+COPY public.auth_group_permissions (id, group_id, permission_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3570 (class 0 OID 16423)
+-- Dependencies: 224
+-- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 54412
+--
+
+COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
+1	Can add log entry	1	add_logentry
+2	Can change log entry	1	change_logentry
+3	Can delete log entry	1	delete_logentry
+4	Can view log entry	1	view_logentry
+5	Can add permission	3	add_permission
+6	Can change permission	3	change_permission
+7	Can delete permission	3	delete_permission
+8	Can view permission	3	view_permission
+9	Can add group	2	add_group
+10	Can change group	2	change_group
+11	Can delete group	2	delete_group
+12	Can view group	2	view_group
+13	Can add content type	4	add_contenttype
+14	Can change content type	4	change_contenttype
+15	Can delete content type	4	delete_contenttype
+16	Can view content type	4	view_contenttype
+17	Can add session	5	add_session
+18	Can change session	5	change_session
+19	Can delete session	5	delete_session
+20	Can view session	5	view_session
+21	Can add user	6	add_user
+22	Can change user	6	change_user
+23	Can delete user	6	delete_user
+24	Can view user	6	view_user
+25	Can add cart item	7	add_cartitem
+26	Can change cart item	7	change_cartitem
+27	Can delete cart item	7	delete_cartitem
+28	Can view cart item	7	view_cartitem
+29	Can add wishlist item	8	add_wishlistitem
+30	Can change wishlist item	8	change_wishlistitem
+31	Can delete wishlist item	8	delete_wishlistitem
+32	Can view wishlist item	8	view_wishlistitem
+33	Can add product	9	add_product
+34	Can change product	9	change_product
+35	Can delete product	9	delete_product
+36	Can view product	9	view_product
+37	Can add order	10	add_order
+38	Can change order	10	change_order
+39	Can delete order	10	delete_order
+40	Can view order	10	view_order
+41	Can add order item	11	add_orderitem
+42	Can change order item	11	change_orderitem
+43	Can delete order item	11	delete_orderitem
+44	Can view order item	11	view_orderitem
+45	Can add admin log	12	add_adminlog
+46	Can change admin log	12	change_adminlog
+47	Can delete admin log	12	delete_adminlog
+48	Can view admin log	12	view_adminlog
+\.
+
+
+--
+-- TOC entry 3584 (class 0 OID 16570)
+-- Dependencies: 238
+-- Data for Name: cart_items; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 54906
+--
+
+COPY public.cart_items (id, product_id, quantity, created_at, user_id, selected_size) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3582 (class 0 OID 16543)
+-- Dependencies: 236
+-- Data for Name: django_admin_log; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 54935
+--
+
+COPY public.django_admin_log (id, action_time, object_id, object_repr, action_flag, change_message, content_type_id, user_id) FROM stdin;
+1	2026-03-18 17:51:32.740922+00	1	pr	1	[{"added": {}}]	9	1
+2	2026-03-18 18:13:23.9468+00	1	ORD-C8E01488 (johndoe@ecamp.com)	2	[{"changed": {"fields": ["Status"]}}]	10	1
+3	2026-03-18 18:36:08.150673+00	3	hardik@gmail.com	1	[{"added": {}}]	6	1
+4	2026-03-18 18:37:39.041709+00	3	hardik@gmail.com	2	[{"changed": {"fields": ["Is staff", "User permissions"]}}]	6	1
+5	2026-03-18 18:41:16.288882+00	3	hardik@gmail.com	2	[{"changed": {"fields": ["User permissions"]}}]	6	1
+6	2026-03-18 18:42:28.966352+00	1	Heather Large Logo Shoulder Bag	2	[{"changed": {"fields": ["Price"]}}]	9	3
+7	2026-03-20 05:57:41.86084+00	4	test@email.com	1	[{"added": {}}]	6	1
+8	2026-03-20 05:58:08.862028+00	4	test@email.com	2	[{"changed": {"fields": ["User permissions"]}}]	6	1
+9	2026-03-20 05:58:20.660676+00	4	test@email.com	2	[{"changed": {"fields": ["Is staff"]}}]	6	1
+10	2026-03-20 06:06:07.663093+00	9	Michael Kors Quinn Large Top Zip Tote Bag (Brown)	2	[{"changed": {"fields": ["Name", "Product code"]}}]	9	1
+11	2026-03-20 09:42:14.590058+00	2	ORD-6DB4D3E1 (johndoe@ecamp.com)	3		10	1
+12	2026-03-20 09:42:14.590141+00	1	ORD-C8E01488 (johndoe@ecamp.com)	3		10	1
+13	2026-03-20 09:46:44.430747+00	1	Heather Large Logo Shoulder Bag	2	[{"changed": {"fields": ["Price"]}}]	9	3
+14	2026-03-20 09:48:15.363984+00	24	Dita Sunglasses Model H2852 (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+15	2026-03-20 09:48:15.432256+00	23	Versace Sunglasses Model 6017 (Silver / Blue)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+16	2026-03-20 09:48:15.502223+00	22	Prada Sunglasses Model 19 (Brown)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+17	2026-03-20 09:48:15.569127+00	21	Cartier Sunglasses Model 0012 (Gold / Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+18	2026-03-20 09:48:15.632424+00	20	Burberry Sunglasses Model 3324 (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+19	2026-03-20 09:48:15.697122+00	19	Marc Jacobs Sunglasses Model 3674 (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+20	2026-03-20 09:48:15.759885+00	18	Louis Vuitton Sunglasses (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+21	2026-03-20 09:48:15.825371+00	17	Dior Sneaker (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+22	2026-03-20 09:48:15.895026+00	16	Versace Odissea Sneaker (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+23	2026-03-20 09:48:15.955748+00	15	Versace Odissea Sneaker (White)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+24	2026-03-20 09:48:16.030552+00	14	Dolce & Gabbana 2.Zero Sneaker (White / Gold)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+25	2026-03-20 09:48:16.094821+00	13	Gucci x Adidas Originals Gazelle Sneaker	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+26	2026-03-20 09:48:16.176777+00	12	LV Trainer Sneaker (White / Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+27	2026-03-20 09:48:16.235149+00	11	LV Trainer Sneaker Boot High (Black)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+28	2026-03-20 09:48:16.300298+00	10	LV Trainer Sneaker (Black Grey White)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+29	2026-03-20 09:48:16.362064+00	9	Michael Kors Quinn Large Top Zip Tote Bag (Brown)	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+30	2026-03-20 09:48:16.424219+00	8	Saint Laurent College Medium Chain Bag	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+31	2026-03-20 09:48:16.492785+00	7	LV x Takashi Murakami Bag	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+32	2026-03-20 09:48:16.681508+00	6	Aldoaira Women's Top Handle Bag	2	[{"changed": {"fields": ["Stock"]}}]	9	3
+33	2026-03-20 09:50:32.587948+00	2	Gigi Large Empire Logo Tote Bag	2	[{"changed": {"fields": ["Price"]}}]	9	3
+34	2026-03-25 07:24:50.646779+00	46	Burberry Wallet	2	[{"changed": {"fields": ["Is active"]}}]	9	1
+35	2026-03-25 07:25:14.946076+00	46	Burberry Wallet	2	[{"changed": {"fields": ["Is active"]}}]	9	1
+36	2026-03-25 07:26:34.359301+00	46	Burberry Wallet	2	[]	9	1
+37	2026-03-29 09:03:33.489538+00	3	ORD-45C92DDC (h@examo.com)	2	[{"changed": {"fields": ["Status"]}}]	10	1
+38	2026-03-30 10:30:45.643939+00	3	ORD-45C92DDC (h@examo.com)	3		10	1
+39	2026-03-30 10:31:20.508695+00	5	h@examo.com	3		6	1
+40	2026-03-30 10:31:20.508754+00	4	test@email.com	3		6	1
+41	2026-03-30 10:31:20.508781+00	2	johndoe@ecamp.com	3		6	1
+42	2026-03-30 10:31:47.340109+00	1	agastya@gmail.com	2	[{"changed": {"fields": ["Email"]}}]	6	1
+43	2026-03-30 10:32:49.219609+00	3	hardik@gmail.com	2	[]	6	1
+44	2026-03-31 08:02:55.819684+00	6	johndoe@mail.com	3		6	1
+45	2026-03-31 08:59:51.508883+00	13	ORD-CF8B1812 (dinajar549@nexafilm.com)	3		10	1
+46	2026-03-31 09:00:16.364005+00	12	ORD-124E8B57 (dinajar549@nexafilm.com)	3		10	1
+47	2026-03-31 09:00:16.364127+00	11	ORD-FA909620 (dinajar549@nexafilm.com)	3		10	1
+48	2026-03-31 09:00:16.364228+00	10	ORD-E922E20C (dinajar549@nexafilm.com)	3		10	1
+49	2026-03-31 09:00:16.36428+00	9	ORD-619A55A5 (dinajar549@nexafilm.com)	3		10	1
+50	2026-03-31 09:00:16.364329+00	8	ORD-83F490F7 (dinajar549@nexafilm.com)	3		10	1
+51	2026-03-31 09:00:16.364372+00	7	ORD-9CD19514 (dinajar549@nexafilm.com)	3		10	1
+52	2026-03-31 09:00:16.364414+00	6	ORD-3BADFDB7 (dinajar549@nexafilm.com)	3		10	1
+53	2026-03-31 09:00:16.364454+00	5	ORD-E9B56E52 (dinajar549@nexafilm.com)	3		10	1
+54	2026-03-31 10:27:21.35763+00	18	xahol27066@agoalz.com	3		6	1
+55	2026-03-31 10:27:21.357789+00	7	dinajar549@nexafilm.com	3		6	1
+56	2026-03-31 10:38:58.301691+00	19	xahol27066@agoalz.com	3		6	1
+57	2026-03-31 10:46:13.484781+00	20	xahol27066@agoalz.com	3		6	1
+58	2026-03-31 10:53:16.766992+00	21	xahol27066@agoalz.com	3		6	1
+59	2026-04-01 16:44:27.618565+00	29	drsangitagm@gmail.com	3		6	1
+60	2026-04-01 17:47:16.440501+00	32	wohel77858@availors.com	3		6	1
+61	2026-04-01 20:51:21.512824+00	34	naxiy67626@fengnu.com	3		6	1
+62	2026-04-01 20:51:21.513067+00	33	wohel77858@availors.com	3		6	1
+63	2026-04-01 20:51:21.513122+00	31	drsangita@gmail.com	3		6	1
+64	2026-04-01 20:51:21.513162+00	30	drsangitagm@gmail.com	3		6	1
+65	2026-04-01 20:51:21.513203+00	28	agastyagm2@gmail.com	3		6	1
+66	2026-04-01 20:51:21.513241+00	27	test@email.com	3		6	1
+67	2026-04-01 20:51:21.513276+00	25	ordernum-test@example.com	3		6	1
+68	2026-04-01 20:51:21.513309+00	24	stemavericks.team@outlook.com	3		6	1
+69	2026-04-01 20:51:21.513343+00	23	xegemox849@marvetos.com	3		6	1
+70	2026-04-01 20:51:58.295488+00	1	agastya@gmail.com	2	[{"changed": {"fields": ["Email verified"]}}]	6	1
+71	2026-04-01 20:52:22.710647+00	3	hardik@gmail.com	2	[{"changed": {"fields": ["Email verified"]}}]	6	1
+72	2026-04-02 05:56:56.54092+00	36	globalonelogistics2026@gmail.com	3		6	1
+73	2026-04-02 05:56:56.540986+00	35	agastyagm2@gmail.com	3		6	1
+74	2026-04-02 08:16:06.003779+00	47	KODAK CHARMERA Digital Camera Keychain (BLIND BOX)	1	[{"added": {}}]	9	1
+75	2026-04-02 08:17:10.957616+00	47	KODAK CHARMERA Digital Camera Keychain (BLIND BOX)	2	[{"changed": {"fields": ["Gallery urls"]}}]	9	1
+76	2026-04-02 08:21:54.28943+00	45	Gucci GG Supreme Kingsnake Print Wallet	2	[{"changed": {"fields": ["Name", "Product code", "Description", "Features", "Gallery urls"]}}]	9	1
+77	2026-04-02 08:22:38.223199+00	45	GG Supreme Kingsnake Print	2	[{"changed": {"fields": ["Name"]}}]	9	1
+78	2026-04-02 09:16:08.974105+00	46	Burberry Monogram Print Wallet	2	[{"changed": {"fields": ["Name", "Product code", "Short description", "Description"]}}]	9	1
+79	2026-04-02 09:22:16.52412+00	44	Men's Black Logo Print Leather Bifold Wallet	2	[{"changed": {"fields": ["Name", "Product code", "Rating", "Short description", "Features"]}}]	9	1
+80	2026-04-02 09:32:49.460414+00	43	Louis Vuitton Wallet	2	[{"changed": {"fields": ["Product code"]}}]	9	1
+81	2026-04-02 09:41:08.114261+00	42	Hudson Bi-Fold Wallet 3 in 1 Admiral Multi Cllection	2	[{"changed": {"fields": ["Name", "Product code", "Features"]}}]	9	1
+82	2026-04-02 09:44:18.143886+00	41	GG Supreme Bee Long Wallet	2	[{"changed": {"fields": ["Name", "Product code", "Description", "Features"]}}]	9	1
+83	2026-04-02 09:54:03.689005+00	40	Gucci Bi-fold Men's Wwallet	2	[{"changed": {"fields": ["Name", "Product code", "Short description", "Description"]}}]	9	1
+84	2026-04-02 09:58:02.658894+00	27	Ray-Ban Sunglasses Model 3670 (Full Black Glass)	2	[{"changed": {"fields": ["Product code", "Short description", "Description", "Features"]}}]	9	1
+85	2026-04-02 09:59:51.68688+00	26	Lacoste Sunglasses Model 143 (Gold Black)	2	[{"changed": {"fields": ["Short description", "Description"]}}]	9	1
+86	2026-04-02 10:08:07.667855+00	26	Lacoste Sunglasses Model 143 (Gold Black)	2	[{"changed": {"fields": ["Product code"]}}]	9	1
+87	2026-04-02 10:17:56.683445+00	25	Gucci Sunglasses Model 0256 (Black)	2	[{"changed": {"fields": ["Product code", "Short description", "Description"]}}]	9	1
+88	2026-04-02 10:20:50.955041+00	24	Dita Sunglasses Model H2852 (Black)	2	[{"changed": {"fields": ["Product code", "Stock", "Short description", "Description"]}}]	9	1
+89	2026-04-02 10:28:19.824792+00	23	Versace Sunglasses Jacques Marie Mage Molino style	2	[{"changed": {"fields": ["Name", "Product code", "Description"]}}]	9	1
+90	2026-04-02 10:31:52.271741+00	2	Gigi Large Empire Signature Logo Tote Bag	2	[{"changed": {"fields": ["Name", "Product code", "Short description", "Description", "Features"]}}]	9	1
+91	2026-04-02 10:33:28.204986+00	1	Heather Large Logo Shoulder Bag (With Original Box)	2	[{"changed": {"fields": ["Name", "Product code", "Short description", "Description"]}}]	9	1
+92	2026-04-02 10:37:17.017148+00	3	Coach Juliet Shoulder Bag in Signature Canvas	2	[{"changed": {"fields": ["Name", "Product code", "Short description", "Description"]}}]	9	1
+93	2026-04-02 10:41:46.091665+00	17	Dior B23 High Top Sneakers (Black and White) Oblique Canvas	2	[{"changed": {"fields": ["Name", "Product code", "Features"]}}]	9	1
+94	2026-04-02 10:54:39.016208+00	48	Gabrielle Paris	1	[{"added": {}}]	9	1
+95	2026-04-02 11:06:29.584449+00	49	Airpods Max - With ANC	1	[{"added": {}}]	9	1
+96	2026-04-02 11:19:18.225403+00	49	Airpods Max - With ANC	2	[{"changed": {"fields": ["Price"]}}]	9	1
+\.
+
+
+--
+-- TOC entry 3568 (class 0 OID 16411)
+-- Dependencies: 222
+-- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 57562
+--
+
+COPY public.django_content_type (id, app_label, model) FROM stdin;
+1	admin	logentry
+2	auth	group
+3	auth	permission
+4	contenttypes	contenttype
+5	sessions	session
+6	accounts	user
+7	cart	cartitem
+8	wishlist	wishlistitem
+9	products	product
+10	orders	order
+11	orders	orderitem
+12	orders	adminlog
+\.
+
+
+--
+-- TOC entry 3566 (class 0 OID 16399)
+-- Dependencies: 220
+-- Data for Name: django_migrations; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 57720
+--
+
+COPY public.django_migrations (id, app, name, applied) FROM stdin;
+1	contenttypes	0001_initial	2026-03-18 17:17:34.470036+00
+2	contenttypes	0002_remove_content_type_name	2026-03-18 17:17:35.672401+00
+3	auth	0001_initial	2026-03-18 17:17:39.560812+00
+4	auth	0002_alter_permission_name_max_length	2026-03-18 17:17:40.289288+00
+5	auth	0003_alter_user_email_max_length	2026-03-18 17:17:40.770642+00
+6	auth	0004_alter_user_username_opts	2026-03-18 17:17:41.50221+00
+7	auth	0005_alter_user_last_login_null	2026-03-18 17:17:42.232069+00
+8	auth	0006_require_contenttypes_0002	2026-03-18 17:17:42.951866+00
+9	auth	0007_alter_validators_add_error_messages	2026-03-18 17:17:43.734879+00
+10	auth	0008_alter_user_username_max_length	2026-03-18 17:17:44.45611+00
+11	auth	0009_alter_user_last_name_max_length	2026-03-18 17:17:45.183768+00
+12	auth	0010_alter_group_name_max_length	2026-03-18 17:17:46.38574+00
+13	auth	0011_update_proxy_permissions	2026-03-18 17:17:46.879301+00
+14	auth	0012_alter_user_first_name_max_length	2026-03-18 17:17:47.633867+00
+15	accounts	0001_initial	2026-03-18 17:17:52.217639+00
+16	admin	0001_initial	2026-03-18 17:17:54.208486+00
+17	admin	0002_logentry_remove_auto_add	2026-03-18 17:17:54.468268+00
+18	admin	0003_logentry_add_action_flag_choices	2026-03-18 17:17:55.203368+00
+19	cart	0001_initial	2026-03-18 17:17:57.42796+00
+20	orders	0001_initial	2026-03-18 17:17:59.8806+00
+21	products	0001_initial	2026-03-18 17:18:00.636722+00
+22	sessions	0001_initial	2026-03-18 17:18:02.356594+00
+23	wishlist	0001_initial	2026-03-18 17:18:04.11046+00
+24	cart	0002_cartitem_cart_items_user_id_fe143f_idx_and_more	2026-03-20 06:24:18.659989+00
+25	orders	0002_order_orders_user_id_51663a_idx_and_more	2026-03-20 06:24:20.639836+00
+26	products	0002_alter_product_brand_alter_product_category_and_more	2026-03-20 06:24:23.77541+00
+27	wishlist	0002_wishlistitem_wishlist_it_user_id_b5f68a_idx_and_more	2026-03-20 06:24:24.989843+00
+28	orders	0003_orderitem_shoe_size	2026-03-31 07:59:07.729653+00
+29	orders	0004_adminlog	2026-03-31 07:59:10.244727+00
+30	accounts	0002_user_email_verification_code_and_more	2026-03-31 08:23:23.732104+00
+31	orders	0005_rename_admin_logs_user_id_0e1821_idx_admin_logs_user_id_916751_idx_and_more	2026-03-31 09:52:58.219266+00
+32	cart	0003_cartitem_selected_size	2026-03-31 16:40:09.750052+00
+33	cart	0004_normalize_selected_size	2026-04-01 05:52:49.691581+00
+\.
+
+
+--
+-- TOC entry 3591 (class 0 OID 16670)
+-- Dependencies: 245
+-- Data for Name: django_session; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 58548
+--
+
+COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
+uahw6tsi78bps4ryl7sr73pwo14cqexh	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w2uZN:6gCMtRHSEDWcq1sihLsIvQT_xxa1jcXUxNQT6NQQycw	2026-04-01 17:20:33.818+00
+20kxpuo07comlw1cgn2btcek0wb6ey3b	.eJxVjEEOgjAQRe_StWkYaPvFpXvOQNqZjqAGEgor492VhIVu_3vvv0wft3Xot5KXfhRzMY05_W4p8iNPO5B7nG6z5XlalzHZXbEHLbabJT-vh_t3MMQyfGsPDlXwZ2KkWpsapA5MrSQHIRJxnFSggSo4wLeoycEjRdUMhnl_AM04N4o:1w2vnZ:Zw3NsYEWA2cOweE8kJWW9IwYMtOvwHIOYcTxjBYKG7M	2026-04-01 18:39:17.262658+00
+2v73ym6luav7a2kkw91c4cu4gte8s6zo	.eJxVjEEOgjAQRe_StWkYaPvFpXvOQNqZjqAGEgor492VhIVu_3vvv0wft3Xot5KXfhRzMY05_W4p8iNPO5B7nG6z5XlalzHZXbEHLbabJT-vh_t3MMQyfGsPDlXwZ2KkWpsapA5MrSQHIRJxnFSggSo4wLeoycEjRdUMhnl_AM04N4o:1w2w0x:WsPvX840-ysgVh2zl-fg2_6_s9OwDkORTprndAdYrv0	2026-04-01 18:53:07.566774+00
+g4lr07ttj5y0bgv2wdpfm9obi15qcduq	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w35GL:4MWI368LY4b2s5uganKC6s1ZGDZ4cMmBhjsM0WJaJZ0	2026-04-02 04:45:37.904561+00
+d6a4irrbc9rdoweegy3jxrv0l58fbf7m	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w35GP:eo99Q1GtAFB0KniwMv2KMve8gHodgRk_vFfFAMcVDIA	2026-04-02 04:45:41.178514+00
+3d1ctqwtw47rt632u5hrtuyik6wj27ww	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w37Hk:0HpyeiW0c41PEQ99-oVzM0l6qjzyK7XTwl7RGG9bGEU	2026-04-02 06:55:12.808212+00
+x0nlgc1e8lus5650pbo5qv9bll7949bc	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w3Sqf:7LgsrgoGThezOy9ARMuoswLd_FG8u9syZgR2QM4Tf6s	2026-04-03 05:56:41.978071+00
+8cbrq0mz6wniekcb36tp2nr6yu63ezst	.eJxVjDsOwyAQBe9CHSHAfEzK9D4Dgt0lOIlAMnYV5e4RkoukfTPz3izEYy_h6LSFFdmVaXb53VKEJ9UB8BHrvXFodd_WxIfCT9r50pBet9P9Oyixl1GjtzrhBNqorK2l7MVEs9SzUxC9A0SQZKxIgiQpUAkxe2sn70kq49jnC_MBOBc:1w3TOB:xEl-ywopVT1jP-OPCxKU4OSwkrIYKhtrMQ_9qH0gDM8	2026-04-03 06:31:19.289646+00
+g3d4llx5qzkpfot1rrxxk4zhq35d86nz	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w3WLw:1bdKKvcFN2M6bxC4sboHQUZkEvzEyy-_RdpGEbqVVjU	2026-04-03 09:41:12.549939+00
+yb6envggr9l55umw407nk39zt4e86odk	.eJxVjEEOgjAQRe_StWkYaPvFpXvOQNqZjqAGEgor492VhIVu_3vvv0wft3Xot5KXfhRzMY05_W4p8iNPO5B7nG6z5XlalzHZXbEHLbabJT-vh_t3MMQyfGsPDlXwZ2KkWpsapA5MrSQHIRJxnFSggSo4wLeoycEjRdUMhnl_AM04N4o:1w3WM5:yz1LYJV_DqIeu9meDIZy3NXVyuicTHG6Eg_amRDYzpI	2026-04-03 09:41:21.445304+00
+73kzurk1t2hw6nwset4mzn2g0ermu8jh	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w5ISr:qPfp2oja9rCHK3TR2neVpsCFi7b7krT8DviXZln95L4	2026-04-08 07:15:41.552844+00
+sqisuv4vssbhptnzqis6gxjsknofdpiw	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w6lzm:573CDBXjFStgplPy4ioSwzu-BGcWrOuGbtxFnLzAVdo	2026-04-12 08:59:46.30238+00
+fcvk57o1cd56hbom0gmmpnpnj16d5utm	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w79t0:Vjhse4Exf5T0UAT7feaQ1r4PyWvvFcISE2KWFBUIqYQ	2026-04-13 10:30:22.177151+00
+pmwewpj46v2837h5np3ama0zalrmkl99	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w7DGl:08R2al9kbQRKgKkyP-pG4-VW-QKSCYNvp5oAYesm0qA	2026-04-13 14:07:07.614442+00
+viaftyzkmp4syunenn808hghd9ag0hq2	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7U2i:hJgPuW8xLtySQgP2NDAcwmJLSYOBwAImpNpluK6Swc4	2026-04-14 08:01:44.302337+00
+6tcplxkmuz5ub8lvi3gpqezkmo7cnm93	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7Uve:Ndwgttst4yE8wF4OiFd4URYiiajMqa9bBB11eOQwGec	2026-04-14 08:58:30.531218+00
+rs8sx0dy04tfpkw4or41nik5k9mv8olz	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7Uvh:w-sNix8IBYhc23U_Ynar566j73IMej48IMJcmuSd1T0	2026-04-14 08:58:33.345627+00
+p1ieg14htbyzgifrwtxug09ujxj1xyyi	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7bAM:yLD3Fb8lINGUpqX_nsldzwwti0b4LrS1mIvwPNgndXs	2026-04-14 15:38:06.337462+00
+qv14vle10tj04821c0ouv8gyt49oafpo	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7bAO:LiyUfZPuCSbyjWlLhNqq7HvAcixTFky60HN9ip4tDg4	2026-04-14 15:38:08.918166+00
+yylopai5r15rvq3wkkafj4sp2ghvc3dt	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7yTX:1YdBoZjw84h5Gp8TsuQZcXD9IuG9nMhyTCIZ4OLProE	2026-04-15 16:31:27.052194+00
+ujv2gzo3wl72box706171jpy34kdnqdc	.eJxVjDEOwjAMAP_iGUUlIU7ckZ03RHYckQJKpaadEH9HlTrAene6NyTe1pq2XpY0KYxwhtMvE87P0nahD2732eS5rcskZk_MYbu5zVpe16P9G1TuFUawDoU8RaskRQqSEyG1wsgXy04s-hgsBw05RFQcXFA3RCFFr-gJPl_hIDeP:1w7zeQ:WxYowWwx45hUdgHVzml80c6MJrQVujhz85M7302LWRk	2026-04-15 17:46:46.665586+00
+hrwlc9l52e1howzf6jb955kowz0c2cvz	.eJxVjEEOgjAQRe_StWkYaPvFpXvOQNqZjqAGEgor492VhIVu_3vvv0wft3Xot5KXfhRzMY05_W4p8iNPO5B7nG6z5XlalzHZXbEHLbabJT-vh_t3MMQyfGsPDlXwZ2KkWpsapA5MrSQHIRJxnFSggSo4wLeoycEjRdUMhnl_AM04N4o:1w8D86:ErYB5R3HJZp-ZZ2ZXKXqssCczZJhTcmo1n-2YTQYTXk	2026-04-16 08:10:18.387516+00
+g4723cmu8z6swph5h0m8y4am26du0y45	.eJxVjMEOwiAQRP-FsyEVZGE9eu83kF2WSNXQpLQn479Lkx40mdO8N_NWkba1xK3lJU6iruqsTr8dU3rmugN5UL3POs11XSbWu6IP2vQ4S37dDvfvoFArfW0sMDoMRpAzZ0DLjGKYgC6GLBtwwRvy4pMPIDBYL3YI3QHXg-rzBeEgN48:1w8D8w:pamHNbRqcFogvWG6TWqpuhYxllR02p5mmcNxoMAOpdo	2026-04-16 08:11:10.408423+00
+\.
+
+
+--
+-- TOC entry 3588 (class 0 OID 16616)
+-- Dependencies: 242
+-- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 60923
+--
+
+COPY public.order_items (id, product_id, product_name, product_image, price, quantity, order_id, shoe_size) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3586 (class 0 OID 16591)
+-- Dependencies: 240
+-- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 60952
+--
+
+COPY public.orders (id, order_number, status, total_amount, shipping_name, shipping_email, shipping_phone, shipping_address, shipping_city, shipping_pincode, shipping_state, notes, created_at, updated_at, user_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3590 (class 0 OID 16646)
+-- Dependencies: 244
+-- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 60981
+--
+
+COPY public.products (id, name, description, short_description, price, category, brand, product_code, image_url, gallery_urls, features, stock, rating, is_active, created_at, updated_at) FROM stdin;
+9	Michael Kors Quinn Large Top Zip Tote Bag (Brown)	Michael Kors Signature Tote Bag.	Stylish signature tote bag.	6499.00	Luxury Bags	Michael Kors		https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_1326,w_1788,y_1074/Gemini_Generated_Image_fqci8bfqci8bfqci_mzt02c.png	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_1326,w_1788,y_1074/Gemini_Generated_Image_fqci8bfqci8bfqci_mzt02c.png", "https://www.myluxezone.com/cdn/shop/files/689a4b5c7b52f1.jpg?v=1755270940&width=600"]	["Tote style", "Daily use"]	7	4.3	t	2026-03-18 17:59:35.728961+00	2026-03-20 09:48:16.332325+00
+49	Airpods Max - With ANC	Experience studio-grade sound with powerful Active Noise Cancellation, Spatial Audio, and Dynamic Head Tracking—packed inside a luxurious over-ear design.	Premium Over-Ear Headphones | Stunning Sound, Iconic Style	10499.00	Headphones/Airpods	Apple		https://www.myluxezone.com/cdn/shop/files/AIRPODS-MAXX.png?v=1753287584&width=800	["https://www.myluxezone.com/cdn/shop/files/AIRPODS-MAXX.png?v=1753287584&width=800", "https://www.myluxezone.com/cdn/shop/files/7d15a480.jpg?v=1753287865&width=800"]	["🔊 Features:\\n✅ Active Noise Cancellation + Transparency Mode\\nBlock out the world or let it in, instantly.", "🎧 Spatial Audio with Head Tracking\\nSurround-sound that moves with you. It’s not just listening—it's an experience.", "🎵 Lossless Audio via USB-C\\nZero compromise. Pure sound quality.", "🧠 Powered by Apple’s H1 chip\\nFor lightning-fast pairing and ultra-smooth performance.", "🎙️ “Hey Siri” support\\nHands-free control for calls, music, and more.", "Package Includes:\\nAirPods Max, Smart Case, Charging Cable"]	10	4.7	t	2026-04-02 11:06:29.576788+00	2026-04-02 11:19:18.218877+00
+22	Prada Sunglasses Model 19 (Brown)	Prada Sunglasses Model 19 in Brown.	Designer sunglasses by Prada.	5499.00	Sunglasses	Prada	PR-SG-19-BRN	https://www.myluxezone.com/cdn/shop/files/681eebc41f7ff2.jpg?v=1760088726&width=800	["https://www.myluxezone.com/cdn/shop/files/681eebc41f7ff2.jpg?v=1760088726&width=800", "https://www.myluxezone.com/cdn/shop/files/681eebc41f1761.jpg?v=1760088726&width=800"]	["Designer eyewear", "UV protection"]	5	4.4	t	2026-03-18 17:59:54.643227+00	2026-03-20 09:48:15.470667+00
+21	Cartier Sunglasses Model 0012 (Gold / Black)	Cartier Sunglasses Model 0012 in Gold / Black.	Luxury sunglasses by Cartier.	5499.00	Sunglasses	Cartier	CA-SG-0012-GB	https://www.myluxezone.com/cdn/shop/files/67950649a485f2.jpg?v=1760088818&width=800	["https://www.myluxezone.com/cdn/shop/files/67950649a485f2.jpg?v=1760088818&width=800", "https://www.myluxezone.com/cdn/shop/files/67950649a42181.jpg?v=1760088818&width=800"]	["Designer eyewear", "UV protection"]	5	4.5	t	2026-03-18 17:59:53.206139+00	2026-03-20 09:48:15.536811+00
+19	Marc Jacobs Sunglasses Model 3674 (Black)	Marc Jacobs Sunglasses Model 3674 in Black.	Designer sunglasses by Marc Jacobs.	5499.00	Sunglasses	Marc Jacobs	MJ-SG-3674-BLK	https://www.myluxezone.com/cdn/shop/files/6628abab7af7d2.jpg?v=1760089020&width=800	["https://www.myluxezone.com/cdn/shop/files/6628abab7af7d2.jpg?v=1760089020&width=800", "https://www.myluxezone.com/cdn/shop/files/6628abab7a1051.jpg?v=1760089020&width=800"]	["Designer eyewear", "UV protection"]	5	4.4	t	2026-03-18 17:59:50.374129+00	2026-03-20 09:48:15.663336+00
+18	Louis Vuitton Sunglasses (Black)	Louis Vuitton Sunglasses Model 88082 in Black.	Luxury sunglasses by Louis Vuitton.	5499.00	Sunglasses	Louis Vuitton	LV-SG-88082-BLK	https://www.myluxezone.com/cdn/shop/files/65f7ffaacc9c82.jpg?v=1760089036&width=800	["https://www.myluxezone.com/cdn/shop/files/65f7ffaacc9c82.jpg?v=1760089036&width=800", "https://www.myluxezone.com/cdn/shop/files/65f7ffaacb1dd0.jpg?v=1760089036&width=800"]	["Designer eyewear", "UV protection"]	6	4.4	t	2026-03-18 17:59:48.96453+00	2026-03-20 09:48:15.726201+00
+16	Versace Odissea Sneaker (Black)	Versace Odissea Sneaker in Black.	Luxury sneaker by Versace.	11099.00	Luxury Shoes	Versace	VE-OD-BW-006	https://www.myluxezone.com/cdn/shop/files/VERSACE-ODISSEA-BLACK-600x400.webp?v=1754551634&width=600	["https://www.myluxezone.com/cdn/shop/files/VERSACE-ODISSEA-BLACK-600x400.webp?v=1754551634&width=600"]	["Designer shoe", "Odissea model"]	6	4.5	t	2026-03-18 17:59:46.091985+00	2026-03-20 09:48:15.857676+00
+15	Versace Odissea Sneaker (White)	Versace Odissea Sneaker in White.	Luxury sneaker by Versace.	11099.00	Luxury Shoes	Versace	VE-OD-BW-006	https://www.myluxezone.com/cdn/shop/files/VERSACE-ODISSEA-WHITE-600x400.webp?v=1754551634&width=600	["https://www.myluxezone.com/cdn/shop/files/VERSACE-ODISSEA-WHITE-600x400.webp?v=1754551634&width=600"]	["Designer shoe", "Odissea model"]	6	4.5	t	2026-03-18 17:59:44.626736+00	2026-03-20 09:48:15.924495+00
+14	Dolce & Gabbana 2.Zero Sneaker (White / Gold)	Dolce & Gabbana 2.Zero Sneaker in White / Gold.	Luxury sneaker by D&G.	12999.00	Luxury Shoes	Dolce & Gabbana	DG-2Z-WG-005	https://lebrouges.in/cdn/shop/files/DOLCE-GABBANA-2.ZERO-WHITE-GOLD.webp?v=1715152432	["https://lebrouges.in/cdn/shop/files/DOLCE-GABBANA-2.ZERO-WHITE-GOLD.webp?v=1715152432"]	["Designer shoe", "2.Zero line"]	6	4.5	t	2026-03-18 17:59:43.171099+00	2026-03-20 09:48:15.99969+00
+13	Gucci x Adidas Originals Gazelle Sneaker	Gucci x Adidas Originals Gazelle Sneaker.	Collab sneaker model.	7099.00	Luxury Shoes	Gucci x Adidas	GXAO-GAZ-004	https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_1077,w_2016,y_792/Gemini_Generated_Image_fqci8bfqci8bfqci_s1gapm.png	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_1077,w_2016,y_792/Gemini_Generated_Image_fqci8bfqci8bfqci_s1gapm.png"]	["Designer collaboration", "Gazelle style"]	5	4.6	t	2026-03-18 17:59:41.705612+00	2026-03-20 09:48:16.060798+00
+12	LV Trainer Sneaker (White / Black)	LV Trainer Sneaker in White / Black.	Luxury sneaker by Louis Vuitton.	9999.00	Luxury Shoes	Louis Vuitton	LV-TR-WB-003	https://www.myluxezone.com/cdn/shop/files/LV-TRAINER-WHITE-BLACK-WHITE-1-600x450.webp?v=1754551620&width=600	["https://www.myluxezone.com/cdn/shop/files/LV-TRAINER-WHITE-BLACK-WHITE-1-600x450.webp?v=1754551620&width=600"]	["Designer shoe", "Trainer silhouette"]	4	4.6	t	2026-03-18 17:59:40.12847+00	2026-03-20 09:48:16.13692+00
+11	LV Trainer Sneaker Boot High (Black)	LV Trainer Sneaker Boot High in Black.	High-top luxury sneaker boot.	23899.00	Luxury Shoes	Louis Vuitton	LV-TR-BH-BLK-002	https://www.myluxezone.com/cdn/shop/files/LV-TRAINER-SNEAKER-BOOT-HIGH-BLACK-GREY-1-600x400.webp?v=1754551697&width=600	["https://www.myluxezone.com/cdn/shop/files/LV-TRAINER-SNEAKER-BOOT-HIGH-BLACK-GREY-1-600x400.webp?v=1754551697&width=600"]	["Designer shoe", "High boot profile"]	6	4.6	t	2026-03-18 17:59:38.655067+00	2026-03-20 09:48:16.205162+00
+10	LV Trainer Sneaker (Black Grey White)	LV Trainer Sneaker in Black / Grey / White.	Luxury sneaker by Louis Vuitton.	11599.00	Luxury Shoes	Louis Vuitton	LV-TR-BGW-001	https://res.cloudinary.com/dryanxqpk/image/upload/v1773339442/Gemini_Generated_Image_fqci8bfqci8bfqci_v0ryql.png	["https://res.cloudinary.com/dryanxqpk/image/upload/v1773339442/Gemini_Generated_Image_fqci8bfqci8bfqci_v0ryql.png"]	["Designer shoe", "Trainer silhouette"]	9	4.6	t	2026-03-18 17:59:37.185466+00	2026-03-20 09:48:16.266172+00
+8	Saint Laurent College Medium Chain Bag	Saint Laurent College Medium Chain Bag.	Iconic chain bag by Saint Laurent.	7499.00	Luxury Bags	Saint Laurent (YSL)	YSL-CMC-008	https://res.cloudinary.com/dryanxqpk/image/upload/v1773387479/Gemini_Generated_Image_fqci8bfqci8bfqci_mt7bms.png	["https://res.cloudinary.com/dryanxqpk/image/upload/v1773387479/Gemini_Generated_Image_fqci8bfqci8bfqci_mt7bms.png"]	["Designer bag", "Chain strap"]	6	4.7	t	2026-03-18 17:59:34.281433+00	2026-03-20 09:48:16.395553+00
+7	LV x Takashi Murakami Bag	Louis Vuitton x Takashi Murakami Collaboration Bag.	Limited collaboration luxury bag.	7299.00	Luxury Bags	Louis Vuitton	LV-TM-CB-007	https://www.royalbagspa.com.au/media/catalog/product/cache/da0175f270382cae6467c4a30091b694/i/m/img_5648_4.jpg	["https://www.royalbagspa.com.au/media/catalog/product/cache/da0175f270382cae6467c4a30091b694/i/m/img_5648_4.jpg"]	["Designer bag", "Collaboration edition"]	7	4.7	t	2026-03-18 17:59:32.866407+00	2026-03-20 09:48:16.4555+00
+17	Dior B23 High Top Sneakers (Black and White) Oblique Canvas	Dior Sneaker in Black.	Luxury sneaker by Dior.	10299.00	Luxury Shoes	Dior		https://res.cloudinary.com/dryanxqpk/image/upload/v1773395309/Gemini_Generated_Image_fqci8bfqci8bfqci_u2wcjd.png	["https://res.cloudinary.com/dryanxqpk/image/upload/v1773395309/Gemini_Generated_Image_fqci8bfqci8bfqci_u2wcjd.png"]	["Design & Materials: The shoe features the iconic Dior Oblique motif on technical canvas, layered with transparent paneling. It has white cotton laces and a white rubber sole. ", "Construction: The design incorporates classic high-top sneaker codes, such as a lace-up front with eyelets, a reinforced round toe, and a rear heel tab.", "Branding: The DIOR signature is prominently displayed on the side of the sole and the heel. ", "Comfort: The sneakers are designed for comfort and durability, featuring a padded collar for ankle support and well-padded insoles."]	8	4.5	t	2026-03-18 17:59:47.515825+00	2026-04-02 10:41:46.088301+00
+6	Aldoaira Women's Top Handle Bag	Aldoaira Women's Top Handle Bag.	Top handle bag by Aldo.	9499.00	Luxury Bags	Aldo	AL-ABTH-006	https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_687,w_938,y_162/Gemini_Generated_Image_fqci8bfqci8bfqci_zhzwit.png	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_687,w_938,y_162/Gemini_Generated_Image_fqci8bfqci8bfqci_zhzwit.png"]	["Designer bag", "Top handle style"]	7	4.4	t	2026-03-18 17:59:31.424767+00	2026-03-20 09:48:16.634738+00
+1	Heather Large Logo Shoulder Bag (With Original Box)	Why You’ll Love It:\r\nPremium-grade materials with a refined finish\r\nSignature detailing for a distinctive, upscale look\r\nFunctional compartments to keep essentials organized\r\nBuilt for durability while maintaining elegance\r\nPerfect for daily use or special occasions, this piece adds instant sophistication to any outfit.	Luxury You Can Carry Anywhere This bag isn’t just an accessory — it’s a statement. Designed with precision and crafted from high-quality materials, it blends timeless style with everyday practicality. From the stitching to the hardware, every detail speaks of premium craftsmanship.	12199.00	Luxury Bags	Michael Kors		https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_587,w_796,y_485/30S2G7HL3B-1546_1_wze6qg.jpg	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_587,w_796,y_485/30S2G7HL3B-1546_1_wze6qg.jpg", "https://michaelkors.scene7.com/is/image/MichaelKors/30S2G7HL3B-1546_2?$pdplarge$", "https://michaelkors.scene7.com/is/image/MichaelKors/30S2G7HL3B-1546_3?$pdplarge$", "https://michaelkors.scene7.com/is/image/MichaelKors/30S2G7HL3B-1546_4?$pdplarge$"]	["Designer bag", "Logo style"]	10	4.5	t	2026-03-18 17:51:32.678664+00	2026-04-02 10:33:28.201204+00
+47	KODAK CHARMERA Digital Camera Keychain (BLIND BOX)	The KODAK CHARMERA is a Digital Camera Keychain collectible. Like Labubu dolls or trading cards, they are sold in a BLIND BOX - you never know which one you're going to get. It comes in 7 styles, including a very rare secret style. The mystery is part of the fun!\r\n\r\nPLEASE NOTE: To shoot photo and video, a microSD memory card must be used (not included).	GOTTA SNAP 'EM ALL!	7999.00	Camera Keychain	Kodak		https://www.myluxezone.com/cdn/shop/files/Artboard11_3268687a-741e-4ed2-9f54-110cec557708.webp?v=1768113841&width=1000	["https://www.myluxezone.com/cdn/shop/files/Artboard11_3268687a-741e-4ed2-9f54-110cec557708.webp?v=1768113841&width=1000", "https://www.myluxezone.com/cdn/shop/files/Charmera_Mood_Outdoor_010.jpg?v=1768113841&width=600", "https://www.myluxezone.com/cdn/shop/files/Charmera_Mood_Indoor_001.jpg?v=1768113841&width=400", "https://www.myluxezone.com/cdn/shop/files/Charmera_Mood_Indoor_003.jpg?v=1768113841&width=400", "https://www.myluxezone.com/cdn/shop/files/Charmera_Mood_Indoor_005.jpg?v=1768113841&width=400"]	[]	10	4.6	t	2026-04-02 08:16:05.998057+00	2026-04-02 08:17:10.953975+00
+45	GG Supreme Kingsnake Print	Premium designer wallets from brands like Louis Vuitton, Gucci, Dior, Prada, Bottega Veneta and more.\r\n\r\nCrafted with high-quality materials, precise stitching, and a sleek, functional design. Built for everyday use with a refined luxury finish.\r\n\r\nWe are independent resellers, not affiliated with any brand or trademark owner.\r\nBranding, tags, and packaging may vary by batch.	Luxury wallet by Gucci.	5599.00	Wallets	Gucci		https://www.myluxezone.com/cdn/shop/files/6814ffdb85bfd0.jpg?v=1767719949&width=600	["https://www.myluxezone.com/cdn/shop/files/6814ffdb85bfd0.jpg?v=1767719949&width=600", "https://www.myluxezone.com/cdn/shop/files/6814ffdb85b1c1.jpg?v=1767719949&width=600", "https://www.myluxezone.com/cdn/shop/files/6814ffdb876233.jpg?v=1767719949&width=600", "https://www.myluxezone.com/cdn/shop/files/6814ffdb869d32.jpg?v=1767719949&width=600"]	["Material: Crafted from high-quality materials, often GG Supreme canvas or leather. ", "Design: It has a classic bi-fold silhouette and features the distinctive red, blue, and white Kingsnake design printed over the monogram base, adding a bold, eye-catching statement.", "Functionality: The interior is designed for practicality, typically featuring multiple card slots and a billfold compartment for organization of essentials.", "Craftsmanship: The product exemplifies Italian craftsmanship, known for its attention to detail and quality."]	10	4.4	t	2026-03-18 18:00:28.14482+00	2026-04-02 08:22:38.212843+00
+24	Dita Sunglasses Model H2852 (Black)	Package Includes:\r\n\r\n1 x Pair of luxury sunglasses (with all brand tags)\r\n1 x Premium hard case\r\n1 x Microfiber cleaning cloth\r\n\r\nNote:\r\nActual color and finish may vary slightly due to lighting and photography.	Elevate your style with these premium luxury sunglasses. Designed for comfort and crafted with attention to detail, each pair comes with full brand tags, a protective case, and a cleaning cloth. The lenses offer UV protection and crystal-clear visibility, making them perfect for daily wear or travel.	5499.00	Sunglasses	Dita		https://www.myluxezone.com/cdn/shop/files/6450e0f4c44392.jpg?v=1760089098&width=800	["https://www.myluxezone.com/cdn/shop/files/6450e0f4c44392.jpg?v=1760089098&width=800", "https://www.myluxezone.com/cdn/shop/files/6450e0f4c2f220.jpg?v=1760089098&width=800"]	["Designer eyewear", "UV protection"]	10	4.4	t	2026-03-18 17:59:57.548007+00	2026-04-02 10:20:50.94033+00
+23	Versace Sunglasses Jacques Marie Mage Molino style	["Design & Style: These sunglasses feature a classic aviator (or pilot) silhouette with a double metal bridge. The design is known for its timeless appeal and sophisticated look. ",\r\n"Materials & Finish: The frames are crafted from metal and typically have a smooth golden finish. Cartier uses premium materials like titanium or high-quality metal in their eyewear. ",\r\n"Iconic Details: A signature detail is the iconic "C" logo which often connects the lens to the temple (arm). The metalwork may have a genuine patterned finish. ",\r\n"Lenses: The lenses are dark (likely grey or green gradient). Many Cartier sunglasses include features like UV protection and polarized lenses to reduce glare. ",\r\n"Craftsmanship & Comfort: Known for quality craftsmanship and attention to detail, the frames are designed to be comfortable and durable, often with adjustable nose pads for a better fit. "]	Designer sunglasses by Versace.	5499.00	Sunglasses	Versace		https://www.myluxezone.com/cdn/shop/files/682c202ca722b2.jpg?v=1760088714&width=800	["https://www.myluxezone.com/cdn/shop/files/682c202ca722b2.jpg?v=1760088714&width=800", "https://www.myluxezone.com/cdn/shop/files/682c202ca6a6e1.jpg?v=1760088714&width=800"]	["Designer eyewear", "UV protection"]	5	4.4	t	2026-03-18 17:59:56.056605+00	2026-04-02 10:28:19.818992+00
+2	Gigi Large Empire Signature Logo Tote Bag	Why You’ll Love It:\r\nPremium-grade materials with a refined finish\r\nSignature detailing for a distinctive, upscale look\r\nFunctional compartments to keep essentials organized\r\nBuilt for durability while maintaining elegance\r\nPerfect for daily use or special occasions, this piece adds instant sophistication to any outfit.	Luxury You Can Carry Anywhere This bag isn’t just an accessory — it’s a statement. Designed with precision and crafted from high-quality materials, it blends timeless style with everyday practicality. From the stitching to the hardware, every detail speaks of premium craftsmanship.	9999.00	Luxury Bags	Michael Kors		https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_772,w_796,y_300/30H3G3GT3B-0227_1_gcw7ri.jpg	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_772,w_796,y_300/30H3G3GT3B-0227_1_gcw7ri.jpg"]	["Premium-grade materials with a refined finish", "Signature detailing for a distinctive, upscale look", "Functional compartments to keep essentials organized", "Built for durability while maintaining elegance", "Perfect for daily use or special occasions, this piece adds instant sophistication to any outfit."]	10	4.5	t	2026-03-18 17:59:25.730403+00	2026-04-02 10:31:52.267214+00
+3	Coach Juliet Shoulder Bag in Signature Canvas	Why You’ll Love It:\r\nPremium-grade materials with a refined finish\r\nSignature detailing for a distinctive, upscale look\r\nFunctional compartments to keep essentials organized\r\nBuilt for durability while maintaining elegance\r\nPerfect for daily use or special occasions, this piece adds instant sophistication to any outfit.	Luxury You Can Carry Anywhere This bag isn’t just an accessory — it’s a statement. Designed with precision and crafted from high-quality materials, it blends timeless style with everyday practicality. From the stitching to the hardware, every detail speaks of premium craftsmanship.	6499.00	Luxury Bags	Coach		https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_594,w_893,y_470/Gemini_Generated_Image_fqci8bfqci8bfqci_gdu6sd.png	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_594,w_893,y_470/Gemini_Generated_Image_fqci8bfqci8bfqci_gdu6sd.png"]	["Designer bag", "Spacious tote"]	10	4.5	t	2026-03-18 17:59:27.148784+00	2026-04-02 10:37:17.013286+00
+4	Coach Mini Grace Crossbody Bag	Coach Mini Grace Crossbody Bag.	Compact crossbody bag by Coach.	6499.00	Luxury Bags	Coach	CO-MG-CB-004	https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_597,w_1024,y_318/Gemini_Generated_Image_fqci8bfqci8bfqci_akxeqc.png	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_597,w_1024,y_318/Gemini_Generated_Image_fqci8bfqci8bfqci_akxeqc.png"]	["Designer bag", "Crossbody style"]	10	4.5	t	2026-03-18 17:59:28.564357+00	2026-03-18 18:04:42.80992+00
+35	MYSLF Eau de Parfum	Yves Saint Laurent MYSLF Eau de Parfum.	Modern fragrance by YSL.	4999.00	Perfumes	Yves Saint Laurent	YSL-MYSLF-EDP	https://www.myluxezone.com/cdn/shop/files/680b65e26d2653.jpg?v=1751482725&width=600	["https://www.myluxezone.com/cdn/shop/files/680b65e26d2653.jpg?v=1751482725&width=600"]	["EDP concentration", "Long lasting"]	10	4.7	t	2026-03-18 18:00:13.598555+00	2026-03-18 18:05:13.053244+00
+5	Coach Women's Hobo Bag	Coach Women's Hobo Bag.	Luxury hobo bag by Coach.	6899.00	Luxury Bags	Coach	CO-WH-005	https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_803,w_890,y_301/Gemini_Generated_Image_fqci8bfqci8bfqci_hmxqf3.png	["https://res.cloudinary.com/dryanxqpk/image/upload/c_crop,g_north_west,h_803,w_890,y_301/Gemini_Generated_Image_fqci8bfqci8bfqci_hmxqf3.png"]	["Designer bag", "Hobo silhouette"]	10	4.5	t	2026-03-18 17:59:30.003836+00	2026-03-18 18:04:43.787986+00
+20	Burberry Sunglasses Model 3324 (Black)	Burberry Sunglasses Model 3324 in Black.	Designer sunglasses by Burberry.	5499.00	Sunglasses	Burberry	BB-SG-3324-BLK	https://www.myluxezone.com/cdn/shop/files/66bdc6f6a808f2.jpg?v=1760088954&width=800	["https://www.myluxezone.com/cdn/shop/files/66bdc6f6a808f2.jpg?v=1760088954&width=800", "https://www.myluxezone.com/cdn/shop/files/66bdc6f6a720c1.jpg?v=1760088954&width=800"]	["Designer eyewear", "UV protection"]	6	4.4	t	2026-03-18 17:59:51.792097+00	2026-03-20 09:48:15.600783+00
+28	Sauvage Eau de Parfum	Dior Sauvage Eau de Parfum.	Luxury fragrance by Dior.	4999.00	Perfumes	Dior	DI-SAU-EDP	https://www.myluxezone.com/cdn/shop/files/6854b640ba8681.jpg?v=1751482201&width=400	["https://www.myluxezone.com/cdn/shop/files/6854b640ba8681.jpg?v=1751482201&width=400", "https://res.cloudinary.com/dryanxqpk/image/upload/v1773342241/Gemini_Generated_Image_fqci8bfqci8bfqci_gvryoy.png"]	["EDP concentration", "Long lasting"]	10	4.8	t	2026-03-18 18:00:03.26306+00	2026-03-18 18:05:06.290265+00
+29	Azzaro - The Most Wanted	Azzaro The Most Wanted.	Luxury fragrance by Azzaro.	4999.00	Perfumes	Azzaro	AZ-MW-EDP	https://www.myluxezone.com/cdn/shop/files/6831caf30cf1e0.jpg?v=1751482526&width=700	["https://www.myluxezone.com/cdn/shop/files/6831caf30cf1e0.jpg?v=1751482526&width=700", "https://www.myluxezone.com/cdn/shop/files/6831caf30d13c1.jpg?v=1751482526&width=600"]	["Long lasting", "Signature scent"]	10	4.7	t	2026-03-18 18:00:04.751894+00	2026-03-18 18:05:07.254817+00
+30	Creed Aventus	Creed Aventus.	Luxury fragrance by Creed.	4999.00	Perfumes	Creed	CR-AVT-EDP	https://www.myluxezone.com/cdn/shop/files/63e8c6c9081e92.jpg?v=1751483457&width=600	["https://www.myluxezone.com/cdn/shop/files/63e8c6c9081e92.jpg?v=1751483457&width=600", "https://www.myluxezone.com/cdn/shop/files/63e8c6c9088714.jpg?v=1751483457&width=600"]	["Premium niche perfume", "Long lasting"]	10	4.9	t	2026-03-18 18:00:06.204512+00	2026-03-18 18:05:08.221908+00
+31	Green Irish Tweed	Creed Green Irish Tweed.	Luxury fragrance by Creed.	4999.00	Perfumes	Creed	CR-GIT-EDP	https://www.myluxezone.com/cdn/shop/files/667a9eb53e7fc0.jpg?v=1751482996&width=600	["https://www.myluxezone.com/cdn/shop/files/667a9eb53e7fc0.jpg?v=1751482996&width=600", "https://www.myluxezone.com/cdn/shop/files/667a9eb53ec4b1.jpg?v=1751482996&width=600"]	["Premium niche perfume", "Fresh aromatic profile"]	10	4.8	t	2026-03-18 18:00:07.853429+00	2026-03-18 18:05:09.187292+00
+32	Uomo Born in Roma (100ml)	Valentino Uomo Born in Roma (100ml).	Luxury fragrance by Valentino.	4999.00	Perfumes	Valentino	VA-UBR-100	https://www.myluxezone.com/cdn/shop/files/67813b659a3d20.jpg?v=1751482850&width=600	["https://www.myluxezone.com/cdn/shop/files/67813b659a3d20.jpg?v=1751482850&width=600", "https://www.myluxezone.com/cdn/shop/files/67813b659a5a01.jpg?v=1751482850&width=600"]	["100ml bottle", "Long lasting"]	10	4.7	t	2026-03-18 18:00:09.288566+00	2026-03-18 18:05:10.159218+00
+33	Stronger With You	Giorgio Armani Stronger With You.	Luxury fragrance by Giorgio Armani.	4999.00	Perfumes	Giorgio Armani	GA-SWY-EDP	https://res.cloudinary.com/dryanxqpk/image/upload/v1773342633/Gemini_Generated_Image_fqci8bfqci8bfqci_wn6gor.png	["https://res.cloudinary.com/dryanxqpk/image/upload/v1773342633/Gemini_Generated_Image_fqci8bfqci8bfqci_wn6gor.png"]	["Modern scent profile", "Long lasting"]	10	4.7	t	2026-03-18 18:00:10.711532+00	2026-03-18 18:05:11.13017+00
+34	Acqua di Gio	Giorgio Armani Acqua di Gio.	Iconic fragrance by Giorgio Armani.	4999.00	Perfumes	Giorgio Armani	GA-ADG-EDT	https://www.myluxezone.com/cdn/shop/files/63e8cff168d3e1.jpg?v=1751483429&width=600	["https://www.myluxezone.com/cdn/shop/files/63e8cff168d3e1.jpg?v=1751483429&width=600", "https://www.myluxezone.com/cdn/shop/files/63e8cff168ff82.jpg?v=1751483429&width=600"]	["Fresh aquatic profile", "Classic scent"]	10	4.7	t	2026-03-18 18:00:12.150688+00	2026-03-18 18:05:12.091862+00
+36	Bleu de Chanel	Chanel Bleu de Chanel.	Iconic fragrance by Chanel.	4999.00	Perfumes	Chanel	CH-BDC-EDP	https://www.myluxezone.com/cdn/shop/files/646498ee26fa10.jpg?v=1755633419&width=600	["https://www.myluxezone.com/cdn/shop/files/646498ee26fa10.jpg?v=1755633419&width=600", "https://www.myluxezone.com/cdn/shop/files/646498ee26fa10.jpg?v=1755633419&width=600"]	["Classic luxury scent", "Long lasting"]	10	4.8	t	2026-03-18 18:00:15.027558+00	2026-03-18 18:05:14.029083+00
+37	Oud Wood	Tom Ford Oud Wood.	Luxury fragrance by Tom Ford.	4999.00	Perfumes	Tom Ford	TF-OW-EDP	https://res.cloudinary.com/dryanxqpk/image/upload/v1773343253/Gemini_Generated_Image_fqci8bfqci8bfqci_wa6xh1.png	["https://res.cloudinary.com/dryanxqpk/image/upload/v1773343253/Gemini_Generated_Image_fqci8bfqci8bfqci_wa6xh1.png"]	["Woody profile", "Premium blend"]	10	4.8	t	2026-03-18 18:00:16.485723+00	2026-03-18 18:05:14.987255+00
+27	Ray-Ban Sunglasses Model 3670 (Full Black Glass)	Package Includes:\r\n\r\n1 x Pair of luxury sunglasses (with all brand tags)\r\n1 x Premium hard case\r\n1 x Microfiber cleaning cloth\r\n\r\nNote:\r\nActual color and finish may vary slightly due to lighting and photography.	Elevate your style with these premium luxury sunglasses. Designed for comfort and crafted with attention to detail, each pair comes with full brand tags, a protective case, and a cleaning cloth. The lenses offer UV protection and crystal-clear visibility, making them perfect for daily wear or travel.	5499.00	Sunglasses	Ray-Ban		https://www.myluxezone.com/cdn/shop/files/647f0b3d8afc31.jpg?v=1760089079&width=800	["https://www.myluxezone.com/cdn/shop/files/647f0b3d8afc31.jpg?v=1760089079&width=800", "https://www.myluxezone.com/cdn/shop/files/647f0b3d8a5630.jpg?v=1760089079&width=800"]	["Designer eyewear", "UV protection", "Crystal-Clear Visibilty", "Comfortable"]	10	4.4	t	2026-03-18 18:00:01.84829+00	2026-04-02 09:58:02.565678+00
+25	Gucci Sunglasses Model 0256 (Black)	Package Includes:\r\n\r\n1 x Pair of luxury sunglasses (with all brand tags)\r\n1 x Premium hard case\r\n1 x Microfiber cleaning cloth\r\n\r\nNote:\r\nActual color and finish may vary slightly due to lighting and photography.	Elevate your style with these premium luxury sunglasses. Designed for comfort and crafted with attention to detail, each pair comes with full brand tags, a protective case, and a cleaning cloth. The lenses offer UV protection and crystal-clear visibility, making them perfect for daily wear or travel.	5499.00	Sunglasses	Gucci		https://www.myluxezone.com/cdn/shop/files/64515587d62fd0.jpg?v=1760089090&width=800	["https://www.myluxezone.com/cdn/shop/files/64515587d62fd0.jpg?v=1760089090&width=800"]	["Designer eyewear", "UV protection"]	10	4.4	t	2026-03-18 17:59:58.995517+00	2026-04-02 10:17:56.675515+00
+26	Lacoste Sunglasses Model 143 (Gold Black)	Package Includes:\r\n\r\n1 x Pair of luxury sunglasses (with all brand tags)\r\n1 x Premium hard case\r\n1 x Microfiber cleaning cloth\r\n\r\nNote:\r\nActual color and finish may vary slightly due to lighting and photography.	Elevate your style with these premium luxury sunglasses. Designed for comfort and crafted with attention to detail, each pair comes with full brand tags, a protective case, and a cleaning cloth. The lenses offer UV protection and crystal-clear visibility, making them perfect for daily wear or travel.	5499.00	Sunglasses	Lacoste		https://www.myluxezone.com/cdn/shop/files/67346923ee8e70.jpg?v=1760088546&width=800	["https://www.myluxezone.com/cdn/shop/files/67346923ee8e70.jpg?v=1760088546&width=800", "https://www.myluxezone.com/cdn/shop/files/67346923efb902.jpg?v=1760088546&width=800"]	["Designer eyewear", "UV protection"]	10	4.3	t	2026-03-18 18:00:00.426963+00	2026-04-02 10:08:07.661126+00
+38	Apogée Eau de Parfum	Louis Vuitton Apogée Eau de Parfum.	Luxury fragrance by Louis Vuitton.	5499.00	Perfumes	Louis Vuitton	LV-APO-EDP	https://www.myluxezone.com/cdn/shop/files/66d2ef0e914683.jpg?v=1751482982&width=600	["https://www.myluxezone.com/cdn/shop/files/66d2ef0e914683.jpg?v=1751482982&width=600", "https://www.myluxezone.com/cdn/shop/files/66d2ef0e9118a1.jpg?v=1751482982&width=600"]	["EDP concentration", "Elegant floral profile"]	10	4.8	t	2026-03-18 18:00:17.905114+00	2026-03-18 18:05:16.017878+00
+39	Gentleman Réserve Privée (100ml)	Givenchy Gentleman Réserve Privée (100ml).	Luxury fragrance by Givenchy.	4999.00	Perfumes	Givenchy	GI-GRP-100	https://www.myluxezone.com/cdn/shop/files/685e7917845312.jpg?v=1751481991&width=400	["https://www.myluxezone.com/cdn/shop/files/685e7917845312.jpg?v=1751481991&width=400", "https://www.myluxezone.com/cdn/shop/files/685e79178411c0.jpg?v=1751481991&width=600"]	["100ml bottle", "Refined scent profile"]	10	4.7	t	2026-03-18 18:00:19.318397+00	2026-03-18 18:05:16.97645+00
+40	Gucci Bi-fold Men's Wwallet	Crafted with high-quality materials, precise stitching, and a sleek, functional design. Built for everyday use with a refined luxury finish.\r\n\r\nWe are independent resellers, not affiliated with any brand or trademark owner.\r\nBranding, tags, and packaging may vary by batch.	This Gucci Bi-fold men's wallet is crafted from leather featuring the signature GG embossed pattern and a green and red web stripe.	5499.00	Wallets	Gucci		https://www.myluxezone.com/cdn/shop/files/6543dcdc3bcda1.jpg?v=1767720050&width=600	["https://www.myluxezone.com/cdn/shop/files/6543dcdc3bcda1.jpg?v=1767720050&width=600", "https://www.myluxezone.com/cdn/shop/files/6543dcdc39b310.jpg?v=1767720051&width=600"]	["Designer wallet", "Daily utility"]	10	4.4	t	2026-03-18 18:00:20.735706+00	2026-04-02 09:54:03.684287+00
+46	Burberry Monogram Print Wallet	Burberry Wallet.	Luxury wallet by Burberry.	5499.00	Wallets	Burberry		https://www.myluxezone.com/cdn/shop/files/67816aee0b7451.jpg?v=1767719991&width=600	["https://www.myluxezone.com/cdn/shop/files/67816aee0b7451.jpg?v=1767719991&width=600", "https://www.myluxezone.com/cdn/shop/files/67816aee0aa6e0.jpg?v=1767719992&width=600"]	["Designer wallet", "Daily utility"]	10	4.4	t	2026-03-18 18:00:29.560712+00	2026-04-02 09:16:08.968062+00
+44	Men's Black Logo Print Leather Bifold Wallet	Burberry Wallet.	Crafted with high-quality materials, precise stitching, and a sleek, functional design. Built for everyday use with a refined luxury finish.	5599.00	Wallets	Burberry		https://www.myluxezone.com/cdn/shop/files/653812de14c2f1.jpg?v=1767720052&width=600	["https://www.myluxezone.com/cdn/shop/files/653812de14c2f1.jpg?v=1767720052&width=600", "https://www.myluxezone.com/cdn/shop/files/653812de13efe0.jpg?v=1767720052&width=600"]	["Design & Material: Crafted from high-quality materials (likely grainy leather or coated canvas based on similar models) with precise stitching and a sleek, functional finish.", "Interior Layout: Typically includes eight card slots and a note compartment with a divider to fit various currencies.", "Dimensions: Approximately 11 x 9.5 cm (4.3 x 3.5 inches).", "Packaging: Includes branding, tags, and packaging that may vary by batch."]	10	4.5	t	2026-03-18 18:00:26.695137+00	2026-04-02 09:22:16.51722+00
+43	Louis Vuitton Wallet	Louis Vuitton Wallet.	Luxury wallet by Louis Vuitton.	5499.00	Wallets	Louis Vuitton		https://www.myluxezone.com/cdn/shop/files/6585f625daaea1.jpg?v=1767720066&width=600	["https://www.myluxezone.com/cdn/shop/files/6585f625daaea1.jpg?v=1767720066&width=600", "https://www.myluxezone.com/cdn/shop/files/6585f625da06a0.jpg?v=1767720066&width=600"]	["Designer wallet", "Premium finish"]	10	4.5	t	2026-03-18 18:00:25.277808+00	2026-04-02 09:32:49.358947+00
+42	Hudson Bi-Fold Wallet 3 in 1 Admiral Multi Cllection	Michael Kors Wallet.	Luxury wallet by Michael Kors.	5499.00	Wallets	Michael Kors		https://www.myluxezone.com/cdn/shop/files/67f7758edfa660.jpg?v=1767719982&width=600	["https://www.myluxezone.com/cdn/shop/files/67f7758edfa660.jpg?v=1767719982&width=600", "https://www.myluxezone.com/cdn/shop/files/67f7758ee1fae4.jpg?v=1767719982&width=600"]	["Material: Crafted from signature PVC coated canvas with leather details. ", "Design: The bifold wallet features the iconic Michael Kors logo pattern with distinctive vertical stripes in a contrasting color. ", "Interior Details: The wallet includes eight card slots, two bill compartments, and two side slip pockets."]	10	4.3	t	2026-03-18 18:00:23.852502+00	2026-04-02 09:41:08.103631+00
+41	GG Supreme Bee Long Wallet	Crafted with high-quality materials, precise stitching, and a sleek, functional design. Built for everyday use with a refined luxury finish.\r\n\r\nWe are independent resellers, not affiliated with any brand or trademark owner.\r\nBranding, tags, and packaging may vary by batch.	Luxury women’s long wallet by Gucci.	5899.00	Wallets	Gucci		https://www.myluxezone.com/cdn/shop/files/66532e3aad7310.jpg?v=1767720028&width=600	["https://www.myluxezone.com/cdn/shop/files/66532e3aad7310.jpg?v=1767720028&width=600", "https://www.myluxezone.com/cdn/shop/files/66532e3ab149f3.jpg?v=1767720028&width=600"]	["Design: A long, sleek silhouette. ", "Color: Primarily black with a yellow/gold and orange bee graphic.", "Closure: Features a secure single-zipper closure. ", "Material: Typically crafted from leather or faux leather. ", "Interior: Often includes interior features such as an interior zipper pocket, card holder, and coin pocket for organization. "]	10	4.4	t	2026-03-18 18:00:22.232522+00	2026-04-02 09:44:18.139639+00
+48	Gabrielle Paris	A premium fragrance crafted for those who appreciate class, confidence, and lasting impressions. Whether you're heading to a special event or just want to elevate your everyday presence, this scent delivers unmatched freshness and depth.		4499.00	Perfumes	Chanel		https://www.myluxezone.com/cdn/shop/files/650b0d813357a0.jpg?v=1751516661&width=600	["https://www.myluxezone.com/cdn/shop/files/650b0d813357a0.jpg?v=1751516661&width=600", "https://www.myluxezone.com/cdn/shop/files/650b0d8133b9c2.jpg?v=1751516661&width=600", "https://www.myluxezone.com/cdn/shop/files/650b0d81341f04.jpg?v=1751516661&width=600"]	["Long-lasting performance", "Elegant bottle, perfect for gifting", "Suitable for daily wear or occasions", "100ML / 60ML Eau de Parfum"]	10	4.5	t	2026-04-02 10:54:39.008103+00	2026-04-02 10:54:39.008118+00
+\.
+
+
+--
+-- TOC entry 3576 (class 0 OID 16480)
+-- Dependencies: 230
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 69311
+--
+
+COPY public.users (id, password, last_login, is_superuser, name, email, is_active, is_staff, created_at, email_verification_code, email_verification_expires_at, email_verified) FROM stdin;
+3	pbkdf2_sha256$1200000$oluy5JDcRVddJyadHt0sLR$YLL8q41nBykwAgAz2S1q5o7fvVYSxJ5UMHYd4MJUs/0=	2026-04-02 08:10:21.096074+00	f	Hardik	hardik@gmail.com	t	t	2026-03-18 18:36:08.119031+00		\N	t
+1	pbkdf2_sha256$1200000$bRUEF2Dy9HPi1T6MEaxKpI$sjxQmZ+lWjfCotir80l8chYditMKtmKBMjJjqbw5tgw=	2026-04-02 08:11:10.405002+00	t	Agastya	agastya@gmail.com	t	t	2026-03-18 17:19:47.551+00	294443	2026-03-31 17:04:13+00	t
+\.
+
+
+--
+-- TOC entry 3578 (class 0 OID 16496)
+-- Dependencies: 232
+-- Data for Name: users_groups; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 69619
+--
+
+COPY public.users_groups (id, user_id, group_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3580 (class 0 OID 16505)
+-- Dependencies: 234
+-- Data for Name: users_user_permissions; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 69648
+--
+
+COPY public.users_user_permissions (id, user_id, permission_id) FROM stdin;
+1	3	5
+2	3	38
+3	3	39
+4	3	40
+5	3	13
+6	3	21
+7	3	33
+8	3	34
+9	3	35
+10	3	36
+\.
+
+
+--
+-- TOC entry 3593 (class 0 OID 16683)
+-- Dependencies: 247
+-- Data for Name: wishlist_items; Type: TABLE DATA; Schema: public; Owner: -
+-- Data Pos: 69722
+--
+
+COPY public.wishlist_items (id, product_id, created_at, user_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3603 (class 0 OID 0)
+-- Dependencies: 248
+-- Name: admin_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.admin_logs_id_seq', 23, true);
+
+
+--
+-- TOC entry 3604 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.auth_group_id_seq', 1, false);
+
+
+--
+-- TOC entry 3605 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: auth_group_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
+
+
+--
+-- TOC entry 3606 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 48, true);
+
+
+--
+-- TOC entry 3607 (class 0 OID 0)
+-- Dependencies: 237
+-- Name: cart_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.cart_items_id_seq', 42, true);
+
+
+--
+-- TOC entry 3608 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.django_admin_log_id_seq', 96, true);
+
+
+--
+-- TOC entry 3609 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 12, true);
+
+
+--
+-- TOC entry 3610 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 33, true);
+
+
+--
+-- TOC entry 3611 (class 0 OID 0)
+-- Dependencies: 241
+-- Name: order_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.order_items_id_seq', 32, true);
+
+
+--
+-- TOC entry 3612 (class 0 OID 0)
+-- Dependencies: 239
+-- Name: orders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.orders_id_seq', 24, true);
+
+
+--
+-- TOC entry 3613 (class 0 OID 0)
+-- Dependencies: 243
+-- Name: products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.products_id_seq', 1, false);
+
+
+--
+-- TOC entry 3614 (class 0 OID 0)
+-- Dependencies: 231
+-- Name: users_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.users_groups_id_seq', 1, false);
+
+
+--
+-- TOC entry 3615 (class 0 OID 0)
+-- Dependencies: 229
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 36, true);
+
+
+--
+-- TOC entry 3616 (class 0 OID 0)
+-- Dependencies: 233
+-- Name: users_user_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.users_user_permissions_id_seq', 21, true);
+
+
+--
+-- TOC entry 3617 (class 0 OID 0)
+-- Dependencies: 246
+-- Name: wishlist_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+SELECT pg_catalog.setval('public.wishlist_items_id_seq', 1, false);
+
+
+--
+-- TOC entry 3400 (class 2606 OID 16738)
+-- Dependencies: 249
+-- Name: admin_logs admin_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.admin_logs
+    ADD CONSTRAINT admin_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3324 (class 2606 OID 16476)
+-- Dependencies: 226
+-- Name: auth_group auth_group_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_group
+    ADD CONSTRAINT auth_group_name_key UNIQUE (name);
+
+
+--
+-- TOC entry 3329 (class 2606 OID 16461)
+-- Dependencies: 228 228
+-- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_0cd325b0_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissions_group_id_permission_id_0cd325b0_uniq UNIQUE (group_id, permission_id);
+
+
+--
+-- TOC entry 3332 (class 2606 OID 16450)
+-- Dependencies: 228
+-- Name: auth_group_permissions auth_group_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissions_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3326 (class 2606 OID 16439)
+-- Dependencies: 226
+-- Name: auth_group auth_group_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_group
+    ADD CONSTRAINT auth_group_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3319 (class 2606 OID 16452)
+-- Dependencies: 224 224
+-- Name: auth_permission auth_permission_content_type_id_codename_01ab375a_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_permission
+    ADD CONSTRAINT auth_permission_content_type_id_codename_01ab375a_uniq UNIQUE (content_type_id, codename);
+
+
+--
+-- TOC entry 3321 (class 2606 OID 16431)
+-- Dependencies: 224
+-- Name: auth_permission auth_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_permission
+    ADD CONSTRAINT auth_permission_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3355 (class 2606 OID 16581)
+-- Dependencies: 238
+-- Name: cart_items cart_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.cart_items
+    ADD CONSTRAINT cart_items_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3360 (class 2606 OID 16583)
+-- Dependencies: 238 238
+-- Name: cart_items cart_items_user_id_product_id_e4319647_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.cart_items
+    ADD CONSTRAINT cart_items_user_id_product_id_e4319647_uniq UNIQUE (user_id, product_id);
+
+
+--
+-- TOC entry 3352 (class 2606 OID 16556)
+-- Dependencies: 236
+-- Name: django_admin_log django_admin_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_admin_log
+    ADD CONSTRAINT django_admin_log_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3314 (class 2606 OID 16421)
+-- Dependencies: 222 222
+-- Name: django_content_type django_content_type_app_label_model_76bd3d3b_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_content_type
+    ADD CONSTRAINT django_content_type_app_label_model_76bd3d3b_uniq UNIQUE (app_label, model);
+
+
+--
+-- TOC entry 3316 (class 2606 OID 16419)
+-- Dependencies: 222
+-- Name: django_content_type django_content_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_content_type
+    ADD CONSTRAINT django_content_type_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3312 (class 2606 OID 16409)
+-- Dependencies: 220
+-- Name: django_migrations django_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_migrations
+    ADD CONSTRAINT django_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3389 (class 2606 OID 16679)
+-- Dependencies: 245
+-- Name: django_session django_session_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_session
+    ADD CONSTRAINT django_session_pkey PRIMARY KEY (session_key);
+
+
+--
+-- TOC entry 3373 (class 2606 OID 16631)
+-- Dependencies: 242
+-- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.order_items
+    ADD CONSTRAINT order_items_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3363 (class 2606 OID 16614)
+-- Dependencies: 240
+-- Name: orders orders_order_number_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_order_number_key UNIQUE (order_number);
+
+
+--
+-- TOC entry 3365 (class 2606 OID 16612)
+-- Dependencies: 240
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3384 (class 2606 OID 16669)
+-- Dependencies: 244
+-- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.products
+    ADD CONSTRAINT products_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3335 (class 2606 OID 16494)
+-- Dependencies: 230
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- TOC entry 3340 (class 2606 OID 16503)
+-- Dependencies: 232
+-- Name: users_groups users_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_groups
+    ADD CONSTRAINT users_groups_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3343 (class 2606 OID 16515)
+-- Dependencies: 232 232
+-- Name: users_groups users_groups_user_id_group_id_fc7788e8_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_groups
+    ADD CONSTRAINT users_groups_user_id_group_id_fc7788e8_uniq UNIQUE (user_id, group_id);
+
+
+--
+-- TOC entry 3337 (class 2606 OID 16492)
+-- Dependencies: 230
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3346 (class 2606 OID 16512)
+-- Dependencies: 234
+-- Name: users_user_permissions users_user_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_user_permissions
+    ADD CONSTRAINT users_user_permissions_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3349 (class 2606 OID 16529)
+-- Dependencies: 234 234
+-- Name: users_user_permissions users_user_permissions_user_id_permission_id_3b86cbdf_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_user_permissions
+    ADD CONSTRAINT users_user_permissions_user_id_permission_id_3b86cbdf_uniq UNIQUE (user_id, permission_id);
+
+
+--
+-- TOC entry 3394 (class 2606 OID 16692)
+-- Dependencies: 247
+-- Name: wishlist_items wishlist_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.wishlist_items
+    ADD CONSTRAINT wishlist_items_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3397 (class 2606 OID 16694)
+-- Dependencies: 247 247
+-- Name: wishlist_items wishlist_items_user_id_product_id_258ffff0_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.wishlist_items
+    ADD CONSTRAINT wishlist_items_user_id_product_id_258ffff0_uniq UNIQUE (user_id, product_id);
+
+
+--
+-- TOC entry 3398 (class 1259 OID 16740)
+-- Dependencies: 249 249
+-- Name: admin_logs_action_cc36f2_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX admin_logs_action_cc36f2_idx ON public.admin_logs USING btree (action, "timestamp");
+
+
+--
+-- TOC entry 3401 (class 1259 OID 16741)
+-- Dependencies: 249 249
+-- Name: admin_logs_target__42fc56_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX admin_logs_target__42fc56_idx ON public.admin_logs USING btree (target_model, target_id);
+
+
+--
+-- TOC entry 3402 (class 1259 OID 16747)
+-- Dependencies: 249
+-- Name: admin_logs_user_id_7cc6dd52; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX admin_logs_user_id_7cc6dd52 ON public.admin_logs USING btree (user_id);
+
+
+--
+-- TOC entry 3403 (class 1259 OID 16739)
+-- Dependencies: 249 249
+-- Name: admin_logs_user_id_916751_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX admin_logs_user_id_916751_idx ON public.admin_logs USING btree (user_id, "timestamp");
+
+
+--
+-- TOC entry 3322 (class 1259 OID 16477)
+-- Dependencies: 226
+-- Name: auth_group_name_a6ea08ec_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX auth_group_name_a6ea08ec_like ON public.auth_group USING btree (name varchar_pattern_ops);
+
+
+--
+-- TOC entry 3327 (class 1259 OID 16472)
+-- Dependencies: 228
+-- Name: auth_group_permissions_group_id_b120cbf9; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX auth_group_permissions_group_id_b120cbf9 ON public.auth_group_permissions USING btree (group_id);
+
+
+--
+-- TOC entry 3330 (class 1259 OID 16473)
+-- Dependencies: 228
+-- Name: auth_group_permissions_permission_id_84c5c92e; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX auth_group_permissions_permission_id_84c5c92e ON public.auth_group_permissions USING btree (permission_id);
+
+
+--
+-- TOC entry 3317 (class 1259 OID 16458)
+-- Dependencies: 224
+-- Name: auth_permission_content_type_id_2f476e4b; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX auth_permission_content_type_id_2f476e4b ON public.auth_permission USING btree (content_type_id);
+
+
+--
+-- TOC entry 3356 (class 1259 OID 16704)
+-- Dependencies: 238
+-- Name: cart_items_product_6a1de7_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX cart_items_product_6a1de7_idx ON public.cart_items USING btree (product_id);
+
+
+--
+-- TOC entry 3357 (class 1259 OID 16589)
+-- Dependencies: 238
+-- Name: cart_items_user_id_74745f54; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX cart_items_user_id_74745f54 ON public.cart_items USING btree (user_id);
+
+
+--
+-- TOC entry 3358 (class 1259 OID 16703)
+-- Dependencies: 238 238
+-- Name: cart_items_user_id_fe143f_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX cart_items_user_id_fe143f_idx ON public.cart_items USING btree (user_id, created_at);
+
+
+--
+-- TOC entry 3350 (class 1259 OID 16567)
+-- Dependencies: 236
+-- Name: django_admin_log_content_type_id_c4bce8eb; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX django_admin_log_content_type_id_c4bce8eb ON public.django_admin_log USING btree (content_type_id);
+
+
+--
+-- TOC entry 3353 (class 1259 OID 16568)
+-- Dependencies: 236
+-- Name: django_admin_log_user_id_c564eba6; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX django_admin_log_user_id_c564eba6 ON public.django_admin_log USING btree (user_id);
+
+
+--
+-- TOC entry 3387 (class 1259 OID 16681)
+-- Dependencies: 245
+-- Name: django_session_expire_date_a5c62663; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX django_session_expire_date_a5c62663 ON public.django_session USING btree (expire_date);
+
+
+--
+-- TOC entry 3390 (class 1259 OID 16680)
+-- Dependencies: 245
+-- Name: django_session_session_key_c0390e0f_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session USING btree (session_key varchar_pattern_ops);
+
+
+--
+-- TOC entry 3370 (class 1259 OID 16708)
+-- Dependencies: 242
+-- Name: order_items_order_i_26ad88_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX order_items_order_i_26ad88_idx ON public.order_items USING btree (order_id);
+
+
+--
+-- TOC entry 3371 (class 1259 OID 16644)
+-- Dependencies: 242
+-- Name: order_items_order_id_412ad78b; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX order_items_order_id_412ad78b ON public.order_items USING btree (order_id);
+
+
+--
+-- TOC entry 3374 (class 1259 OID 16709)
+-- Dependencies: 242
+-- Name: order_items_product_a53db1_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX order_items_product_a53db1_idx ON public.order_items USING btree (product_id);
+
+
+--
+-- TOC entry 3361 (class 1259 OID 16637)
+-- Dependencies: 240
+-- Name: orders_order_number_fdca857f_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX orders_order_number_fdca857f_like ON public.orders USING btree (order_number varchar_pattern_ops);
+
+
+--
+-- TOC entry 3366 (class 1259 OID 16707)
+-- Dependencies: 240 240
+-- Name: orders_status_11db6c_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX orders_status_11db6c_idx ON public.orders USING btree (status, created_at);
+
+
+--
+-- TOC entry 3367 (class 1259 OID 16706)
+-- Dependencies: 240 240
+-- Name: orders_user_id_17dbdf_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX orders_user_id_17dbdf_idx ON public.orders USING btree (user_id, status);
+
+
+--
+-- TOC entry 3368 (class 1259 OID 16705)
+-- Dependencies: 240 240
+-- Name: orders_user_id_51663a_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX orders_user_id_51663a_idx ON public.orders USING btree (user_id, created_at);
+
+
+--
+-- TOC entry 3369 (class 1259 OID 16638)
+-- Dependencies: 240
+-- Name: orders_user_id_7e2523fb; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX orders_user_id_7e2523fb ON public.orders USING btree (user_id);
+
+
+--
+-- TOC entry 3375 (class 1259 OID 16710)
+-- Dependencies: 244
+-- Name: products_brand_d3f3629a; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_brand_d3f3629a ON public.products USING btree (brand);
+
+
+--
+-- TOC entry 3376 (class 1259 OID 16711)
+-- Dependencies: 244
+-- Name: products_brand_d3f3629a_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_brand_d3f3629a_like ON public.products USING btree (brand varchar_pattern_ops);
+
+
+--
+-- TOC entry 3377 (class 1259 OID 16712)
+-- Dependencies: 244
+-- Name: products_category_ed47a042; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_category_ed47a042 ON public.products USING btree (category);
+
+
+--
+-- TOC entry 3378 (class 1259 OID 16713)
+-- Dependencies: 244
+-- Name: products_category_ed47a042_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_category_ed47a042_like ON public.products USING btree (category varchar_pattern_ops);
+
+
+--
+-- TOC entry 3379 (class 1259 OID 16718)
+-- Dependencies: 244 244
+-- Name: products_is_acti_08ec1e_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_is_acti_08ec1e_idx ON public.products USING btree (is_active, category);
+
+
+--
+-- TOC entry 3380 (class 1259 OID 16719)
+-- Dependencies: 244 244
+-- Name: products_is_acti_c9c3a3_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_is_acti_c9c3a3_idx ON public.products USING btree (is_active, brand);
+
+
+--
+-- TOC entry 3381 (class 1259 OID 16717)
+-- Dependencies: 244 244
+-- Name: products_is_acti_d5bdcf_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_is_acti_d5bdcf_idx ON public.products USING btree (is_active, created_at);
+
+
+--
+-- TOC entry 3382 (class 1259 OID 16714)
+-- Dependencies: 244
+-- Name: products_is_active_4d0bbafa; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_is_active_4d0bbafa ON public.products USING btree (is_active);
+
+
+--
+-- TOC entry 3385 (class 1259 OID 16715)
+-- Dependencies: 244
+-- Name: products_product_code_de3ca32c; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_product_code_de3ca32c ON public.products USING btree (product_code);
+
+
+--
+-- TOC entry 3386 (class 1259 OID 16716)
+-- Dependencies: 244
+-- Name: products_product_code_de3ca32c_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX products_product_code_de3ca32c_like ON public.products USING btree (product_code varchar_pattern_ops);
+
+
+--
+-- TOC entry 3333 (class 1259 OID 16513)
+-- Dependencies: 230
+-- Name: users_email_0ea73cca_like; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX users_email_0ea73cca_like ON public.users USING btree (email varchar_pattern_ops);
+
+
+--
+-- TOC entry 3338 (class 1259 OID 16527)
+-- Dependencies: 232
+-- Name: users_groups_group_id_2f3517aa; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX users_groups_group_id_2f3517aa ON public.users_groups USING btree (group_id);
+
+
+--
+-- TOC entry 3341 (class 1259 OID 16526)
+-- Dependencies: 232
+-- Name: users_groups_user_id_f500bee5; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX users_groups_user_id_f500bee5 ON public.users_groups USING btree (user_id);
+
+
+--
+-- TOC entry 3344 (class 1259 OID 16541)
+-- Dependencies: 234
+-- Name: users_user_permissions_permission_id_6d08dcd2; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX users_user_permissions_permission_id_6d08dcd2 ON public.users_user_permissions USING btree (permission_id);
+
+
+--
+-- TOC entry 3347 (class 1259 OID 16540)
+-- Dependencies: 234
+-- Name: users_user_permissions_user_id_92473840; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX users_user_permissions_user_id_92473840 ON public.users_user_permissions USING btree (user_id);
+
+
+--
+-- TOC entry 3391 (class 1259 OID 16721)
+-- Dependencies: 247
+-- Name: wishlist_it_product_282ecb_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX wishlist_it_product_282ecb_idx ON public.wishlist_items USING btree (product_id);
+
+
+--
+-- TOC entry 3392 (class 1259 OID 16720)
+-- Dependencies: 247 247
+-- Name: wishlist_it_user_id_b5f68a_idx; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX wishlist_it_user_id_b5f68a_idx ON public.wishlist_items USING btree (user_id, created_at);
+
+
+--
+-- TOC entry 3395 (class 1259 OID 16700)
+-- Dependencies: 247
+-- Name: wishlist_items_user_id_fb64a501; Type: INDEX; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+CREATE INDEX wishlist_items_user_id_fb64a501 ON public.wishlist_items USING btree (user_id);
+
+
+--
+-- TOC entry 3417 (class 2606 OID 16742)
+-- Dependencies: 249 230 3337
+-- Name: admin_logs admin_logs_user_id_7cc6dd52_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.admin_logs
+    ADD CONSTRAINT admin_logs_user_id_7cc6dd52_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3405 (class 2606 OID 16467)
+-- Dependencies: 224 228 3321
+-- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissio_permission_id_84c5c92e_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3406 (class 2606 OID 16462)
+-- Dependencies: 228 226 3326
+-- Name: auth_group_permissions auth_group_permissions_group_id_b120cbf9_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_group_permissions
+    ADD CONSTRAINT auth_group_permissions_group_id_b120cbf9_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3404 (class 2606 OID 16453)
+-- Dependencies: 3316 222 224
+-- Name: auth_permission auth_permission_content_type_id_2f476e4b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.auth_permission
+    ADD CONSTRAINT auth_permission_content_type_id_2f476e4b_fk_django_co FOREIGN KEY (content_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3413 (class 2606 OID 16584)
+-- Dependencies: 3337 230 238
+-- Name: cart_items cart_items_user_id_74745f54_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.cart_items
+    ADD CONSTRAINT cart_items_user_id_74745f54_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3411 (class 2606 OID 16557)
+-- Dependencies: 236 3316 222
+-- Name: django_admin_log django_admin_log_content_type_id_c4bce8eb_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_admin_log
+    ADD CONSTRAINT django_admin_log_content_type_id_c4bce8eb_fk_django_co FOREIGN KEY (content_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3412 (class 2606 OID 16562)
+-- Dependencies: 236 230 3337
+-- Name: django_admin_log django_admin_log_user_id_c564eba6_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.django_admin_log
+    ADD CONSTRAINT django_admin_log_user_id_c564eba6_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3415 (class 2606 OID 16639)
+-- Dependencies: 3365 240 242
+-- Name: order_items order_items_order_id_412ad78b_fk_orders_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.order_items
+    ADD CONSTRAINT order_items_order_id_412ad78b_fk_orders_id FOREIGN KEY (order_id) REFERENCES public.orders(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3414 (class 2606 OID 16632)
+-- Dependencies: 240 230 3337
+-- Name: orders orders_user_id_7e2523fb_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_user_id_7e2523fb_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3407 (class 2606 OID 16521)
+-- Dependencies: 226 232 3326
+-- Name: users_groups users_groups_group_id_2f3517aa_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_groups
+    ADD CONSTRAINT users_groups_group_id_2f3517aa_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3408 (class 2606 OID 16516)
+-- Dependencies: 230 232 3337
+-- Name: users_groups users_groups_user_id_f500bee5_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_groups
+    ADD CONSTRAINT users_groups_user_id_f500bee5_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3409 (class 2606 OID 16535)
+-- Dependencies: 224 3321 234
+-- Name: users_user_permissions users_user_permissio_permission_id_6d08dcd2_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_user_permissions
+    ADD CONSTRAINT users_user_permissio_permission_id_6d08dcd2_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3410 (class 2606 OID 16530)
+-- Dependencies: 3337 234 230
+-- Name: users_user_permissions users_user_permissions_user_id_92473840_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.users_user_permissions
+    ADD CONSTRAINT users_user_permissions_user_id_92473840_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- TOC entry 3416 (class 2606 OID 16695)
+-- Dependencies: 230 3337 247
+-- Name: wishlist_items wishlist_items_user_id_fb64a501_fk_users_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Data Pos: 0
+--
+
+ALTER TABLE ONLY public.wishlist_items
+    ADD CONSTRAINT wishlist_items_user_id_fb64a501_fk_users_id FOREIGN KEY (user_id) REFERENCES public.users(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+-- Completed on 2026-04-03 12:36:46
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict MgnNaSQ0eeLChz9Ek9yaahnu2UM5GMajoW2IYrnU6TC71PTecQTUEAKz40aO5zD
+

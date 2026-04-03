@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatINR } from "../utils/currency";
 import { normalizeImageUrl } from "../utils/productsApi";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
 
 function getProductImage(product) {
   const raw = product?.image_url || product?.image;

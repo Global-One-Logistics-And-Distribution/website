@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useCallback, useState } from "react";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://dropship-v2.onrender.com/api");
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
 
 const AuthContext = createContext(null);
 
