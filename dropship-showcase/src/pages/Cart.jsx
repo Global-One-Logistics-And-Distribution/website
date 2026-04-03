@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, ShoppingCart, Truck, ChevronRight, ShieldCheck } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import RazorpayPaymentButton from "../components/RazorpayPaymentButton";
 import { formatINR } from "../utils/currency";
 import { getMRP } from "../utils/product";
 import { getProductSlug } from "../utils/slug";
@@ -121,7 +120,13 @@ export default function Cart() {
               const productId = item?.productId ?? product?.id;
               const price = Number(product?.price) || 0;
               const stock = Number(product?.stock);
-              const maxAllowed = Number.isFinite(stock) && stock >= 0 ? Math.min(10, stock) : 10;
+              const sizeStock = product?.size_stock || product?.sizeStock || {};
+              const sizeKey = String(item?.selectedSize || "").trim();
+              const isShoe = String(product?.category || "").toLowerCase().includes("shoe");
+              const perSizeStock = Number(sizeStock?.[sizeKey]);
+              const maxAllowed = isShoe
+                ? (Number.isFinite(perSizeStock) && perSizeStock >= 0 ? Math.min(10, perSizeStock) : 0)
+                : (Number.isFinite(stock) && stock >= 0 ? Math.min(10, stock) : 10);
               const mrp = price > 0 ? getMRP(price, productId) : 0;
               const rawImage = product?.image_url || product?.image;
               const image =
@@ -267,9 +272,14 @@ export default function Cart() {
             Proceed to Checkout
             <ChevronRight size={16} />
           </Link>
-
-          <div className="mt-3 flex justify-center">
-            <RazorpayPaymentButton />
+          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>Secure payments with</span>
+            <img
+              src="https://cdn.razorpay.com/logo.svg"
+              alt="Razorpay"
+              className="h-4 w-auto"
+              loading="lazy"
+            />
           </div>
 
           <Link

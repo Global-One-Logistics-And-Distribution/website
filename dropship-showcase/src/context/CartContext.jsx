@@ -78,6 +78,20 @@ function maxAllowedForProduct(product) {
   return CART_MAX_QUANTITY;
 }
 
+function maxAllowedForProductSize(product, selectedSize = "") {
+  const category = String(product?.category || "").toLowerCase();
+  const isShoe = category.includes("shoe");
+  if (!isShoe) return maxAllowedForProduct(product);
+
+  const sizeKey = String(selectedSize || "").trim();
+  const sizeStock = product?.size_stock || product?.sizeStock || {};
+  const perSize = Number(sizeStock?.[sizeKey]);
+  if (Number.isFinite(perSize) && perSize >= 0) {
+    return Math.min(CART_MAX_QUANTITY, perSize);
+  }
+  return 0;
+}
+
 function safeParseCart(raw) {
   try {
     const parsed = JSON.parse(raw);
@@ -196,7 +210,8 @@ export function CartProvider({ children }) {
 
       const existing = items.find((i) => String(i.productId) === String(pid));
       const existingQty = Number(existing?.quantity) || 0;
-      const maxAllowed = maxAllowedForProduct(product || existing?.product);
+      const resolvedSize = selectedSize || existing?.selectedSize || "";
+      const maxAllowed = maxAllowedForProductSize(product || existing?.product, resolvedSize);
 
       if (maxAllowed < 1) {
         toast.error("This product is out of stock");
@@ -216,11 +231,11 @@ export function CartProvider({ children }) {
         if (existingInState) {
           return prev.map((i) =>
             String(i.productId) === String(pid)
-              ? { ...i, quantity: nextQty, selectedSize: selectedSize || i.selectedSize || "", product: i.product || product || null }
+              ? { ...i, quantity: nextQty, selectedSize: resolvedSize, product: i.product || product || null }
               : i
           );
         }
-        return [...prev, { productId: pid, quantity: nextQty, selectedSize, product: product || null }];
+        return [...prev, { productId: pid, quantity: nextQty, selectedSize: resolvedSize, product: product || null }];
       });
 
       if (quantityToAdd < q) {
@@ -240,7 +255,7 @@ export function CartProvider({ children }) {
             body: JSON.stringify({
               productId: pid,
               quantity: quantityToAdd,
-              selectedSize: selectedSize || existing?.selectedSize || "",
+              selectedSize: resolvedSize,
             }),
           });
           if (!res.ok) {
@@ -269,7 +284,7 @@ export function CartProvider({ children }) {
       if (!Number.isFinite(q) || q < 1) return;
 
       const existing = items.find((i) => String(i.productId) === String(productId));
-      const maxAllowed = maxAllowedForProduct(existing?.product);
+      const maxAllowed = maxAllowedForProductSize(existing?.product, existing?.selectedSize || "");
       if (maxAllowed < 1) {
         toast.error("This product is out of stock");
         return;

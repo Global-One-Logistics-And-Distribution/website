@@ -27,7 +27,7 @@ class ProductAdmin(admin.ModelAdmin):
             "fields": ("product_number", "name", "brand", "category", "product_code", "is_active"),
         }),
         ("Pricing & Stock", {
-            "fields": ("price", "stock", "rating"),
+            "fields": ("price", "stock", "size_stock", "rating"),
         }),
         ("Description", {
             "fields": ("short_description", "description", "features"),

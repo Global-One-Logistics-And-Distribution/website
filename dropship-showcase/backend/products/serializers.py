@@ -14,6 +14,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "brand",
             "image_url",
             "gallery_urls",
+            "size_stock",
             "stock",
             "rating",
         ]
@@ -34,6 +35,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_url",
             "gallery_urls",
             "features",
+            "size_stock",
             "stock",
             "rating",
             "is_active",

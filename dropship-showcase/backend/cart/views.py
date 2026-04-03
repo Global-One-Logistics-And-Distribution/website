@@ -14,6 +14,22 @@ from .serializers import (
 from products.models import Product
 
 
+def _is_shoe_category(category):
+    return "shoe" in str(category or "").strip().lower()
+
+
+def _normalized_size(size):
+    return str(size or "").strip()
+
+
+def _max_allowed_for_product(product, selected_size=""):
+    if _is_shoe_category(product.category):
+        size_key = _normalized_size(selected_size)
+        size_stock = product.size_stock if isinstance(product.size_stock, dict) else {}
+        return min(CART_MAX_QUANTITY, int(size_stock.get(size_key, 0) or 0))
+    return min(CART_MAX_QUANTITY, int(product.stock or 0))
+
+
 def _products_map_for_cart_items(items):
     product_ids = [item.product_id for item in items]
     if not product_ids:
@@ -28,6 +44,7 @@ def _products_map_for_cart_items(items):
         "brand",
         "image_url",
         "gallery_urls",
+        "size_stock",
         "stock",
         "rating",
     )
@@ -61,7 +78,13 @@ def cart_list(request):
         if not product:
             return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        max_allowed = min(CART_MAX_QUANTITY, int(product.stock or 0))
+        if _is_shoe_category(product.category) and not selected_size:
+            return Response(
+                {"errors": {"selectedSize": ["Size is required for shoes."]}},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        max_allowed = _max_allowed_for_product(product, selected_size)
         if max_allowed < 1:
             return Response(
                 {"errors": {"quantity": ["This product is out of stock."]}},
@@ -76,6 +99,10 @@ def cart_list(request):
 
         if item.selected_size is None:
             item.selected_size = ""
+
+        if not created and _is_shoe_category(product.category) and selected_size and selected_size != item.selected_size:
+            item.quantity = 0
+            item.selected_size = selected_size
 
         new_quantity = quantity if created else (item.quantity + quantity)
         if new_quantity > max_allowed:
@@ -130,7 +157,7 @@ def cart_item(request, product_id):
         if not product:
             return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        max_allowed = min(CART_MAX_QUANTITY, int(product.stock or 0))
+        max_allowed = _max_allowed_for_product(product, item.selected_size)
         quantity = serializer.validated_data["quantity"]
         if max_allowed < 1:
             return Response(
@@ -173,7 +200,7 @@ def cart_sync(request):
 
     if incoming_items:
         requested_ids = {item["productId"] for item in incoming_items}
-        products = Product.objects.filter(id__in=requested_ids, is_active=True).only("id", "stock")
+        products = Product.objects.filter(id__in=requested_ids, is_active=True).only("id", "stock", "category", "size_stock")
         products_map = {product.id: product for product in products}
 
         existing_items = CartItem.objects.filter(user=user, product_id__in=requested_ids)
@@ -191,7 +218,10 @@ def cart_sync(request):
             if not product:
                 continue
 
-            max_allowed = min(CART_MAX_QUANTITY, int(product.stock or 0))
+            if _is_shoe_category(product.category) and not selected_size:
+                continue
+
+            max_allowed = _max_allowed_for_product(product, selected_size)
             if max_allowed < 1:
                 continue
 

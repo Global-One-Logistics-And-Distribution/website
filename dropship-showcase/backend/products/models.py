@@ -13,6 +13,7 @@ class Product(models.Model):
     image_url = models.URLField(max_length=1000, blank=True, default="")
     gallery_urls = models.JSONField(default=list, blank=True)
     features = models.JSONField(default=list, blank=True)
+    size_stock = models.JSONField(default=dict, blank=True)
     stock = models.PositiveIntegerField(default=0)
     rating = models.DecimalField(max_digits=3, decimal_places=1, default=0)
     is_active = models.BooleanField(default=True, db_index=True)
@@ -29,6 +30,27 @@ class Product(models.Model):
         ]
 
     def save(self, *args, **kwargs):
+        # Keep size-wise shoe inventory normalized and aligned with aggregate stock.
+        category_name = (self.category or "").strip().lower()
+        is_shoe = "shoe" in category_name
+        normalized = {}
+        raw_size_stock = self.size_stock if isinstance(self.size_stock, dict) else {}
+        for size, qty in raw_size_stock.items():
+            size_key = str(size).strip()
+            if not size_key:
+                continue
+            try:
+                normalized_qty = max(0, int(qty))
+            except (TypeError, ValueError):
+                continue
+            normalized[size_key] = normalized_qty
+
+        if is_shoe:
+            self.size_stock = normalized
+            self.stock = sum(normalized.values())
+        else:
+            self.size_stock = {}
+
         # Reuse the smallest missing positive ID when creating a new product.
         if self.pk is None:
             with transaction.atomic():

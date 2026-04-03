@@ -6,7 +6,6 @@ import { ShoppingCart, MapPin, User, Mail, Phone, ArrowRight, Loader2 } from "lu
 import toast from "react-hot-toast";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import RazorpayPaymentButton from "../components/RazorpayPaymentButton";
 import { formatINR } from "../utils/currency";
 import { normalizeImageUrl } from "../utils/productsApi";
 
@@ -496,9 +495,6 @@ export default function Checkout() {
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/20 px-4 py-3 text-sm">
                 Razorpay (Online Payment Only)
               </div>
-              <div className="mt-3 flex justify-center">
-                <RazorpayPaymentButton />
-              </div>
               {!razorpayKey && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                   Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.
@@ -560,6 +556,15 @@ export default function Checkout() {
                 <>Pay & Place Order <ArrowRight size={16} /></>
               )}
             </button>
+            <div className="mt-2 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>Secure payments with</span>
+              <img
+                src="https://cdn.razorpay.com/logo.svg"
+                alt="Razorpay"
+                className="h-4 w-auto"
+                loading="lazy"
+              />
+            </div>
           </motion.div>
 
           {/* Order summary */}

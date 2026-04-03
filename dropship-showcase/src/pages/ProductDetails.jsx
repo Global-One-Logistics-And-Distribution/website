@@ -7,7 +7,6 @@ import toast from "react-hot-toast";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
-import RazorpayPaymentButton from "../components/RazorpayPaymentButton";
 import { formatINR } from "../utils/currency";
 import { useProduct, useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
@@ -82,6 +81,7 @@ export default function ProductDetails() {
   const isShoe = hydratedProduct?.category === "Luxury Shoes";
   const shoeSizes = [7, 8, 9, 10, 11];
   const [selectedSize, setSelectedSize] = useState(null);
+  const sizeStockMap = hydratedProduct?.size_stock || hydratedProduct?.sizeStock || {};
 
   // Quantity selector
   const [quantity, setQuantity] = useState(1);
@@ -145,9 +145,14 @@ export default function ProductDetails() {
     setActiveImage(images[0]);
   }, [images]);
 
-  const stock = Number(hydratedProduct?.stock);
+  const selectedSizeStock = isShoe && selectedSize != null
+    ? Number(sizeStockMap[String(selectedSize)] ?? 0)
+    : null;
+  const stock = isShoe && selectedSize != null
+    ? selectedSizeStock
+    : Number(hydratedProduct?.stock);
   const maxSelectableQty = Number.isFinite(stock) && stock >= 0 ? Math.min(10, stock) : 10;
-  const isOutOfStock = maxSelectableQty < 1;
+  const isOutOfStock = isShoe ? (selectedSize == null ? false : maxSelectableQty < 1) : maxSelectableQty < 1;
 
   useEffect(() => {
     if (isOutOfStock) {
@@ -442,16 +447,22 @@ export default function ProductDetails() {
                     type="button"
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setSelectedSize(size)}
+                    disabled={Number(sizeStockMap[String(size)] ?? 0) < 1}
                     className={`h-10 min-w-[2.75rem] px-2 rounded-lg border-2 text-sm font-medium transition ${
                       selectedSize === size
                         ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
                         : "border-slate-300 dark:border-slate-700 hover:border-indigo-300 text-slate-700 dark:text-slate-300"
-                    }`}
+                    } ${Number(sizeStockMap[String(size)] ?? 0) < 1 ? "opacity-40 cursor-not-allowed" : ""}`}
                   >
                     {size}
                   </motion.button>
                 ))}
               </div>
+              {selectedSize != null && (
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  {maxSelectableQty > 0 ? `${maxSelectableQty} left in UK ${selectedSize}` : `UK ${selectedSize} is out of stock`}
+                </p>
+              )}
             </div>
           )}
 
@@ -483,7 +494,11 @@ export default function ProductDetails() {
                 </button>
               </div>
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                {isOutOfStock ? "Out of stock" : `Max ${maxSelectableQty} per order`}
+                {isShoe && selectedSize == null
+                  ? "Select a size to check stock"
+                  : isOutOfStock
+                  ? "Out of stock"
+                  : `Max ${maxSelectableQty} per order`}
               </span>
             </div>
           </div>
@@ -493,14 +508,12 @@ export default function ProductDetails() {
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={handleAddToCart}
-              disabled={isOutOfStock}
+              disabled={isShoe ? !selectedSize || isOutOfStock : isOutOfStock}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <ShoppingCart size={18} />
               Add to Cart
             </motion.button>
-
-            {!isOutOfStock && <RazorpayPaymentButton className="inline-flex" />}
 
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -515,6 +528,18 @@ export default function ProductDetails() {
               {isInWishlist(hydratedProduct.id) ? "In Wishlist" : "Add to Wishlist"}
             </motion.button>
           </div>
+
+          {!isOutOfStock && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>Secure payments with</span>
+              <img
+                src="https://cdn.razorpay.com/logo.svg"
+                alt="Razorpay"
+                className="h-4 w-auto"
+                loading="lazy"
+              />
+            </div>
+          )}
 
           {/* Trust badges */}
           <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">

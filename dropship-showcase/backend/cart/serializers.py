@@ -27,6 +27,7 @@ class CartItemSerializer(serializers.ModelSerializer):
                 "brand",
                 "image_url",
                 "gallery_urls",
+                "size_stock",
                 "stock",
                 "rating",
             ).first()

@@ -47,6 +47,7 @@ def product_list(request):
         "brand",
         "image_url",
         "gallery_urls",
+        "size_stock",
         "stock",
         "rating",
     )

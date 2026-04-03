@@ -128,6 +128,16 @@ export function normalizeProduct(raw) {
 
   const shortDescription = cleanText(raw.shortDescription) || cleanText(raw.short_description);
   const description = cleanText(raw.description);
+  const rawSizeStock = raw.size_stock || raw.sizeStock;
+  const sizeStock = Object.entries(
+    rawSizeStock && typeof rawSizeStock === "object" ? rawSizeStock : {}
+  ).reduce((acc, [size, qty]) => {
+    const sizeKey = String(size || "").trim();
+    const quantity = Number(qty);
+    if (!sizeKey || !Number.isFinite(quantity) || quantity < 0) return acc;
+    acc[sizeKey] = Math.floor(quantity);
+    return acc;
+  }, {});
 
   return {
     ...raw,
@@ -139,6 +149,8 @@ export function normalizeProduct(raw) {
     short_description: shortDescription,
     shortDescription,
     description,
+    size_stock: sizeStock,
+    sizeStock,
     features: normalizeFeatures(raw.features),
     product_code: raw.product_code || raw.productCode || "",
     productCode: raw.productCode || raw.product_code || "",

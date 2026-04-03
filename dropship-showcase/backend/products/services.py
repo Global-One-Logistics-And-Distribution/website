@@ -29,6 +29,7 @@ def build_top_products_payload(limit=8):
             "brand",
             "image_url",
             "gallery_urls",
+            "size_stock",
             "stock",
             "rating",
         )[:limit]
@@ -44,6 +45,7 @@ def build_top_products_payload(limit=8):
         "brand",
         "image_url",
         "gallery_urls",
+        "size_stock",
         "stock",
         "rating",
     )
