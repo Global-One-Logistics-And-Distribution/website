@@ -207,6 +207,7 @@ CSRF_TRUSTED_ORIGINS = config(
     default="http://localhost:5173,http://127.0.0.1:5173,https://elitedrop.net.in,https://www.elitedrop.net.in",
     cast=Csv(),
 )
+STOREFRONT_URL = config("STOREFRONT_URL", default="https://www.elitedrop.net.in")
 
 # ── Security (production) ─────────────────────────────────────────────────────
 SECURE_CONTENT_TYPE_NOSNIFF = True

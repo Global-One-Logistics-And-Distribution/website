@@ -77,6 +77,7 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `JWT_LIFETIME_DAYS` | JWT access token lifetime in days | `7` |
 | `JWT_SESSION_LIFETIME_HOURS` | Access token lifetime when remember me is OFF | `12` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins | `http://localhost:5173` |
+| `STOREFRONT_URL` | Public storefront base URL used in feeds/canonical links | `https://www.elitedrop.net.in` |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client ID used for token verification | — |
 | `FIREBASE_PROJECT_ID` | Firebase project ID for verifying Firebase ID tokens | — |
 | `FIREBASE_CLIENT_EMAIL` | Firebase Admin service account client email | — |
@@ -155,3 +156,8 @@ Auth endpoints (`signup`, `signin`, `social/google`, `social/firebase`) verify T
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/health/` | Service health check |
+
+### Google Merchant Feed
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/products/merchant/google.xml` | XML product feed for Google Merchant Center |
