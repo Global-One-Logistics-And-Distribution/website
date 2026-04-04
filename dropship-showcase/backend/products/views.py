@@ -24,6 +24,39 @@ PRODUCT_LIST_CACHE_TTL = 120
 PRODUCT_DETAIL_CACHE_TTL = 180
 MERCHANT_FEED_CACHE_TTL = 900
 
+APPAREL_KEYWORDS = (
+    "apparel",
+    "shoe",
+    "shoes",
+    "sneaker",
+    "sneakers",
+    "bag",
+    "handbag",
+    "wallet",
+    "belt",
+    "watch",
+    "fashion",
+)
+
+COLOR_KEYWORDS = (
+    "black",
+    "white",
+    "blue",
+    "navy",
+    "red",
+    "green",
+    "yellow",
+    "orange",
+    "pink",
+    "purple",
+    "brown",
+    "grey",
+    "gray",
+    "beige",
+    "gold",
+    "silver",
+)
+
 
 def _cached_response(payload, max_age):
     response = Response(payload)
@@ -44,6 +77,60 @@ def _pick_primary_image(product):
             if image_url:
                 return image_url
     return ""
+
+
+def _is_apparel_like_product(product):
+    haystack = f"{product.category or ''} {product.name or ''}".lower()
+    return any(keyword in haystack for keyword in APPAREL_KEYWORDS)
+
+
+def _infer_age_group(product):
+    haystack = f"{product.category or ''} {product.name or ''}".lower()
+    if any(token in haystack for token in ("kid", "kids", "child", "children", "toddler", "baby")):
+        return "kids"
+    return "adult"
+
+
+def _infer_gender(product):
+    haystack = f"{product.category or ''} {product.name or ''}".lower()
+    if any(token in haystack for token in ("women", "woman", "ladies", "female", "girl", "girls")):
+        return "female"
+    if any(token in haystack for token in ("men", "man", "male", "boy", "boys")):
+        return "male"
+    return "unisex"
+
+
+def _infer_color(product):
+    haystack = f"{product.category or ''} {product.name or ''} {product.short_description or ''}".lower()
+    for color in COLOR_KEYWORDS:
+        if color in haystack:
+            if color == "grey":
+                return "gray"
+            return color
+    return "multicolor"
+
+
+def _get_feed_countries():
+    raw = getattr(settings, "MERCHANT_FEED_SHIPPING_COUNTRIES", ["IN"])
+    if isinstance(raw, (list, tuple)):
+        values = raw
+    else:
+        values = str(raw or "").split(",")
+
+    countries = []
+    for value in values:
+        code = str(value or "").strip().upper()
+        if code:
+            countries.append(code)
+    return countries or ["IN"]
+
+
+def _get_feed_currency():
+    return str(getattr(settings, "MERCHANT_FEED_CURRENCY", "INR") or "INR").strip().upper()
+
+
+def _get_shipping_service_name():
+    return str(getattr(settings, "MERCHANT_FEED_SHIPPING_SERVICE", "Standard") or "Standard").strip()
 
 
 @api_view(["GET"])
@@ -139,6 +226,10 @@ def google_merchant_feed(request):
     if not storefront_url:
         storefront_url = request.build_absolute_uri("/").rstrip("/")
 
+    feed_currency = _get_feed_currency()
+    shipping_countries = _get_feed_countries()
+    shipping_service_name = _get_shipping_service_name()
+
     products = Product.objects.filter(is_active=True).only(
         "id",
         "name",
@@ -176,7 +267,7 @@ def google_merchant_feed(request):
             ET.SubElement(item, "g:image_link").text = image_url
 
         ET.SubElement(item, "g:availability").text = "in_stock" if product.stock > 0 else "out_of_stock"
-        ET.SubElement(item, "g:price").text = f"{product.price:.2f} INR"
+        ET.SubElement(item, "g:price").text = f"{product.price:.2f} {feed_currency}"
         ET.SubElement(item, "g:condition").text = "new"
 
         if product.brand:
@@ -185,6 +276,16 @@ def google_merchant_feed(request):
             ET.SubElement(item, "g:mpn").text = product.product_code.strip()
         if product.category:
             ET.SubElement(item, "g:product_type").text = product.category.strip()
+
+        ET.SubElement(item, "g:age_group").text = _infer_age_group(product)
+        ET.SubElement(item, "g:gender").text = _infer_gender(product)
+        ET.SubElement(item, "g:color").text = _infer_color(product)
+
+        for country in shipping_countries:
+            shipping = ET.SubElement(item, "g:shipping")
+            ET.SubElement(shipping, "g:country").text = country
+            ET.SubElement(shipping, "g:service").text = shipping_service_name
+            ET.SubElement(shipping, "g:price").text = f"{product.price:.2f} {feed_currency}"
 
     xml_payload = ET.tostring(root, encoding="utf-8", xml_declaration=True)
     cache.set("feeds:google-merchant-xml", xml_payload, MERCHANT_FEED_CACHE_TTL)

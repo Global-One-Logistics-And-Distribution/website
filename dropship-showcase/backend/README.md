@@ -78,6 +78,9 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `JWT_SESSION_LIFETIME_HOURS` | Access token lifetime when remember me is OFF | `12` |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed frontend origins | `http://localhost:5173` |
 | `STOREFRONT_URL` | Public storefront base URL used in feeds/canonical links | `https://www.elitedrop.net.in` |
+| `MERCHANT_FEED_CURRENCY` | Currency code used in Google Merchant feed prices | `INR` |
+| `MERCHANT_FEED_SHIPPING_COUNTRIES` | Comma-separated ISO country codes for feed shipping lines | `IN` |
+| `MERCHANT_FEED_SHIPPING_SERVICE` | Shipping service label in Merchant feed | `Standard` |
 | `GOOGLE_CLIENT_ID` | Google OAuth web client ID used for token verification | — |
 | `FIREBASE_PROJECT_ID` | Firebase project ID for verifying Firebase ID tokens | — |
 | `FIREBASE_CLIENT_EMAIL` | Firebase Admin service account client email | — |
@@ -161,3 +164,9 @@ Auth endpoints (`signup`, `signin`, `social/google`, `social/firebase`) verify T
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/products/merchant/google.xml` | XML product feed for Google Merchant Center |
+
+Merchant feed notes:
+- Feed now includes `g:shipping` per item using `MERCHANT_FEED_SHIPPING_COUNTRIES`.
+- Feed shipping `g:price` is generated per item and matches each product price.
+- Feed always includes fallback `g:age_group`, `g:gender`, and `g:color` values to satisfy Merchant Center requirements.
+- Set `MERCHANT_FEED_SHIPPING_COUNTRIES` to all your target countries in Merchant Center, for example `IN,AE,US`.
