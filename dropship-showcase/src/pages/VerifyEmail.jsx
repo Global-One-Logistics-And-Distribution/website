@@ -19,7 +19,12 @@ export default function VerifyEmail() {
     return location.state?.email || urlEmail || user?.email || "";
   }, [params, location.state, user?.email]);
 
-  const redirectTo = location.state?.redirectTo || "/";
+  const redirectParam = params.get("redirectTo");
+  const requestedRedirect = location.state?.redirectTo || redirectParam || "/";
+  const redirectTo =
+    typeof requestedRedirect === "string" && requestedRedirect.startsWith("/")
+      ? requestedRedirect
+      : "/";
   const postVerifyRequireName =
     location.state?.postVerifyRequireName === true || params.get("completeProfile") === "1";
 
@@ -205,7 +210,11 @@ export default function VerifyEmail() {
               <RefreshCw className="w-4 h-4" />
               {resending ? "Sending…" : "Resend code"}
             </button>
-            <Link to="/signin" className="hover:underline">
+            <Link
+              to={`/signin?redirectTo=${encodeURIComponent(redirectTo)}`}
+              state={{ redirectTo }}
+              className="hover:underline"
+            >
               Back to sign in
             </Link>
           </div>

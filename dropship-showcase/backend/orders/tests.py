@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import User
 from products.models import Product
+from orders.models import Order
 
 
 def get_token(user):
@@ -29,7 +30,7 @@ class OrdersTestCase(TestCase):
             name="Luxury Sneaker",
             category="Luxury Shoes",
             price="3499.00",
-            stock=10,
+            size_stock={"7": 2, "8": 2, "9": 2, "10": 2, "11": 2},
             is_active=True,
         )
 
@@ -83,3 +84,38 @@ class OrdersTestCase(TestCase):
         res = self.client.post(self.orders_url, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res.data["order"]["shipping_email"], self.user.email)
+
+    def test_invoice_download_for_order_owner(self):
+        regular_product = Product.objects.create(
+            name="Luxury Belt",
+            category="Accessories",
+            price="1999.00",
+            stock=5,
+            is_active=True,
+        )
+        payload = {
+            "shipping_name": "Orders User",
+            "shipping_email": "orders@example.com",
+            "shipping_phone": "9876543210",
+            "shipping_address": "123 Main Street",
+            "shipping_city": "Bengaluru",
+            "shipping_pincode": "560001",
+            "shipping_state": "Karnataka",
+            "items": [
+                {
+                    "product_id": regular_product.id,
+                    "quantity": 1,
+                }
+            ],
+        }
+
+        create_res = self.client.post(self.orders_url, payload, format="json")
+        self.assertEqual(create_res.status_code, status.HTTP_201_CREATED)
+        order_number = create_res.data["order"]["order_number"]
+
+        invoice_url = reverse("order-invoice-download", args=[order_number])
+        invoice_res = self.client.get(invoice_url)
+        self.assertEqual(invoice_res.status_code, status.HTTP_200_OK)
+        self.assertIn("text/html", invoice_res["Content-Type"])
+        self.assertIn("attachment; filename=\"invoice-", invoice_res["Content-Disposition"])
+        self.assertIn(order_number, invoice_res.content.decode("utf-8"))

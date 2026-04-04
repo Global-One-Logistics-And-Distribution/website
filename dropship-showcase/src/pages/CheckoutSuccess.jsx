@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { CheckCircle, Loader2, Package } from "lucide-react";
+import { CheckCircle, Download, Loader2, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,6 +15,7 @@ export default function CheckoutSuccess() {
   const orderFromState = location.state?.order;
   const [order, setOrder] = useState(orderFromState || null);
   const [loading, setLoading] = useState(!orderFromState);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
 
   const orderNumber = useMemo(() => {
     if (orderFromState?.order_number) return orderFromState.order_number;
@@ -90,6 +91,41 @@ export default function CheckoutSuccess() {
     return null;
   }
 
+  const handleDownloadInvoice = async () => {
+    if (!token || !order?.order_number) {
+      toast.error("Invoice is not available right now.");
+      return;
+    }
+
+    setDownloadingInvoice(true);
+    try {
+      const res = await fetch(`${API}/orders/${encodeURIComponent(order.order_number)}/invoice/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Unable to download invoice.");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `invoice-${order.order_number}.html`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Invoice downloaded.");
+    } catch (error) {
+      toast.error(error?.message || "Unable to download invoice.");
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
   return (
     <section className="container-pad py-20 flex justify-center">
       <Helmet>
@@ -115,9 +151,18 @@ export default function CheckoutSuccess() {
           </p>
         )}
         <p className="text-slate-500 dark:text-slate-400 mb-8">
-          Thank you for your purchase. You can track your order in your account.
+          Thank you for your purchase. Your invoice has been emailed to you and is available to download below.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadInvoice}
+            disabled={downloadingInvoice}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-60"
+          >
+            {downloadingInvoice ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Download Invoice
+          </button>
           <Link
             to="/orders"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"

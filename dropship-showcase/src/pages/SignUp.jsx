@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
@@ -13,6 +13,10 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "htt
 export default function SignUp() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectParam = new URLSearchParams(location.search).get("redirectTo");
+  const requestedRedirect = location.state?.redirectTo || redirectParam || "/";
+  const redirectTo = typeof requestedRedirect === "string" && requestedRedirect.startsWith("/") ? requestedRedirect : "/";
   const hasFirebaseAuth = isFirebaseAuthConfigured();
 
   const [form, setForm] = useState({ email: "", password: "", confirm: "" });
@@ -115,13 +119,14 @@ export default function SignUp() {
         const query = new URLSearchParams({
           email: data.user?.email || form.email,
           completeProfile: "1",
+          redirectTo,
         }).toString();
 
         navigate(`/verify-email?${query}`, {
           replace: true,
           state: {
             email: data.user?.email || form.email,
-            redirectTo: "/",
+            redirectTo,
             devVerificationCode: data.dev_verification_code || "",
             postVerifyRequireName: true,
           },
@@ -132,10 +137,13 @@ export default function SignUp() {
       if (data.token && data.user) {
         login(data.token, data.user);
         toast.success(`Welcome, ${data.user.name}!`);
-        navigate("/");
+        navigate(redirectTo, { replace: true });
       } else {
         toast.success("Account created. Please sign in.");
-        navigate("/signin");
+        navigate(`/signin?redirectTo=${encodeURIComponent(redirectTo)}`, {
+          replace: true,
+          state: { redirectTo },
+        });
       }
     } catch (err) {
       const message = err?.message || "Network error. Please try again.";
@@ -173,7 +181,7 @@ export default function SignUp() {
 
       login(data.token, data.user, { rememberMe: true });
       toast.success(`Welcome, ${data.user.name}!`);
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       toast.error(getFirebaseAuthErrorMessage(error));
     } finally {
@@ -356,7 +364,8 @@ export default function SignUp() {
           <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             Already have an account?{" "}
             <Link
-              to="/signin"
+              to={`/signin?redirectTo=${encodeURIComponent(redirectTo)}`}
+              state={{ redirectTo }}
               className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
             >
               Sign in

@@ -50,10 +50,7 @@ const CATEGORIES = [
 ];
 
 const SOCIALS = [
-  { icon: Instagram, label: "Instagram", href: "https://instagram.com/gold" },
-  { icon: Twitter, label: "Twitter / X", href: "#" },
-  { icon: Facebook, label: "Facebook", href: "#" },
-  { icon: Youtube, label: "YouTube", href: "#" },
+  { icon: Instagram, label: "Instagram", href: "https://instagram.com/elitedrop_g.o.l.d" },
 ];
 
 export default function Footer() {
@@ -68,9 +65,14 @@ export default function Footer() {
   };
 
   return (
-    <footer className="border-t border-slate-200 dark:border-slate-800 mt-16 bg-white dark:bg-slate-950">
+    <footer className="relative isolate overflow-hidden border-t border-slate-200 dark:border-slate-800 mt-16 bg-[linear-gradient(125deg,#ecfeff_0%,#f8fafc_40%,#ecfccb_100%)] dark:bg-[linear-gradient(125deg,#020617_0%,#0f172a_45%,#083344_100%)]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-28 left-1/4 h-72 w-72 rounded-full bg-cyan-300/25 blur-3xl dark:bg-cyan-500/20" />
+        <div className="absolute -bottom-24 right-1/4 h-72 w-72 rounded-full bg-lime-300/20 blur-3xl dark:bg-emerald-500/15" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.55),transparent_42%)] dark:bg-[radial-gradient(circle_at_25%_20%,rgba(15,118,110,0.28),transparent_42%)]" />
+      </div>
       {/* Trust badges strip */}
-      <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60">
+      <div className="border-b border-slate-100 dark:border-slate-800 bg-white/75 dark:bg-slate-900/65 backdrop-blur-md">
         <div className="container-pad py-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
@@ -207,7 +209,7 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-slate-100 dark:border-slate-800">
+      <div className="border-t border-slate-100 dark:border-slate-800 bg-white/55 dark:bg-slate-900/55 backdrop-blur-md">
         <div className="container-pad py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 dark:text-slate-500">
           <p>© {new Date().getFullYear()} EliteDrop. All rights reserved.</p>
           <div className="flex gap-4">

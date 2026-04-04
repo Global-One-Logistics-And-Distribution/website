@@ -2,12 +2,14 @@ from decimal import Decimal
 import logging
 from django.conf import settings
 from django.db import transaction
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Order, OrderItem
+from .invoice import build_invoice_html, send_order_invoice_email
 from .serializers import OrderSerializer, CreateOrderSerializer
 from products.models import Product
 
@@ -181,10 +183,16 @@ def order_list(request):
 
                 CartItem.objects.filter(user=user).delete()
 
+            try:
+                send_order_invoice_email(order)
+            except Exception:
+                logger.exception("Invoice email failed for order=%s", order.order_number)
+
             return Response(
                 {"order": OrderSerializer(order).data},
                 status=status.HTTP_201_CREATED,
             )
+
         except Exception as exc:
             logger.exception("Order placement failed for user_id=%s", getattr(user, "id", None))
             return Response(
@@ -206,3 +214,19 @@ def order_detail(request, order_number):
     except Order.DoesNotExist:
         return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
     return Response({"order": OrderSerializer(order).data})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def order_invoice_download(request, order_number):
+    try:
+        order = Order.objects.select_related("user").prefetch_related("items").get(
+            user=request.user, order_number=order_number
+        )
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    html = build_invoice_html(order)
+    response = HttpResponse(html, content_type="text/html; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="invoice-{order.order_number}.html"'
+    return response

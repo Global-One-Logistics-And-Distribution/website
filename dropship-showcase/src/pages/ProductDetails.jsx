@@ -11,6 +11,8 @@ import { formatINR } from "../utils/currency";
 import { useProduct, useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
 
+const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
+
 export default function ProductDetails() {
   const { slug } = useParams();
   const location = useLocation();
@@ -140,6 +142,45 @@ export default function ProductDetails() {
   }, [hydratedProduct, hasVariants, selectedVariant]);
 
   const [activeImage, setActiveImage] = useState(images[0]);
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+  const productAmountInPaise = Math.round((Number(hydratedProduct?.price) || 0) * 100);
+
+  useEffect(() => {
+    const mount = document.getElementById("razorpay-affordability-widget-product");
+    if (!mount) return;
+
+    const renderAffordabilityWidget = () => {
+      if (!window.RazorpayAffordabilitySuite || !razorpayKey || productAmountInPaise <= 0) {
+        mount.innerHTML = "";
+        return;
+      }
+
+      mount.innerHTML = "";
+      const widgetConfig = {
+        key: razorpayKey,
+        amount: productAmountInPaise,
+      };
+      const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
+      affordabilitySuite.render();
+    };
+
+    const existingScript = document.querySelector(`script[src="${RAZORPAY_AFFORDABILITY_SCRIPT_SRC}"]`);
+    if (existingScript) {
+      renderAffordabilityWidget();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
+    script.async = true;
+    script.onload = renderAffordabilityWidget;
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      mount.innerHTML = "";
+    };
+  }, [productAmountInPaise, razorpayKey]);
 
   useEffect(() => {
     setActiveImage(images[0]);
@@ -343,6 +384,12 @@ export default function ProductDetails() {
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Inclusive of all taxes. <span className="text-green-600 dark:text-green-400 font-medium">Free delivery</span> on this item.
               </p>
+            )}
+            {hasFakeDiscount && razorpayKey && (
+              <div className="mt-3">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
+                <div id="razorpay-affordability-widget-product" />
+              </div>
             )}
           </div>
 

@@ -14,7 +14,9 @@ export default function SignIn() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || "/";
+  const redirectParam = new URLSearchParams(location.search).get("redirectTo");
+  const requestedRedirect = location.state?.redirectTo || location.state?.from || redirectParam || "/";
+  const from = typeof requestedRedirect === "string" && requestedRedirect.startsWith("/") ? requestedRedirect : "/";
   const hasFirebaseAuth = isFirebaseAuthConfigured();
 
   const [form, setForm] = useState({ email: "", password: "", rememberMe: true });
@@ -73,7 +75,7 @@ export default function SignIn() {
       if (!res.ok) {
         if (data.requires_verification) {
           toast.error(data.error || "Please verify your email to continue.");
-          navigate("/verify-email", {
+          navigate(`/verify-email?redirectTo=${encodeURIComponent(from)}`, {
             replace: true,
             state: {
               email: form.email,
@@ -285,7 +287,8 @@ export default function SignIn() {
           <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             Don&apos;t have an account?{" "}
             <Link
-              to="/signup"
+              to={`/signup?redirectTo=${encodeURIComponent(from)}`}
+              state={{ redirectTo: from }}
               className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
             >
               Sign up

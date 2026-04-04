@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingCart, MapPin, User, Mail, Phone, ArrowRight, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -10,6 +10,7 @@ import { formatINR } from "../utils/currency";
 import { normalizeImageUrl } from "../utils/productsApi";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
 
 function getProductImage(product) {
   const raw = product?.image_url || product?.image;
@@ -79,7 +80,9 @@ export default function Checkout() {
   const cart = useCart() || {};
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isVerified = user?.email_verified !== false;
+  const checkoutPath = `${location.pathname}${location.search}`;
   const items = Array.isArray(cart.items) ? cart.items : [];
   const totalPrice = Number(cart.totalPrice) || 0;
   const totalItems = Number(cart.totalItems) || 0;
@@ -100,6 +103,43 @@ export default function Checkout() {
   const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
 
+  useEffect(() => {
+    const amountInPaise = Math.round(totalPrice * 100);
+    const mount = document.getElementById("razorpay-affordability-widget");
+    if (!mount) return;
+
+    const renderAffordabilityWidget = () => {
+      if (!window.RazorpayAffordabilitySuite || !razorpayKey || amountInPaise <= 0) {
+        mount.innerHTML = "";
+        return;
+      }
+
+      mount.innerHTML = "";
+      const widgetConfig = {
+        key: razorpayKey,
+        amount: amountInPaise,
+      };
+      const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
+      affordabilitySuite.render();
+    };
+
+    const existingScript = document.querySelector(`script[src="${RAZORPAY_AFFORDABILITY_SCRIPT_SRC}"]`);
+    if (existingScript) {
+      renderAffordabilityWidget();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
+    script.async = true;
+    script.onload = renderAffordabilityWidget;
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+    };
+  }, [razorpayKey, totalPrice]);
+
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -116,7 +156,7 @@ export default function Checkout() {
     if (!digits) {
       errs.shipping_phone = "Phone number is required.";
     } else if (!/^[6-9]\d{9}$/.test(digits)) {
-      errs.shipping_phone = "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.";
+      errs.shipping_phone = "Enter a valid 10-digit Indian mobile number.";
     }
     if (!form.shipping_pincode.trim()) {
       errs.shipping_pincode = "Pincode is required.";
@@ -152,7 +192,9 @@ export default function Checkout() {
 
     if (!user || !token) {
       toast.error("Please sign in to place an order.");
-      navigate("/signin");
+      navigate(`/signin?redirectTo=${encodeURIComponent(checkoutPath)}`, {
+        state: { redirectTo: checkoutPath },
+      });
       return;
     }
 
@@ -505,7 +547,13 @@ export default function Checkout() {
             {!user && (
               <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-xl px-4 py-3">
                 You need to{" "}
-                <Link to="/signin" className="underline font-medium">sign in</Link>{" "}
+                <Link
+                  to={`/signin?redirectTo=${encodeURIComponent(checkoutPath)}`}
+                  state={{ redirectTo: checkoutPath }}
+                  className="underline font-medium"
+                >
+                  sign in
+                </Link>{" "}
                 to place an order.
               </p>
             )}
@@ -623,6 +671,12 @@ export default function Checkout() {
                   {totalPrice > 0 ? formatINR(totalPrice) : "—"}
                 </span>
               </div>
+              {totalPrice > 0 && razorpayKey && (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
+                  <div id="razorpay-affordability-widget" />
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
