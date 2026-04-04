@@ -36,8 +36,8 @@ const QUICK_LINKS = [
 const HELP_LINKS = [
   { label: "My Account", to: "/account" },
   { label: "Track Order", to: "/orders" },
-  { label: "Return Policy", to: "/about" },
-  { label: "Shipping Info", to: "/about" },
+  { label: "Return Policy", to: "/return-policy" },
+  { label: "Shipping Info", to: "/shipping-policy" },
   { label: "FAQ", to: "/contact" },
 ];
 
@@ -213,9 +213,9 @@ export default function Footer() {
         <div className="container-pad py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 dark:text-slate-500">
           <p>© {new Date().getFullYear()} EliteDrop. All rights reserved.</p>
           <div className="flex gap-4">
-            <Link to="/about" className="hover:text-indigo-500 transition">Privacy Policy</Link>
+            <Link to="/privacy-policy" className="hover:text-indigo-500 transition">Privacy Policy</Link>
             <Link to="/about" className="hover:text-indigo-500 transition">Terms of Service</Link>
-            <Link to="/about" className="hover:text-indigo-500 transition">Shipping Policy</Link>
+            <Link to="/return-policy" className="hover:text-indigo-500 transition">Return Policy</Link>
           </div>
         </div>
       </div>

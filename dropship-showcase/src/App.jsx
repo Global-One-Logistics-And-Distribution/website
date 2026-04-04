@@ -20,6 +20,9 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Account = lazy(() => import("./pages/Account"));
 const Orders = lazy(() => import("./pages/Orders"));
+const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 
 
 function PageFallback() {
@@ -67,6 +70,9 @@ export default function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/return-policy" element={<ReturnPolicy />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/shipping-policy" element={<ShippingPolicy />} />
               {/* Catch-all: redirect unknown routes to home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
