@@ -12,6 +12,8 @@ import { useProduct, useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
 
 const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
+const FALLBACK_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1000' height='700' viewBox='0 0 1000 700'%3E%3Crect width='1000' height='700' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='Arial,sans-serif' font-size='42' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 export default function ProductDetails() {
   const { slug } = useParams();
@@ -52,7 +54,7 @@ export default function ProductDetails() {
     "Explore authentic premium products with fast delivery and secure checkout.";
   const seoImage =
     hydratedProduct?.image_url || hydratedProduct?.image || "https://www.elitedrop.net.in/android-chrome-512x512.png";
-  const fallbackImage = "https://via.placeholder.com/1000x700?text=No+Image";
+  const fallbackImage = FALLBACK_IMAGE;
 
   useEffect(() => {
     if (!hydratedProduct || !slug) return;
@@ -159,9 +161,14 @@ export default function ProductDetails() {
       const widgetConfig = {
         key: razorpayKey,
         amount: productAmountInPaise,
+        target: "#razorpay-affordability-widget-product",
       };
-      const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
-      affordabilitySuite.render();
+      try {
+        const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
+        affordabilitySuite.render();
+      } catch {
+        mount.innerHTML = "";
+      }
     };
 
     const existingScript = document.querySelector(`script[src="${RAZORPAY_AFFORDABILITY_SCRIPT_SRC}"]`);

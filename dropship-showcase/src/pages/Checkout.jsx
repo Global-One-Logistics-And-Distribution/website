@@ -11,6 +11,8 @@ import { normalizeImageUrl } from "../utils/productsApi";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
 const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
+const CHECKOUT_FALLBACK_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='Arial,sans-serif' font-size='8' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
 
 function getProductImage(product) {
   const raw = product?.image_url || product?.image;
@@ -118,9 +120,14 @@ export default function Checkout() {
       const widgetConfig = {
         key: razorpayKey,
         amount: amountInPaise,
+        target: "#razorpay-affordability-widget",
       };
-      const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
-      affordabilitySuite.render();
+      try {
+        const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
+        affordabilitySuite.render();
+      } catch {
+        mount.innerHTML = "";
+      }
     };
 
     const existingScript = document.querySelector(`script[src="${RAZORPAY_AFFORDABILITY_SCRIPT_SRC}"]`);
@@ -629,9 +636,7 @@ export default function Checkout() {
             <div className="space-y-3 text-sm">
               {items.map((item) => {
                 const price = Number(item.product?.price) || 0;
-                const image =
-                  getProductImage(item.product) ||
-                  "https://via.placeholder.com/64?text=No+Image";
+                const image = getProductImage(item.product) || CHECKOUT_FALLBACK_IMAGE;
 
                 return (
                   <div key={item.productId} className="flex items-center gap-3">
