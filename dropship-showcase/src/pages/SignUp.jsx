@@ -276,12 +276,14 @@ export default function SignUp() {
                   autoComplete="new-password"
                   value={form.confirm}
                   onChange={handleChange}
+                  aria-invalid={!!errors.confirm}
+                  aria-describedby={errors.confirm ? "confirm-error" : undefined}
                   placeholder="Repeat your password"
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
                     errors.confirm ? "border-red-500" : "border-slate-300 dark:border-slate-700"
                   }`}
                 />
-                {errors.confirm && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
+                {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
               </div>
             </div>
 
