@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product
+from .models import Product, SiteMaintenanceSettings
 
 
 @admin.register(Product)
@@ -103,3 +103,39 @@ class ProductAdmin(admin.ModelAdmin):
             )
         return "No image"
     image_preview_large.short_description = "Image Preview"
+
+
+@admin.register(SiteMaintenanceSettings)
+class SiteMaintenanceSettingsAdmin(admin.ModelAdmin):
+    list_display = [
+        "whole_site_maintenance",
+        "products_maintenance",
+        "sign_maintenance",
+        "checkout_maintenance",
+        "updated_at",
+    ]
+    readonly_fields = ["updated_at"]
+    fieldsets = (
+        (
+            "Global",
+            {
+                "fields": ("whole_site_maintenance", "maintenance_message", "updated_at"),
+            },
+        ),
+        (
+            "Section Toggles",
+            {
+                "fields": (
+                    "products_maintenance",
+                    "sign_maintenance",
+                    "checkout_maintenance",
+                ),
+            },
+        ),
+    )
+
+    def has_add_permission(self, request):
+        return not SiteMaintenanceSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -9,6 +9,7 @@ from django.utils.text import slugify
 from xml.etree import ElementTree as ET
 
 from .models import Product
+from .models import SiteMaintenanceSettings
 from .serializers import ProductSerializer, ProductListSerializer
 from .services import (
     TOP_CATEGORIES_CACHE_KEY,
@@ -56,6 +57,21 @@ COLOR_KEYWORDS = (
     "gold",
     "silver",
 )
+
+
+def _maintenance_block_response(scope):
+    settings_obj = SiteMaintenanceSettings.get_solo()
+    payload = settings_obj.as_public_payload()
+
+    if payload["whole_site"] or payload.get(scope, False):
+        return Response(
+            {
+                "error": payload["message"],
+                "maintenance": payload,
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return None
 
 
 def _cached_response(payload, max_age):
@@ -136,6 +152,10 @@ def _get_shipping_service_name():
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def product_list(request):
+    maintenance_error = _maintenance_block_response("products")
+    if maintenance_error is not None:
+        return maintenance_error
+
     category = (request.query_params.get("category") or "").strip().lower()
     brand = (request.query_params.get("brand") or "").strip().lower()
     search = (request.query_params.get("q") or "").strip().lower()
@@ -176,6 +196,10 @@ def product_list(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def product_detail(request, pk):
+    maintenance_error = _maintenance_block_response("products")
+    if maintenance_error is not None:
+        return maintenance_error
+
     cache_key = f"products:detail:{pk}"
     cached_payload = cache.get(cache_key)
     if cached_payload is not None:
@@ -194,6 +218,10 @@ def product_detail(request, pk):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_products(request):
+    maintenance_error = _maintenance_block_response("products")
+    if maintenance_error is not None:
+        return maintenance_error
+
     cached_payload = cache.get(TOP_PRODUCTS_CACHE_KEY)
     if cached_payload is not None:
         return _cached_response(cached_payload, TOP_PRODUCTS_CACHE_TTL)
@@ -206,6 +234,10 @@ def top_products(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def top_categories(request):
+    maintenance_error = _maintenance_block_response("products")
+    if maintenance_error is not None:
+        return maintenance_error
+
     cached_payload = cache.get(TOP_CATEGORIES_CACHE_KEY)
     if cached_payload is not None:
         return _cached_response(cached_payload, TOP_CATEGORIES_CACHE_TTL)
@@ -292,4 +324,13 @@ def google_merchant_feed(request):
 
     response = HttpResponse(xml_payload, content_type="application/xml; charset=utf-8")
     response["Cache-Control"] = f"public, max-age={MERCHANT_FEED_CACHE_TTL}, stale-while-revalidate=60"
+    return response
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def site_maintenance_settings(request):
+    payload = SiteMaintenanceSettings.get_solo().as_public_payload()
+    response = Response({"maintenance": payload})
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
     return response

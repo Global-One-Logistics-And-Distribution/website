@@ -68,3 +68,45 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class SiteMaintenanceSettings(models.Model):
+    singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
+    whole_site_maintenance = models.BooleanField(default=False)
+    products_maintenance = models.BooleanField(default=False)
+    sign_maintenance = models.BooleanField(default=False)
+    checkout_maintenance = models.BooleanField(default=False)
+    maintenance_message = models.CharField(
+        max_length=255,
+        blank=True,
+        default="We are doing scheduled maintenance. Please try again shortly.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "site_maintenance_settings"
+        verbose_name = "Site Maintenance Settings"
+        verbose_name_plural = "Site Maintenance Settings"
+
+    def save(self, *args, **kwargs):
+        self.singleton_key = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Site Maintenance Settings"
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(singleton_key=1)
+        return obj
+
+    def as_public_payload(self):
+        message = (self.maintenance_message or "").strip() or "This section is under maintenance."
+        return {
+            "whole_site": bool(self.whole_site_maintenance),
+            "products": bool(self.products_maintenance),
+            "sign": bool(self.sign_maintenance),
+            "checkout": bool(self.checkout_maintenance),
+            "message": message,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }

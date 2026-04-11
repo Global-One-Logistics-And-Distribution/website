@@ -12,6 +12,7 @@ from .models import Order, OrderItem
 from .invoice import build_invoice_html, send_order_invoice_email
 from .serializers import OrderSerializer, CreateOrderSerializer
 from products.models import Product
+from products.models import SiteMaintenanceSettings
 
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,16 @@ def order_list(request):
         return Response({"orders": OrderSerializer(orders, many=True).data})
 
     if request.method == "POST":
+        maintenance_payload = SiteMaintenanceSettings.get_solo().as_public_payload()
+        if maintenance_payload["whole_site"] or maintenance_payload["checkout"]:
+            return Response(
+                {
+                    "error": maintenance_payload["message"],
+                    "maintenance": maintenance_payload,
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         if not getattr(user, "email_verified", False):
             return Response(
                 {"error": "Please verify your email before placing an order."},

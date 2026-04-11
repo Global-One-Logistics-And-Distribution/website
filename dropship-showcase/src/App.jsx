@@ -1,9 +1,10 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import MaintenanceNotice from "./components/MaintenanceNotice";
 
 const Home = lazy(() => import("./pages/Home"));
 const ProductListing = lazy(() => import("./pages/ProductListing"));
@@ -24,6 +25,16 @@ const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+
+
+function MaintenanceGate({ enabled, title, message, children }) {
+  if (enabled) {
+    return <MaintenanceNotice title={title} message={message} />;
+  }
+  return children;
+}
+
 
 function PageFallback() {
   return (
@@ -43,6 +54,79 @@ function PageFallback() {
 }
 
 export default function App() {
+  const [maintenanceLoaded, setMaintenanceLoaded] = useState(false);
+  const [maintenance, setMaintenance] = useState({
+    whole_site: false,
+    products: false,
+    sign: false,
+    checkout: false,
+    message: "This section is under maintenance.",
+  });
+
+  useEffect(() => {
+    let active = true;
+    const REFRESH_INTERVAL_MS = 8000;
+
+    const loadMaintenance = async () => {
+      try {
+        const res = await fetch(`${API}/products/site-settings/?t=${Date.now()}`, {
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+
+        const data = await res.json().catch(() => ({}));
+        const payload = data?.maintenance;
+        if (!active || !payload || typeof payload !== "object") return;
+
+        setMaintenance((prev) => ({
+          ...prev,
+          whole_site: Boolean(payload.whole_site),
+          products: Boolean(payload.products),
+          sign: Boolean(payload.sign),
+          checkout: Boolean(payload.checkout),
+          message: String(payload.message || prev.message),
+        }));
+      } catch {
+        // Keep defaults when maintenance settings endpoint is temporarily unavailable.
+      } finally {
+        if (active) {
+          setMaintenanceLoaded(true);
+        }
+      }
+    };
+
+    loadMaintenance();
+
+    const intervalId = window.setInterval(() => {
+      loadMaintenance();
+    }, REFRESH_INTERVAL_MS);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadMaintenance();
+      }
+    };
+    const handleWindowFocus = () => {
+      loadMaintenance();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, []);
+
+  const maintenanceMessage = useMemo(
+    () => maintenance.message || "This section is under maintenance.",
+    [maintenance.message]
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
@@ -53,19 +137,113 @@ export default function App() {
       <Navbar />
       <AnimatePresence mode="wait">
         <main className="flex-1">
+          {!maintenanceLoaded ? (
+            <PageFallback />
+          ) : (
+            maintenance.whole_site ? (
+              <MaintenanceNotice title="Site Under Maintenance" message={maintenanceMessage} />
+            ) : (
           <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/products" element={<ProductListing />} />
-              <Route path="/products/:slug" element={<ProductDetails />} />
+              <Route
+                path="/products"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.products}
+                    title="Products Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <ProductListing />
+                  </MaintenanceGate>
+                )}
+              />
+              <Route
+                path="/products/:slug"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.products}
+                    title="Products Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <ProductDetails />
+                  </MaintenanceGate>
+                )}
+              />
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/checkout/success" element={<CheckoutSuccess />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route
+                path="/checkout"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.checkout}
+                    title="Checkout Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <Checkout />
+                  </MaintenanceGate>
+                )}
+              />
+              <Route
+                path="/checkout/success"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.checkout}
+                    title="Checkout Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <CheckoutSuccess />
+                  </MaintenanceGate>
+                )}
+              />
+              <Route
+                path="/signin"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.sign}
+                    title="Sign In Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <SignIn />
+                  </MaintenanceGate>
+                )}
+              />
+              <Route
+                path="/signup"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.sign}
+                    title="Sign Up Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <SignUp />
+                  </MaintenanceGate>
+                )}
+              />
+              <Route
+                path="/verify-email"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.sign}
+                    title="Sign In Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <VerifyEmail />
+                  </MaintenanceGate>
+                )}
+              />
+              <Route
+                path="/complete-profile"
+                element={(
+                  <MaintenanceGate
+                    enabled={maintenance.sign}
+                    title="Sign In Temporarily Unavailable"
+                    message={maintenanceMessage}
+                  >
+                    <CompleteProfile />
+                  </MaintenanceGate>
+                )}
+              />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />
@@ -77,6 +255,8 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
+            )
+          )}
         </main>
       </AnimatePresence>
       <Footer />

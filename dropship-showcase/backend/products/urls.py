@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path("", views.product_list, name="product-list"),
+    path("site-settings/", views.site_maintenance_settings, name="site-maintenance-settings"),
     path("top/", views.top_products, name="product-top"),
     path("categories/top/", views.top_categories, name="product-top-categories"),
     path("merchant/google.xml", views.google_merchant_feed, name="google-merchant-feed"),

@@ -18,22 +18,23 @@ from .models import User
 from .serializers import SignupSerializer, SigninSerializer, UserSerializer, UpdateProfileSerializer
 from .utils import send_verification_email
 from .firebase_auth import verify_firebase_id_token
-from .turnstile import is_turnstile_enabled, verify_turnstile_token
+from products.models import SiteMaintenanceSettings
 
 
 logger = logging.getLogger(__name__)
 
 
-def _validate_turnstile(request):
-    if not is_turnstile_enabled():
-        return None
-
-    token = request.data.get("turnstile_token")
-    remoteip = request.META.get("REMOTE_ADDR", "")
-    ok, message = verify_turnstile_token(token, remoteip=remoteip)
-    if ok:
-        return None
-    return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
+def _sign_maintenance_response():
+    payload = SiteMaintenanceSettings.get_solo().as_public_payload()
+    if payload["whole_site"] or payload["sign"]:
+        return Response(
+            {
+                "error": payload["message"],
+                "maintenance": payload,
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return None
 
 
 class LoginRateThrottle(AnonRateThrottle):
@@ -93,9 +94,9 @@ def _parse_remember_me(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def signup(request):
-    turnstile_error = _validate_turnstile(request)
-    if turnstile_error is not None:
-        return turnstile_error
+    maintenance_error = _sign_maintenance_response()
+    if maintenance_error is not None:
+        return maintenance_error
 
     serializer = SignupSerializer(data=request.data)
     if not serializer.is_valid():
@@ -137,9 +138,9 @@ def signup(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def signin(request):
-    turnstile_error = _validate_turnstile(request)
-    if turnstile_error is not None:
-        return turnstile_error
+    maintenance_error = _sign_maintenance_response()
+    if maintenance_error is not None:
+        return maintenance_error
 
     serializer = SigninSerializer(data=request.data)
     if not serializer.is_valid():
@@ -184,9 +185,9 @@ def signin(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def google_signin(request):
-    turnstile_error = _validate_turnstile(request)
-    if turnstile_error is not None:
-        return turnstile_error
+    maintenance_error = _sign_maintenance_response()
+    if maintenance_error is not None:
+        return maintenance_error
 
     raw_token = str(request.data.get("id_token", "")).strip()
     remember_me = _parse_remember_me(request)
@@ -218,9 +219,9 @@ def google_signin(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def firebase_signin(request):
-    turnstile_error = _validate_turnstile(request)
-    if turnstile_error is not None:
-        return turnstile_error
+    maintenance_error = _sign_maintenance_response()
+    if maintenance_error is not None:
+        return maintenance_error
 
     raw_token = str(request.data.get("id_token", "")).strip()
     remember_me = _parse_remember_me(request)
@@ -256,6 +257,10 @@ def firebase_signin(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def verify_email(request):
+    maintenance_error = _sign_maintenance_response()
+    if maintenance_error is not None:
+        return maintenance_error
+
     email = str(request.data.get("email", "")).lower().strip()
     code = str(request.data.get("code", "")).strip()
 
@@ -317,6 +322,10 @@ def verify_email(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginRateThrottle])
 def resend_verification(request):
+    maintenance_error = _sign_maintenance_response()
+    if maintenance_error is not None:
+        return maintenance_error
+
     email = str(request.data.get("email", "")).lower().strip()
     if not email:
         return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
