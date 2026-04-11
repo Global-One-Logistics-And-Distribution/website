@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.core.cache import cache
@@ -329,6 +329,7 @@ def google_merchant_feed(request):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
+@throttle_classes([])
 def site_maintenance_settings(request):
     payload = SiteMaintenanceSettings.get_solo().as_public_payload()
     response = Response({"maintenance": payload})

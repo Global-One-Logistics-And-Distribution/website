@@ -65,19 +65,43 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    const REFRESH_INTERVAL_MS = 8000;
+    let timerId = null;
+    const BASE_REFRESH_INTERVAL_MS = 12000;
+    const MAX_REFRESH_INTERVAL_MS = 60000;
+    let nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
+
+    const scheduleNext = (delayMs = nextRefreshIntervalMs) => {
+      if (!active) return;
+      if (timerId !== null) {
+        window.clearTimeout(timerId);
+      }
+      timerId = window.setTimeout(() => {
+        loadMaintenance();
+      }, delayMs);
+    };
 
     const loadMaintenance = async () => {
       try {
-        const res = await fetch(`${API}/products/site-settings/?t=${Date.now()}`, {
+        const res = await fetch(`${API}/products/site-settings/`, {
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
         });
-        if (!res.ok) return;
+        if (res.status === 429) {
+          nextRefreshIntervalMs = Math.min(nextRefreshIntervalMs * 2, MAX_REFRESH_INTERVAL_MS);
+          return;
+        }
+
+        if (!res.ok) {
+          nextRefreshIntervalMs = Math.min(nextRefreshIntervalMs * 2, MAX_REFRESH_INTERVAL_MS);
+          return;
+        }
 
         const data = await res.json().catch(() => ({}));
         const payload = data?.maintenance;
-        if (!active || !payload || typeof payload !== "object") return;
+        if (!active || !payload || typeof payload !== "object") {
+          nextRefreshIntervalMs = Math.min(nextRefreshIntervalMs * 2, MAX_REFRESH_INTERVAL_MS);
+          return;
+        }
 
         setMaintenance((prev) => ({
           ...prev,
@@ -87,27 +111,28 @@ export default function App() {
           checkout: Boolean(payload.checkout),
           message: String(payload.message || prev.message),
         }));
+        nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
       } catch {
         // Keep defaults when maintenance settings endpoint is temporarily unavailable.
+        nextRefreshIntervalMs = Math.min(nextRefreshIntervalMs * 2, MAX_REFRESH_INTERVAL_MS);
       } finally {
         if (active) {
           setMaintenanceLoaded(true);
+          scheduleNext();
         }
       }
     };
 
     loadMaintenance();
 
-    const intervalId = window.setInterval(() => {
-      loadMaintenance();
-    }, REFRESH_INTERVAL_MS);
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
+        nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
         loadMaintenance();
       }
     };
     const handleWindowFocus = () => {
+      nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
       loadMaintenance();
     };
 
@@ -116,7 +141,9 @@ export default function App() {
 
     return () => {
       active = false;
-      window.clearInterval(intervalId);
+      if (timerId !== null) {
+        window.clearTimeout(timerId);
+      }
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleWindowFocus);
     };
