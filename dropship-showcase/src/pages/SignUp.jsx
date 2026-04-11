@@ -212,11 +212,13 @@ export default function SignUp() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
                     errors.email ? "border-red-500" : "border-slate-300 dark:border-slate-700"
                   }`}
                 />
-                {errors.email && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>}
+                {errors.email && <p id="email-error" role="alert" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>}
               </div>
             </div>
 
