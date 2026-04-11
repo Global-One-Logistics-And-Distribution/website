@@ -178,17 +178,6 @@ export default function SignUp() {
   })();
 
   const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strengthScore];
-
-  const rememberMeField = (
-    <label className="flex items-center gap-2 text-sm text-gray-700">
-      <input
-        type="checkbox"
-        checked={rememberMe}
-        onChange={(e) => setRememberMe(e.target.checked)}
-      />
-      Remember me
-    </label>
-  );
   const strengthColor = ["", "bg-red-500", "bg-amber-400", "bg-yellow-400", "bg-emerald-500"][strengthScore];
 
   return (
@@ -303,6 +292,16 @@ export default function SignUp() {
                 {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
               </div>
             </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Remember me
+            </label>
 
             {/* Submit */}
             <motion.button

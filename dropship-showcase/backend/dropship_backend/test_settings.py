@@ -1,5 +1,9 @@
 """Test settings - uses SQLite to avoid requiring PostgreSQL in CI."""
-from .settings import *  # noqa: F401, F403
+from . import settings as base_settings
+
+for name in dir(base_settings):
+    if name.isupper():
+        globals()[name] = getattr(base_settings, name)
 
 DATABASES = {
     "default": {

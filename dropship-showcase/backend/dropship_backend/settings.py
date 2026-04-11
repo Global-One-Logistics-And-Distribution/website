@@ -1,7 +1,6 @@
 """
 Django settings for the Dropship backend.
 """
-import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv

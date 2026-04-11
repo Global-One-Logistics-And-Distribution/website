@@ -1,6 +1,10 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def _inject_dashboard_stats(ctx, request):
@@ -33,7 +37,7 @@ def _inject_dashboard_stats(ctx, request):
             .prefetch_related("items")[:8]
         )
     except Exception:
-        pass
+        logger.exception("Failed to inject admin dashboard stats")
 
 
 _original_each_context = admin.AdminSite.each_context

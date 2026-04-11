@@ -6,7 +6,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import User
 from products.models import Product
-from orders.models import Order
 
 
 def get_token(user):
