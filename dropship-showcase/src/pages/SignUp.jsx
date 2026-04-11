@@ -7,7 +7,10 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { getFirebaseAuthErrorMessage, isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const getApiBaseUrl = () =>
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+
+const API = getApiBaseUrl();
 
 export default function SignUp() {
   const { login } = useAuth();
