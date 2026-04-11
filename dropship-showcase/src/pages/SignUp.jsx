@@ -22,6 +22,7 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -146,7 +147,7 @@ export default function SignUp() {
       const res = await fetch(`${API}/auth/social/firebase/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_token: payload.idToken, name: payload.name, remember_me: true }),
+        body: JSON.stringify({ id_token: payload.idToken, name: payload.name, remember_me: rememberMe }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -154,7 +155,7 @@ export default function SignUp() {
         return;
       }
 
-      login(data.token, data.user, { rememberMe: true });
+      login(data.token, data.user, { rememberMe });
       toast.success(`Welcome, ${data.user.name}!`);
       navigate(redirectTo, { replace: true });
     } catch (error) {
@@ -174,6 +175,17 @@ export default function SignUp() {
   })();
 
   const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strengthScore];
+
+  const rememberMeField = (
+    <label className="flex items-center gap-2 text-sm text-gray-700">
+      <input
+        type="checkbox"
+        checked={rememberMe}
+        onChange={(e) => setRememberMe(e.target.checked)}
+      />
+      Remember me
+    </label>
+  );
   const strengthColor = ["", "bg-red-500", "bg-amber-400", "bg-yellow-400", "bg-emerald-500"][strengthScore];
 
   return (
