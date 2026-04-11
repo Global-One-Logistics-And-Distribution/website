@@ -7,7 +7,10 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { getFirebaseAuthErrorMessage, isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const getApiBaseUrl = () =>
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+
+const API = getApiBaseUrl();
 
 export default function SignUp() {
   const { login } = useAuth();
@@ -22,6 +25,7 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -146,7 +150,7 @@ export default function SignUp() {
       const res = await fetch(`${API}/auth/social/firebase/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_token: payload.idToken, name: payload.name, remember_me: true }),
+        body: JSON.stringify({ id_token: payload.idToken, name: payload.name, remember_me: rememberMe }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -154,7 +158,7 @@ export default function SignUp() {
         return;
       }
 
-      login(data.token, data.user, { rememberMe: true });
+      login(data.token, data.user, { rememberMe });
       toast.success(`Welcome, ${data.user.name}!`);
       navigate(redirectTo, { replace: true });
     } catch (error) {
@@ -174,6 +178,17 @@ export default function SignUp() {
   })();
 
   const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strengthScore];
+
+  const rememberMeField = (
+    <label className="flex items-center gap-2 text-sm text-gray-700">
+      <input
+        type="checkbox"
+        checked={rememberMe}
+        onChange={(e) => setRememberMe(e.target.checked)}
+      />
+      Remember me
+    </label>
+  );
   const strengthColor = ["", "bg-red-500", "bg-amber-400", "bg-yellow-400", "bg-emerald-500"][strengthScore];
 
   return (
@@ -212,11 +227,13 @@ export default function SignUp() {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
                     errors.email ? "border-red-500" : "border-slate-300 dark:border-slate-700"
                   }`}
                 />
-                {errors.email && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>}
+                {errors.email && <p id="email-error" role="alert" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>}
               </div>
             </div>
 
@@ -276,12 +293,14 @@ export default function SignUp() {
                   autoComplete="new-password"
                   value={form.confirm}
                   onChange={handleChange}
+                  aria-invalid={!!errors.confirm}
+                  aria-describedby={errors.confirm ? "confirm-error" : undefined}
                   placeholder="Repeat your password"
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
                     errors.confirm ? "border-red-500" : "border-slate-300 dark:border-slate-700"
                   }`}
                 />
-                {errors.confirm && <p className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
+                {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
               </div>
             </div>
 

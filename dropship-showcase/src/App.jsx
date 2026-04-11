@@ -25,7 +25,7 @@ const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const API = import.meta.env.VITE_API_URL || "/api";
 
 
 function MaintenanceGate({ enabled, title, message, children }) {
@@ -68,7 +68,9 @@ export default function App() {
     let timerId = null;
     const BASE_REFRESH_INTERVAL_MS = 12000;
     const MAX_REFRESH_INTERVAL_MS = 60000;
+    const EVENT_TRIGGER_DEDUPE_MS = 1000;
     let nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
+    let lastEventTriggeredRefreshAt = 0;
 
     const scheduleNext = (delayMs = nextRefreshIntervalMs) => {
       if (!active) return;
@@ -125,15 +127,23 @@ export default function App() {
 
     loadMaintenance();
 
+    const triggerImmediateRefreshFromEvent = () => {
+      const now = Date.now();
+      if (now - lastEventTriggeredRefreshAt < EVENT_TRIGGER_DEDUPE_MS) {
+        return;
+      }
+      lastEventTriggeredRefreshAt = now;
+      nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
+      loadMaintenance();
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
-        loadMaintenance();
+        triggerImmediateRefreshFromEvent();
       }
     };
     const handleWindowFocus = () => {
-      nextRefreshIntervalMs = BASE_REFRESH_INTERVAL_MS;
-      loadMaintenance();
+      triggerImmediateRefreshFromEvent();
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
