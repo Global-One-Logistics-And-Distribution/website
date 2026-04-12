@@ -188,6 +188,11 @@ CORS_ALLOWED_ORIGINS = config(
     default="http://localhost:5173,http://127.0.0.1:5173,https://elitedrop.net.in,https://www.elitedrop.net.in",
     cast=Csv(),
 )
+CORS_ALLOWED_ORIGIN_REGEXES = config(
+    "CORS_ALLOWED_ORIGIN_REGEXES",
+    default=r"^https://.*\.vercel\.app$",
+    cast=Csv(),
+)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "accept",

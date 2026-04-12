@@ -25,7 +25,10 @@ const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 
-const API = import.meta.env.VITE_API_URL || "/api";
+const API = (
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api")
+).replace(/\/$/, "");
 
 
 function MaintenanceGate({ enabled, title, message, children }) {
