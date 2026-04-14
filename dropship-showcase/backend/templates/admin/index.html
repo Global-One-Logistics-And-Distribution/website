@@ -15,17 +15,45 @@
       <div style="font-size:1.6rem;font-weight:700;color:#d97706;">{{ dashboard_stats.pending_orders }}</div>
       <div style="font-size:0.8rem;color:#b45309;font-weight:500;margin-top:2px;">Pending Orders</div>
     </div>
+    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#15803d;">{{ dashboard_stats.delivered_orders }}</div>
+      <div style="font-size:0.8rem;color:#166534;font-weight:500;margin-top:2px;">Delivered Orders</div>
+    </div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#b91c1c;">{{ dashboard_stats.cancelled_orders }}</div>
+      <div style="font-size:0.8rem;color:#991b1b;font-weight:500;margin-top:2px;">Cancelled Orders</div>
+    </div>
+    <div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#0891b2;">{{ dashboard_stats.today_orders }}</div>
+      <div style="font-size:0.8rem;color:#0e7490;font-weight:500;margin-top:2px;">Orders Today</div>
+    </div>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px;">
       <div style="font-size:1.6rem;font-weight:700;color:#16a34a;">Rs {{ dashboard_stats.total_revenue_display }}</div>
       <div style="font-size:0.8rem;color:#15803d;font-weight:500;margin-top:2px;">Revenue (Delivered+)</div>
+    </div>
+    <div style="background:#ecfdf5;border:1px solid #86efac;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#047857;">Rs {{ dashboard_stats.today_revenue_display }}</div>
+      <div style="font-size:0.8rem;color:#065f46;font-weight:500;margin-top:2px;">Revenue Today</div>
+    </div>
+    <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#0f766e;">Rs {{ dashboard_stats.revenue_last_7_days_display }}</div>
+      <div style="font-size:0.8rem;color:#115e59;font-weight:500;margin-top:2px;">Revenue (Last 7 Days)</div>
     </div>
     <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px 20px;">
       <div style="font-size:1.6rem;font-weight:700;color:#0284c7;">{{ dashboard_stats.total_users }}</div>
       <div style="font-size:0.8rem;color:#0369a1;font-weight:500;margin-top:2px;">Registered Users</div>
     </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#1d4ed8;">{{ dashboard_stats.recent_users }}</div>
+      <div style="font-size:0.8rem;color:#1e40af;font-weight:500;margin-top:2px;">New Users (7d)</div>
+    </div>
     <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;padding:16px 20px;">
       <div style="font-size:1.6rem;font-weight:700;color:#7e22ce;">{{ dashboard_stats.active_products }}</div>
       <div style="font-size:0.8rem;color:#6b21a8;font-weight:500;margin-top:2px;">Active Products</div>
+    </div>
+    <div style="background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#c2410c;">{{ dashboard_stats.low_stock_products }}</div>
+      <div style="font-size:0.8rem;color:#9a3412;font-weight:500;margin-top:2px;">Low Stock (<=5)</div>
     </div>
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px 20px;">
       <div style="font-size:1.6rem;font-weight:700;color:#c2410c;">{{ dashboard_stats.processing_orders }}</div>
