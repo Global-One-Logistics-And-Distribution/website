@@ -63,7 +63,7 @@ export default function App() {
     products: false,
     sign: false,
     checkout: false,
-    message: "This section is under maintenance.",
+    message: "We are going under maintenance.",
   });
 
   useEffect(() => {
