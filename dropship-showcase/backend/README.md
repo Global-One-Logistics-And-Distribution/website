@@ -149,6 +149,8 @@ Keep sender identity aligned with a verified ZeptoMail domain/sender.
 | GET | `/` | ✓ | List user's orders |
 | POST | `/` | ✓ | Place a new order |
 | GET | `/<order_number>/` | ✓ | Order detail |
+| POST | `/<order_number>/invoice/create/` | ✓ | Create Razorpay invoice link for this order |
+| GET | `/<order_number>/invoice/` | ✓ | Download HTML invoice |
 
 ### Health
 | Method | Path | Description |

@@ -19,7 +19,6 @@ dropship-showcase/
 │   ├── dropship_backend/ # Django project settings, urls, wsgi
 │   ├── requirements.txt  # Python dependencies
 │   └── .env.example      # Backend env template
-├── server/               # ⚠️ Legacy Node/Express backend (deprecated — kept for reference)
 ├── public/               # Static assets + SPA routing (_redirects for Netlify)
 └── vercel.json           # Vercel SPA rewrite rules
 ```

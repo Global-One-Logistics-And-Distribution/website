@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
 from django.http import HttpResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -18,6 +19,7 @@ from rest_framework.throttling import UserRateThrottle
 
 from .models import Order, OrderItem
 from .invoice import build_invoice_html, send_order_invoice_email
+from .payments import build_razorpay_invoice_payload
 from .serializers import OrderSerializer, CreateOrderSerializer
 from products.models import Product
 from products.models import SiteMaintenanceSettings
@@ -51,6 +53,51 @@ def _get_razorpay_client():
         logger.exception("Razorpay package import failed.")
         return None
     return razorpay.Client(auth=(key_id, key_secret))
+
+
+def _create_or_get_razorpay_invoice(order):
+    if order.invoice_id and order.invoice_url:
+        return {
+            "invoice_id": order.invoice_id,
+            "invoice_number": order.invoice_number,
+            "invoice_status": order.invoice_status,
+            "invoice_url": order.invoice_url,
+            "created": False,
+        }
+
+    if not order.items.exists():
+        return None
+
+    client = _get_razorpay_client()
+    if not client:
+        return None
+
+    invoice_payload = build_razorpay_invoice_payload(order)
+    invoice = client.invoice.create(invoice_payload)
+
+    order.invoice_id = str(invoice.get("id") or "")
+    order.invoice_number = str(invoice.get("invoice_number") or "")
+    order.invoice_status = str(invoice.get("status") or "")
+    order.invoice_url = str(invoice.get("short_url") or invoice.get("hosted_invoice_url") or "")
+    order.invoice_created_at = timezone.now()
+    order.save(
+        update_fields=[
+            "invoice_id",
+            "invoice_number",
+            "invoice_status",
+            "invoice_url",
+            "invoice_created_at",
+            "updated_at",
+        ]
+    )
+
+    return {
+        "invoice_id": order.invoice_id,
+        "invoice_number": order.invoice_number,
+        "invoice_status": order.invoice_status,
+        "invoice_url": order.invoice_url,
+        "created": True,
+    }
 
 
 class PaymentCreateOrderThrottle(UserRateThrottle):
@@ -322,6 +369,11 @@ def order_list(request):
             except Exception:
                 logger.exception("Invoice email failed for order=%s", order.order_number)
 
+            try:
+                _create_or_get_razorpay_invoice(order)
+            except Exception:
+                logger.exception("Razorpay invoice auto-create failed for order=%s", order.order_number)
+
             return Response(
                 {"order": OrderSerializer(order).data},
                 status=status.HTTP_201_CREATED,
@@ -364,6 +416,47 @@ def order_invoice_download(request, order_number):
     response = HttpResponse(html, content_type="text/html; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="invoice-{order.order_number}.html"'
     return response
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_razorpay_invoice(request, order_number):
+    try:
+        order = Order.objects.select_related("user").prefetch_related("items").get(
+            user=request.user, order_number=order_number
+        )
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        invoice_payload = _create_or_get_razorpay_invoice(order)
+        if invoice_payload is None:
+            return Response(
+                {"error": "Cannot create invoice right now for this order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    except Exception as exc:
+        status_code = int(getattr(exc, "status_code", 500) or 500)
+        if status_code == 401:
+            return Response({"error": "Razorpay authentication failed."}, status=status.HTTP_401_UNAUTHORIZED)
+        logger.exception("Razorpay invoice create failed for order=%s", order.order_number)
+        return Response(
+            {
+                "error": "Failed to create Razorpay invoice.",
+                **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+            },
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    return Response(
+        {
+            "invoice_id": invoice_payload["invoice_id"],
+            "invoice_number": invoice_payload["invoice_number"],
+            "invoice_status": invoice_payload["invoice_status"],
+            "invoice_url": invoice_payload["invoice_url"],
+        },
+        status=status.HTTP_201_CREATED if invoice_payload.get("created") else status.HTTP_200_OK,
+    )
 
 
 @api_view(["POST"])

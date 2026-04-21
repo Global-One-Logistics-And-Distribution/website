@@ -24,6 +24,11 @@ class Order(models.Model):
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    invoice_id = models.CharField(max_length=100, blank=True, default="", db_index=True)
+    invoice_number = models.CharField(max_length=100, blank=True, default="")
+    invoice_status = models.CharField(max_length=50, blank=True, default="")
+    invoice_url = models.URLField(max_length=1000, blank=True, default="")
+    invoice_created_at = models.DateTimeField(null=True, blank=True)
 
     # Shipping address
     shipping_name = models.CharField(max_length=200)

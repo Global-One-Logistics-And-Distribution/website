@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { CheckCircle, Download, Loader2, Package } from "lucide-react";
+import { CheckCircle, Download, ExternalLink, Loader2, Package } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
@@ -16,6 +16,7 @@ export default function CheckoutSuccess() {
   const [order, setOrder] = useState(orderFromState || null);
   const [loading, setLoading] = useState(!orderFromState);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [creatingRazorpayInvoice, setCreatingRazorpayInvoice] = useState(false);
 
   const orderNumber = useMemo(() => {
     if (orderFromState?.order_number) return orderFromState.order_number;
@@ -75,6 +76,52 @@ export default function CheckoutSuccess() {
       cancelled = true;
     };
   }, [user, token, navigate, location.pathname, location.search, orderNumber, orderFromState]);
+
+  useEffect(() => {
+    if (!token || !order?.order_number || order?.invoice_url || creatingRazorpayInvoice) {
+      return;
+    }
+
+    let cancelled = false;
+    setCreatingRazorpayInvoice(true);
+
+    fetch(`${API}/orders/${encodeURIComponent(order.order_number)}/invoice/create/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data?.error || "Unable to prepare Razorpay invoice.");
+        }
+
+        if (!cancelled) {
+          setOrder((prev) => ({
+            ...(prev || {}),
+            invoice_id: data?.invoice_id || prev?.invoice_id || "",
+            invoice_number: data?.invoice_number || prev?.invoice_number || "",
+            invoice_status: data?.invoice_status || prev?.invoice_status || "",
+            invoice_url: data?.invoice_url || prev?.invoice_url || "",
+          }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error("Could not prepare Razorpay invoice link. You can still download the invoice.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCreatingRazorpayInvoice(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, order?.order_number, order?.invoice_url, creatingRazorpayInvoice]);
 
   if (loading) {
     return (
@@ -151,18 +198,35 @@ export default function CheckoutSuccess() {
           </p>
         )}
         <p className="text-slate-500 dark:text-slate-400 mb-8">
-          Thank you for your purchase. Your invoice has been emailed to you and is available to download below.
+          Thank you for your purchase. Your Razorpay invoice is shown below and has also been emailed to you.
         </p>
+        {creatingRazorpayInvoice && (
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            Preparing Razorpay invoice link...
+          </p>
+        )}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={handleDownloadInvoice}
-            disabled={downloadingInvoice}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-60"
-          >
-            {downloadingInvoice ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            Download Invoice
-          </button>
+          {order?.invoice_url ? (
+            <a
+              href={order.invoice_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition"
+            >
+              <ExternalLink size={16} />
+              View Razorpay Invoice
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDownloadInvoice}
+              disabled={downloadingInvoice || creatingRazorpayInvoice}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition disabled:opacity-60"
+            >
+              {downloadingInvoice ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              Download Invoice
+            </button>
+          )}
           <Link
             to="/orders"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"

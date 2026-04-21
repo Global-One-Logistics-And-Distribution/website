@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, Home, XCircle, Loader2 } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, Home, XCircle, Loader2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { formatINR } from "../utils/currency";
 
@@ -79,8 +80,54 @@ function TrackingBar({ status }) {
   );
 }
 
-function OrderCard({ order }) {
+function OrderCard({ order, token, onOrderPatched }) {
   const [expanded, setExpanded] = useState(false);
+  const [openingInvoice, setOpeningInvoice] = useState(false);
+
+  const handleViewRazorpayInvoice = async () => {
+    if (!token) {
+      toast.error("Please sign in to open invoice.");
+      return;
+    }
+
+    if (order?.invoice_url) {
+      window.open(order.invoice_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    setOpeningInvoice(true);
+    try {
+      const res = await fetch(`${API}/orders/${encodeURIComponent(order.order_number)}/invoice/create/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "Unable to create Razorpay invoice.");
+      }
+
+      const patchedOrder = {
+        ...order,
+        invoice_id: data?.invoice_id || "",
+        invoice_number: data?.invoice_number || "",
+        invoice_status: data?.invoice_status || "",
+        invoice_url: data?.invoice_url || "",
+      };
+      onOrderPatched?.(patchedOrder);
+
+      if (patchedOrder.invoice_url) {
+        window.open(patchedOrder.invoice_url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.error("Invoice created but link is not available yet.");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Unable to open Razorpay invoice.");
+    } finally {
+      setOpeningInvoice(false);
+    }
+  };
 
   return (
     <motion.div
@@ -175,6 +222,21 @@ function OrderCard({ order }) {
             <span>Order Total</span>
             <span>{formatINR(Number(order.total_amount))}</span>
           </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Razorpay Invoice: {order.invoice_status || (order.invoice_url ? "available" : "not created")}
+            </p>
+            <button
+              type="button"
+              onClick={handleViewRazorpayInvoice}
+              disabled={openingInvoice}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 transition"
+            >
+              {openingInvoice ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+              {order.invoice_url ? "View Razorpay Invoice" : "Create & View Razorpay Invoice"}
+            </button>
+          </div>
         </div>
       )}
     </motion.div>
@@ -186,6 +248,11 @@ export default function Orders() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleOrderPatched = (patchedOrder) => {
+    if (!patchedOrder?.id) return;
+    setOrders((prev) => prev.map((item) => (item.id === patchedOrder.id ? patchedOrder : item)));
+  };
 
   useEffect(() => {
     if (!user || !token) {
@@ -251,7 +318,12 @@ export default function Orders() {
       </motion.h1>
       <div className="space-y-4 max-w-3xl">
         {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
+          <OrderCard
+            key={order.id}
+            order={order}
+            token={token}
+            onOrderPatched={handleOrderPatched}
+          />
         ))}
       </div>
     </section>

@@ -103,7 +103,17 @@ class OrderAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status", "created_at", "shipping_state"]
     search_fields = ["order_number", "user__email", "shipping_name", "shipping_email", "shipping_phone"]
-    readonly_fields = ["order_number", "total_amount", "created_at", "updated_at"]
+    readonly_fields = [
+        "order_number",
+        "total_amount",
+        "invoice_id",
+        "invoice_number",
+        "invoice_status",
+        "invoice_url",
+        "invoice_created_at",
+        "created_at",
+        "updated_at",
+    ]
     ordering = ["-created_at"]
     inlines = [OrderItemInline]
     actions = [
@@ -116,6 +126,15 @@ class OrderAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Order Info", {
             "fields": ("order_number", "user", "status", "total_amount", "notes"),
+        }),
+        ("Invoice", {
+            "fields": (
+                "invoice_id",
+                "invoice_number",
+                "invoice_status",
+                "invoice_url",
+                "invoice_created_at",
+            ),
         }),
         ("Shipping Address", {
             "fields": (
