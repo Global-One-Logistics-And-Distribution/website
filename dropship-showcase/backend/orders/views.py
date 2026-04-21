@@ -22,7 +22,6 @@ from .serializers import OrderSerializer, CreateOrderSerializer
 from products.models import Product
 from products.models import SiteMaintenanceSettings
 from cart.models import CartItem
-import razorpay
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +44,11 @@ def _get_razorpay_client():
     key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
     key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
     if not key_id or not key_secret:
+        return None
+    try:
+        import razorpay
+    except Exception:
+        logger.exception("Razorpay package import failed.")
         return None
     return razorpay.Client(auth=(key_id, key_secret))
 
