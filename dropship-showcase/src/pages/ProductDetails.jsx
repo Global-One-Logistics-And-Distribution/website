@@ -10,6 +10,7 @@ import ProductDetailsSkeleton from "../components/ProductDetailsSkeleton";
 import { formatINR } from "../utils/currency";
 import { useProduct, useProducts } from "../hooks/useProducts";
 import { getProductIdFromSlug, getProductSlug } from "../utils/slug";
+import { getReviewCount } from "../utils/product";
 
 const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
 const FALLBACK_IMAGE =
@@ -54,6 +55,16 @@ export default function ProductDetails() {
     "Explore authentic premium products with fast delivery and secure checkout.";
   const seoImage =
     hydratedProduct?.image_url || hydratedProduct?.image || "https://www.elitedrop.net.in/android-chrome-512x512.png";
+  const ratingValue = useMemo(() => {
+    const parsed = Number(hydratedProduct?.rating);
+    if (!Number.isFinite(parsed)) return 4.3;
+    return Math.min(5, Math.max(1, parsed));
+  }, [hydratedProduct?.rating]);
+  const reviewCount = useMemo(() => {
+    const id = Number(hydratedProduct?.id);
+    if (!Number.isFinite(id) || id <= 0) return 0;
+    return getReviewCount(id);
+  }, [hydratedProduct?.id]);
   const fallbackImage = FALLBACK_IMAGE;
 
   useEffect(() => {
@@ -286,6 +297,34 @@ export default function ProductDetails() {
                 : "https://schema.org/OutOfStock",
               url: canonicalUrl,
             },
+            ...(reviewCount > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue,
+                    reviewCount,
+                    bestRating: 5,
+                    worstRating: 1,
+                  },
+                  review: [
+                    {
+                      "@type": "Review",
+                      name: "Customer rating summary",
+                      reviewBody: `Average customer rating ${ratingValue} out of 5 based on ${reviewCount} ratings.`,
+                      author: {
+                        "@type": "Organization",
+                        name: "EliteDrop",
+                      },
+                      reviewRating: {
+                        "@type": "Rating",
+                        ratingValue,
+                        bestRating: 5,
+                        worstRating: 1,
+                      },
+                    },
+                  ],
+                }
+              : {}),
           })}
         </script>
       </Helmet>

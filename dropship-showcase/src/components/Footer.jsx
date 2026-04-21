@@ -211,7 +211,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-slate-100 dark:border-slate-800 bg-white/55 dark:bg-slate-900/55 backdrop-blur-md">
         <div className="container-pad py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 dark:text-slate-500">
-          <p>© {new Date().getFullYear()} EliteDrop. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Global One Logistics And Distribution. All rights reserved.</p>
           <div className="flex gap-4">
             <Link to="/privacy-policy" className="hover:text-indigo-500 transition">Privacy Policy</Link>
             <Link to="/about" className="hover:text-indigo-500 transition">Terms of Service</Link>
