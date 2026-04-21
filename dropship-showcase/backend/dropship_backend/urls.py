@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 import logging
+from orders import views as order_views
 
 
 logger = logging.getLogger(__name__)
@@ -89,5 +90,8 @@ urlpatterns = [
     path("api/wishlist/", include("wishlist.urls")),
     path("api/products/", include("products.urls")),
     path("api/orders/", include("orders.urls")),
+    path("api/checkout/create-order", order_views.create_razorpay_order, name="razorpay-create-order"),
+    path("api/checkout/verify-payment", order_views.verify_razorpay_payment, name="razorpay-verify-payment"),
+    path("api/checkout/webhook", order_views.razorpay_webhook, name="razorpay-webhook"),
     path("api/health/", health_check),
 ]

@@ -1,6 +1,6 @@
 # Dropship Showcase — Backend Server
 
-Express.js API server with PostgreSQL, JWT authentication, Stripe payments, and security hardening.
+Express.js API server with PostgreSQL, JWT authentication, Razorpay checkout support, and security hardening.
 
 ## Quick Start
 
@@ -34,8 +34,8 @@ psql -U postgres -d dropship -f schema.sql
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET` | Secret key for JWT signing (min 32 chars) |
 | `JWT_EXPIRES_IN` | Token expiry (e.g. `7d`) |
-| `STRIPE_SECRET_KEY` | Stripe secret key from dashboard |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `RAZORPAY_KEY_ID` | Razorpay key ID |
+| `RAZORPAY_KEY_SECRET` | Razorpay key secret |
 | `CLIENT_ORIGIN` | Frontend origin for CORS |
 
 ### 5. Run
@@ -76,8 +76,9 @@ npm start
 ### Checkout (`/api/checkout`)
 | Method | Path | Description |
 |---|---|---|
-| POST | `/create-payment-intent` | Create Stripe PaymentIntent (requires JWT) |
-| POST | `/webhook` | Stripe webhook handler |
+| POST | `/create-order` | Create Razorpay order (requires JWT) |
+| POST | `/verify-payment` | Verify Razorpay payment signature (requires JWT) |
+| POST | `/webhook` | Webhook placeholder |
 
 ## Security Features
 - **bcryptjs** (cost factor 12) for password hashing
@@ -86,5 +87,5 @@ npm start
 - **Helmet** for HTTP security headers (HSTS, CSP, etc.)
 - **express-validator** for input sanitization and validation
 - **Constant-time comparison** to prevent timing attacks
-- **No raw card data** — all payments via Stripe PaymentIntents
+- **No raw card data** — Razorpay checkout handles PCI-sensitive payment data
 - **CORS** restricted to configured client origin

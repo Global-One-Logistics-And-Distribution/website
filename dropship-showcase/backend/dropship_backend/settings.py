@@ -158,6 +158,8 @@ REST_FRAMEWORK = {
         "anon": "100/hour",
         "user": "1000/hour",
         "login": "10/hour",
+        "payment_create_order": "30/hour",
+        "payment_verify": "60/hour",
     },
 }
 
@@ -181,6 +183,9 @@ FIREBASE_PRIVATE_KEY_ID = config("FIREBASE_PRIVATE_KEY_ID", default="")
 FIREBASE_CLIENT_ID = config("FIREBASE_CLIENT_ID", default="")
 FIREBASE_CLIENT_X509_CERT_URL = config("FIREBASE_CLIENT_X509_CERT_URL", default="")
 FIREBASE_CLOCK_SKEW_SECONDS = config("FIREBASE_CLOCK_SKEW_SECONDS", default=60, cast=int)
+RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID", default="")
+RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET", default="")
+RAZORPAY_WEBHOOK_SECRET = config("RAZORPAY_WEBHOOK_SECRET", default="")
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(

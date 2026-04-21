@@ -104,6 +104,27 @@ export default function Checkout() {
   const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+  const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
+
+  const getValidRazorpayPrefill = () => {
+    const prefill = {};
+    const name = String(form.shipping_name || "").trim();
+    const email = String(form.shipping_email || "").trim();
+    const contactDigits = String(form.shipping_phone || "").replace(/\D/g, "");
+
+    if (name) prefill.name = name;
+    if (email && /^\S+@\S+\.\S+$/.test(email)) prefill.email = email;
+
+    let contact = contactDigits;
+    if (contact.length === 12 && contact.startsWith("91")) {
+      contact = contact.slice(2);
+    }
+    if (contact.length === 10) {
+      prefill.contact = contact;
+    }
+
+    return prefill;
+  };
 
   useEffect(() => {
     const amountInPaise = Math.round(totalPrice * 100);
@@ -234,23 +255,13 @@ export default function Checkout() {
 
     setPlacing(true);
     try {
-      const orderItems = items.map((item) => {
-        const image = getProductImage(item.product);
-        return {
-          product_id: item.productId,
-          product_name: item.product?.name || `Product #${item.productId}`,
-          product_image: image,
-          price: Number(item.product?.price) || 0,
-          quantity: Number(item.quantity) || 1,
-          shoe_size: item.selectedSize || item.product?.selectedSize || "",
-        };
-      });
-
-      const submitOrder = async (notesOverride = null) => {
+      const submitOrder = async ({ notesOverride = null, paymentProof = "", razorpayOrderId = "", razorpayPaymentId = "" } = {}) => {
         const payload = {
           ...form,
           notes: notesOverride ?? form.notes,
-          items: orderItems,
+          payment_proof: paymentProof,
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: razorpayPaymentId,
         };
         const res = await fetch(`${API}/orders/`, {
           method: "POST",
@@ -306,34 +317,61 @@ export default function Checkout() {
       if (paymentMethod === "razorpay") {
         if (!razorpayKey) {
           toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID to test payment.");
+          setPlacing(false);
           return;
         }
 
         const loaded = await loadRazorpayScript();
         if (!loaded) {
           toast.error("Unable to load Razorpay checkout. Please try again.");
+          setPlacing(false);
           return;
         }
 
         const amountInPaise = Math.round(totalPrice * 100);
-        if (!amountInPaise || amountInPaise <= 0) {
-          toast.error("Invalid order amount for payment.");
+        if (!amountInPaise || amountInPaise < 100) {
+          toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
+          setPlacing(false);
+          return;
+        }
+
+        const createOrderRes = await fetch(`${API}/checkout/create-order`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        });
+
+        const createOrderData = await createOrderRes.json().catch(() => ({}));
+        if (!createOrderRes.ok || !createOrderData?.order_id) {
+          const message = parseBackendError(createOrderData) || "Could not initialize payment.";
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message,
+              statusCode: createOrderRes.status || 500,
+              paymentMethod,
+            })
+          );
+          toast.error(message);
+          setPlacing(false);
           return;
         }
 
         const options = {
           key: razorpayKey,
-          amount: amountInPaise,
-          currency: "INR",
+          amount: createOrderData.amount,
+          currency: createOrderData.currency,
+          order_id: createOrderData.order_id,
           name: "EliteDrop",
-          description: "Test payment",
-          prefill: {
-            name: form.shipping_name,
-            email: form.shipping_email,
-            contact: form.shipping_phone,
-          },
+          description: "Order payment",
+          prefill: getValidRazorpayPrefill(),
           theme: {
             color: "#4f46e5",
+          },
+          retry: {
+            enabled: true,
           },
           modal: {
             ondismiss: () => {
@@ -342,19 +380,70 @@ export default function Checkout() {
             },
           },
           handler: async (response) => {
-            const paymentTag = `Paid via Razorpay (test). Payment ID: ${response.razorpay_payment_id || "N/A"}`;
-            const composedNotes = form.notes ? `${form.notes}\n${paymentTag}` : paymentTag;
-            await submitOrder(composedNotes);
+            const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response?.razorpay_order_id,
+                razorpay_payment_id: response?.razorpay_payment_id,
+                razorpay_signature: response?.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json().catch(() => ({}));
+            if (!verifyRes.ok || !verifyData?.success) {
+              const message = parseBackendError(verifyData) || "Payment verification failed.";
+              setOrderFailure(
+                buildOrderFailureNotice({
+                  message,
+                  statusCode: verifyRes.status || 400,
+                  paymentMethod,
+                })
+              );
+              toast.error(message);
+              setPlacing(false);
+              return;
+            }
+
+            const paymentProof = verifyData?.payment_proof || "";
+            if (!paymentProof) {
+              const message = "Payment verification proof missing. Please retry payment.";
+              setOrderFailure(
+                buildOrderFailureNotice({
+                  message,
+                  statusCode: 400,
+                  paymentMethod,
+                })
+              );
+              toast.error(message);
+              setPlacing(false);
+              return;
+            }
+
+            await submitOrder({
+              paymentProof,
+              razorpayOrderId: response?.razorpay_order_id || "",
+              razorpayPaymentId: response?.razorpay_payment_id || "",
+            });
             setPlacing(false);
           },
         };
 
         const razorpay = new window.Razorpay(options);
         razorpay.on("payment.failed", (resp) => {
-          const reason = resp?.error?.description || "Payment failed.";
+          const gatewayReason = resp?.error?.description || "Payment failed.";
+          const code = resp?.error?.code ? ` (${resp.error.code})` : "";
+          const reason = `${gatewayReason}${code}`;
+          const helpText = isRazorpayTestMode
+            ? "You are in Razorpay test mode. Use only Razorpay test cards/UPI IDs from their docs; real cards can be rejected in test mode."
+            : "Please verify card details, bank limits, and OTP/3DS authentication, then retry.";
+
           setOrderFailure(
             buildOrderFailureNotice({
-              message: reason,
+              message: `${reason} ${helpText}`,
               statusCode: 402,
               paymentMethod,
             })
@@ -544,6 +633,11 @@ export default function Checkout() {
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/20 px-4 py-3 text-sm">
                 Razorpay (Online Payment Only)
               </div>
+              {isRazorpayTestMode && (
+                <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">
+                  Test mode is enabled. Use Razorpay test payment methods only.
+                </p>
+              )}
               {!razorpayKey && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                   Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.

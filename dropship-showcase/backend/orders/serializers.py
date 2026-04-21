@@ -72,7 +72,10 @@ class CreateOrderSerializer(serializers.Serializer):
     shipping_pincode = serializers.CharField(max_length=10)
     shipping_state = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
-    items = CreateOrderItemSerializer(many=True)
+    items = CreateOrderItemSerializer(many=True, required=False, default=list)
+    payment_proof = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    razorpay_order_id = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+    razorpay_payment_id = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
     def validate_shipping_phone(self, value):
         raw = str(value or "").strip().replace(" ", "")
@@ -88,6 +91,4 @@ class CreateOrderSerializer(serializers.Serializer):
         return raw
 
     def validate_items(self, value):
-        if not value:
-            raise serializers.ValidationError("Order must have at least one item.")
         return value

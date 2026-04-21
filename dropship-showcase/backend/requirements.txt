@@ -12,3 +12,4 @@ google-auth==2.40.3
 PyJWT==2.12.1
 requests==2.33.1
 firebase-admin==6.6.0
+razorpay==1.4.2
