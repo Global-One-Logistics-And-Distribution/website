@@ -195,7 +195,6 @@ export default function App() {
                     title="Products Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                  <Route path="/orders/:orderNumber/invoice/create" element={<OrderInvoiceCreate />} />
                     <ProductListing />
                   </MaintenanceGate>
                 )}
@@ -290,6 +289,7 @@ export default function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/account" element={<Account />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:orderNumber/invoice/create" element={<OrderInvoiceCreate />} />
               <Route path="/return-policy" element={<ReturnPolicy />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
