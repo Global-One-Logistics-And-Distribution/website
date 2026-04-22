@@ -20,7 +20,9 @@ def build_razorpay_invoice_payload(order):
     expire_by = int((timezone.now() + timedelta(days=expire_days)).timestamp())
     customer_name = (order.shipping_name or "").strip() or "Customer"
     customer_email = (order.shipping_email or "").strip()
-    customer_contact = (order.shipping_phone or "").strip()
+    customer_contact = "".join(ch for ch in str(order.shipping_phone or "") if ch.isdigit())
+    if customer_contact.startswith("91") and len(customer_contact) == 12:
+        customer_contact = customer_contact[2:]
 
     line_items = []
     for item in order.items.all():
@@ -35,9 +37,9 @@ def build_razorpay_invoice_payload(order):
         )
 
     storefront = getattr(settings, "STOREFRONT_URL", "").rstrip("/")
-    view_less = f"{storefront}/orders/{order.order_number}" if storefront else ""
+    callback_url = f"{storefront}/orders/{order.order_number}" if storefront else ""
 
-    return {
+    payload = {
         "type": "link",
         "description": f"Invoice for order {order.order_number}",
         "customer": {
@@ -55,5 +57,10 @@ def build_razorpay_invoice_payload(order):
             "order_number": order.order_number,
             "user_id": str(order.user_id or ""),
         },
-        "view_less": view_less,
     }
+
+    if callback_url:
+        payload["callback_url"] = callback_url
+        payload["callback_method"] = "get"
+
+    return payload

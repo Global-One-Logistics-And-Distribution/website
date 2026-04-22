@@ -5,6 +5,7 @@ import json
 import logging
 import secrets
 import time
+from urllib.parse import urlsplit
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
@@ -118,6 +119,19 @@ def _payment_proof_cache_key(user_id, proof_token):
 
 def _used_payment_cache_key(payment_id):
     return f"rzp:used:{payment_id}"
+
+
+def _frontend_base_url(request):
+    origin = request.headers.get("Origin") or request.headers.get("Referer") or ""
+    if origin:
+        parsed = urlsplit(origin)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+
+    if getattr(settings, "DEBUG", False):
+        return "http://localhost:5173"
+
+    return getattr(settings, "STOREFRONT_URL", "").rstrip("/")
 
 
 def _build_trusted_cart_snapshot(user, lock_rows=False):
@@ -278,7 +292,6 @@ def order_list(request):
             payment_proof = str(data.pop("payment_proof", "")).strip()
             request_order_id = str(data.pop("razorpay_order_id", "")).strip()
             request_payment_id = str(data.pop("razorpay_payment_id", "")).strip()
-
             if not payment_proof:
                 return Response(
                     {"error": "Verified payment proof is required before placing order."},
@@ -418,9 +431,27 @@ def order_invoice_download(request, order_number):
     return response
 
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
 def create_razorpay_invoice(request, order_number):
+    if request.method == "GET":
+        frontend_base = _frontend_base_url(request)
+        if not frontend_base:
+            return Response(
+                {"error": "Frontend URL is not configured on server."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        return HttpResponse(
+            status=302,
+            headers={"Location": f"{frontend_base}/orders/{order_number}/invoice/create"},
+        )
+
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Authentication credentials were not provided."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
     try:
         order = Order.objects.select_related("user").prefetch_related("items").get(
             user=request.user, order_number=order_number
@@ -439,6 +470,14 @@ def create_razorpay_invoice(request, order_number):
         status_code = int(getattr(exc, "status_code", 500) or 500)
         if status_code == 401:
             return Response({"error": "Razorpay authentication failed."}, status=status.HTTP_401_UNAUTHORIZED)
+        if status_code == 400:
+            return Response(
+                {
+                    "error": "Razorpay rejected invoice payload.",
+                    **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         logger.exception("Razorpay invoice create failed for order=%s", order.order_number)
         return Response(
             {

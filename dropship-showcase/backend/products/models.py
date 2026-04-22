@@ -1,5 +1,6 @@
 from django.db import models
 from django.db import transaction
+from django.db.utils import OperationalError, ProgrammingError
 
 
 class Product(models.Model):
@@ -97,8 +98,12 @@ class SiteMaintenanceSettings(models.Model):
 
     @classmethod
     def get_solo(cls):
-        obj, _ = cls.objects.get_or_create(singleton_key=1)
-        return obj
+        try:
+            obj, _ = cls.objects.get_or_create(singleton_key=1)
+            return obj
+        except (OperationalError, ProgrammingError):
+            # Fail open so public pages don't crash when migration/db is temporarily unavailable.
+            return cls(singleton_key=1)
 
     def as_public_payload(self):
         message = (self.maintenance_message or "").strip() or "This section is under maintenance."

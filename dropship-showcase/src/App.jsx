@@ -21,6 +21,7 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Account = lazy(() => import("./pages/Account"));
 const Orders = lazy(() => import("./pages/Orders"));
+const OrderInvoiceCreate = lazy(() => import("./pages/OrderInvoiceCreate"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
@@ -194,6 +195,7 @@ export default function App() {
                     title="Products Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
+                  <Route path="/orders/:orderNumber/invoice/create" element={<OrderInvoiceCreate />} />
                     <ProductListing />
                   </MaintenanceGate>
                 )}

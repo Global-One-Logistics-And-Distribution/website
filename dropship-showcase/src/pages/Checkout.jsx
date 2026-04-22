@@ -345,6 +345,15 @@ export default function Checkout() {
         });
 
         const createOrderData = await createOrderRes.json().catch(() => ({}));
+        if (createOrderRes.status === 503) {
+          toast("Online payment is temporarily disabled. Placing order directly.");
+          const placed = await submitOrder();
+          if (!placed) {
+            setPlacing(false);
+          }
+          return;
+        }
+
         if (!createOrderRes.ok || !createOrderData?.order_id) {
           const message = parseBackendError(createOrderData) || "Could not initialize payment.";
           setOrderFailure(
