@@ -2,6 +2,19 @@
   "installCommand": "npm install --no-package-lock",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "elitedrop.net.in"
+        }
+      ],
+      "destination": "https://www.elitedrop.net.in/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

@@ -11,6 +11,7 @@ export default function About() {
           name="description"
           content="Learn about EliteDrop."
         />
+        <link rel="canonical" href="https://www.elitedrop.net.in/about" />
       </Helmet>
 
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 bg-white dark:bg-slate-900">

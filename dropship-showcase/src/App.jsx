@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import Navbar from "./components/Navbar";
@@ -53,6 +53,39 @@ function PageFallback() {
           />
         ))}
       </div>
+    </section>
+  );
+}
+
+function NoIndexRoute({ title, children }) {
+  return (
+    <>
+      <Helmet>
+        <title>{title}</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      {children}
+    </>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <section className="container-pad py-16 text-center">
+      <Helmet>
+        <title>Page Not Found | EliteDrop</title>
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+      <h1 className="text-3xl font-bold">404 - Page not found</h1>
+      <p className="mt-3 text-slate-600 dark:text-slate-300">
+        The page you requested does not exist or may have moved.
+      </p>
+      <a
+        href="/"
+        className="inline-block mt-6 px-5 py-2.5 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+      >
+        Go to Home
+      </a>
     </section>
   );
 }
@@ -211,8 +244,14 @@ export default function App() {
                   </MaintenanceGate>
                 )}
               />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/cart" element={<Cart />} />
+              <Route
+                path="/wishlist"
+                element={<NoIndexRoute title="Wishlist | EliteDrop"><Wishlist /></NoIndexRoute>}
+              />
+              <Route
+                path="/cart"
+                element={<NoIndexRoute title="Cart | EliteDrop"><Cart /></NoIndexRoute>}
+              />
               <Route
                 path="/checkout"
                 element={(
@@ -221,7 +260,9 @@ export default function App() {
                     title="Checkout Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                    <Checkout />
+                    <NoIndexRoute title="Checkout | EliteDrop">
+                      <Checkout />
+                    </NoIndexRoute>
                   </MaintenanceGate>
                 )}
               />
@@ -233,7 +274,9 @@ export default function App() {
                     title="Checkout Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                    <CheckoutSuccess />
+                    <NoIndexRoute title="Order Confirmed | EliteDrop">
+                      <CheckoutSuccess />
+                    </NoIndexRoute>
                   </MaintenanceGate>
                 )}
               />
@@ -245,7 +288,9 @@ export default function App() {
                     title="Sign In Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                    <SignIn />
+                    <NoIndexRoute title="Sign In | EliteDrop">
+                      <SignIn />
+                    </NoIndexRoute>
                   </MaintenanceGate>
                 )}
               />
@@ -257,7 +302,9 @@ export default function App() {
                     title="Sign Up Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                    <SignUp />
+                    <NoIndexRoute title="Sign Up | EliteDrop">
+                      <SignUp />
+                    </NoIndexRoute>
                   </MaintenanceGate>
                 )}
               />
@@ -269,7 +316,9 @@ export default function App() {
                     title="Sign In Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                    <VerifyEmail />
+                    <NoIndexRoute title="Verify Email | EliteDrop">
+                      <VerifyEmail />
+                    </NoIndexRoute>
                   </MaintenanceGate>
                 )}
               />
@@ -281,20 +330,31 @@ export default function App() {
                     title="Sign In Temporarily Unavailable"
                     message={maintenanceMessage}
                   >
-                    <CompleteProfile />
+                    <NoIndexRoute title="Complete Profile | EliteDrop">
+                      <CompleteProfile />
+                    </NoIndexRoute>
                   </MaintenanceGate>
                 )}
               />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:orderNumber/invoice/create" element={<OrderInvoiceCreate />} />
+              <Route
+                path="/account"
+                element={<NoIndexRoute title="Account | EliteDrop"><Account /></NoIndexRoute>}
+              />
+              <Route
+                path="/orders"
+                element={<NoIndexRoute title="My Orders | EliteDrop"><Orders /></NoIndexRoute>}
+              />
+              <Route
+                path="/orders/:orderNumber/invoice/create"
+                element={<NoIndexRoute title="Create Invoice | EliteDrop"><OrderInvoiceCreate /></NoIndexRoute>}
+              />
               <Route path="/return-policy" element={<ReturnPolicy />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
-              {/* Catch-all: redirect unknown routes to home */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Catch-all: explicit not-found route helps avoid soft-404 redirect behavior */}
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
             )

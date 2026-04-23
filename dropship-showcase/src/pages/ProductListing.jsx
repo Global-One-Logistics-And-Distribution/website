@@ -155,9 +155,8 @@ export default function ProductListing() {
   const seoDescription = selectedCategory !== "All"
     ? `Browse ${selectedCategory} at EliteDrop. Premium quality products with secure checkout and fast delivery.`
     : "Explore all premium products at EliteDrop, including bags, watches, shoes, wallets, and accessories.";
-  const canonicalUrl = selectedCategory !== "All"
-    ? `${siteUrl}/products?category=${encodeURIComponent(selectedCategory)}`
-    : `${siteUrl}/products`;
+  // Consolidate query/filter variants under one canonical listing URL.
+  const canonicalUrl = `${siteUrl}/products`;
 
   return (
     <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container-pad py-10">

@@ -3,7 +3,14 @@ import { Helmet } from "react-helmet-async";
 export default function Contact() {
   return (
     <section className="container-pad py-10">
-      <Helmet><title>EliteDrop | Contact</title></Helmet>
+      <Helmet>
+        <title>EliteDrop | Contact</title>
+        <meta
+          name="description"
+          content="Contact EliteDrop support for product, order, and delivery queries."
+        />
+        <link rel="canonical" href="https://www.elitedrop.net.in/contact" />
+      </Helmet>
 
       <h1 className="text-3xl font-bold mb-6">Contact</h1>
 

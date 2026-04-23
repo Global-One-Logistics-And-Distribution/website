@@ -233,7 +233,10 @@ export default function ProductDetails() {
   if (!hydratedProduct) {
     return (
       <section className="container-pad py-12">
-        <Helmet><title>Product Not Found | EliteDrop</title></Helmet>
+        <Helmet>
+          <title>Product Not Found | EliteDrop</title>
+          <meta name="robots" content="noindex, follow" />
+        </Helmet>
         <h1 className="text-2xl font-bold">Product not found</h1>
         <Link to="/products" className="inline-block mt-5 px-4 py-2 rounded-lg bg-slate-900 text-white">
           Back to Products
