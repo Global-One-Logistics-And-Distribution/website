@@ -189,7 +189,6 @@ export default function Footer() {
                 {[
                   { icon: CreditCard, label: "Cards" },
                   { icon: Smartphone, label: "UPI" },
-                  { icon: Banknote, label: "COD" },
                 ].map(({ icon: Icon, label }) => (
                   <div
                     key={label}
