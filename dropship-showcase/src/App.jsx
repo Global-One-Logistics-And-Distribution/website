@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -209,16 +208,15 @@ export default function App() {
         <link rel="apple-touch-icon" href="/favicon.ico" />
       </Helmet>
       <Navbar />
-      <AnimatePresence mode="wait">
-        <main className="flex-1">
-          {!maintenanceLoaded ? (
-            <PageFallback />
+      <main className="flex-1">
+        {!maintenanceLoaded ? (
+          <PageFallback />
+        ) : (
+          maintenance.whole_site ? (
+            <MaintenanceNotice title="Site Under Maintenance" message={maintenanceMessage} />
           ) : (
-            maintenance.whole_site ? (
-              <MaintenanceNotice title="Site Under Maintenance" message={maintenanceMessage} />
-            ) : (
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route
                 path="/products"
@@ -355,12 +353,11 @@ export default function App() {
               <Route path="/shipping-policy" element={<ShippingPolicy />} />
               {/* Catch-all: explicit not-found route helps avoid soft-404 redirect behavior */}
               <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </Suspense>
-            )
-          )}
-        </main>
-      </AnimatePresence>
+              </Routes>
+            </Suspense>
+          )
+        )}
+      </main>
       <Footer />
     </div>
   );
