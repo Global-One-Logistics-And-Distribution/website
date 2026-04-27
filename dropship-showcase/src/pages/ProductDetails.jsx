@@ -157,28 +157,34 @@ export default function ProductDetails() {
   const [activeImage, setActiveImage] = useState(images[0]);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
   const productAmountInPaise = Math.round((Number(hydratedProduct?.price) || 0) * 100);
+  const affordabilityHostRef = useRef(null);
 
   useEffect(() => {
-    const mount = document.getElementById("razorpay-affordability-widget-product");
-    if (!mount) return;
+    const host = affordabilityHostRef.current;
+    if (!host) return;
+
+    const targetId = "razorpay-affordability-widget-product-runtime";
+    const mount = document.createElement("div");
+    mount.id = targetId;
+    host.replaceChildren(mount);
 
     const renderAffordabilityWidget = () => {
       if (!window.RazorpayAffordabilitySuite || !razorpayKey || productAmountInPaise <= 0) {
-        mount.innerHTML = "";
+        if (mount.isConnected) mount.replaceChildren();
         return;
       }
 
-      mount.innerHTML = "";
+      if (mount.isConnected) mount.replaceChildren();
       const widgetConfig = {
         key: razorpayKey,
         amount: productAmountInPaise,
-        target: "#razorpay-affordability-widget-product",
+        target: `#${targetId}`,
       };
       try {
         const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
         affordabilitySuite.render();
       } catch {
-        mount.innerHTML = "";
+        if (mount.isConnected) mount.replaceChildren();
       }
     };
 
@@ -196,7 +202,7 @@ export default function ProductDetails() {
 
     return () => {
       script.onload = null;
-      mount.innerHTML = "";
+      if (host.isConnected) host.replaceChildren();
     };
   }, [productAmountInPaise, razorpayKey]);
 
@@ -437,7 +443,7 @@ export default function ProductDetails() {
             {hasFakeDiscount && razorpayKey && (
               <div className="mt-3">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
-                <div id="razorpay-affordability-widget-product" />
+                <div ref={affordabilityHostRef} />
               </div>
             )}
           </div>

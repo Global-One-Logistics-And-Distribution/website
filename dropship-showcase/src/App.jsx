@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Routes, Route, useLocation, useNavigationType } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -87,6 +87,52 @@ function NotFoundPage() {
       </a>
     </section>
   );
+}
+
+function ScrollToTop() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const positionsRef = useRef(new Map());
+  const previousLocationRef = useRef(null);
+
+  useEffect(() => {
+    if (!("scrollRestoration" in window.history)) {
+      return undefined;
+    }
+
+    const previousMode = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+
+    return () => {
+      window.history.scrollRestoration = previousMode;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const previousLocation = previousLocationRef.current;
+
+    if (previousLocation?.key) {
+      positionsRef.current.set(previousLocation.key, window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0);
+    }
+
+    if (navigationType === "POP") {
+      const restoredScrollTop = positionsRef.current.get(location.key) || 0;
+      window.scrollTo({ top: restoredScrollTop, left: 0, behavior: "auto" });
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+
+    document.documentElement.scrollTop = navigationType === "POP"
+      ? positionsRef.current.get(location.key) || 0
+      : 0;
+    document.body.scrollTop = navigationType === "POP"
+      ? positionsRef.current.get(location.key) || 0
+      : 0;
+
+    previousLocationRef.current = location;
+  }, [location.key, navigationType]);
+
+  return null;
 }
 
 export default function App() {
@@ -208,6 +254,7 @@ export default function App() {
         <link rel="apple-touch-icon" href="/favicon.ico" />
       </Helmet>
       <Navbar />
+      <ScrollToTop />
       <main className="flex-1">
         {!maintenanceLoaded ? (
           <PageFallback />

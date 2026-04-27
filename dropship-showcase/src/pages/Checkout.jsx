@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -105,6 +105,7 @@ export default function Checkout() {
   const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
   const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
+  const affordabilityHostRef = useRef(null);
 
   const getValidRazorpayPrefill = () => {
     const prefill = {};
@@ -128,26 +129,31 @@ export default function Checkout() {
 
   useEffect(() => {
     const amountInPaise = Math.round(totalPrice * 100);
-    const mount = document.getElementById("razorpay-affordability-widget");
-    if (!mount) return;
+    const host = affordabilityHostRef.current;
+    if (!host) return;
+
+    const targetId = "razorpay-affordability-widget-runtime";
+    const mount = document.createElement("div");
+    mount.id = targetId;
+    host.replaceChildren(mount);
 
     const renderAffordabilityWidget = () => {
       if (!window.RazorpayAffordabilitySuite || !razorpayKey || amountInPaise <= 0) {
-        mount.innerHTML = "";
+        if (mount.isConnected) mount.replaceChildren();
         return;
       }
 
-      mount.innerHTML = "";
+      if (mount.isConnected) mount.replaceChildren();
       const widgetConfig = {
         key: razorpayKey,
         amount: amountInPaise,
-        target: "#razorpay-affordability-widget",
+        target: `#${targetId}`,
       };
       try {
         const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
         affordabilitySuite.render();
       } catch {
-        mount.innerHTML = "";
+        if (mount.isConnected) mount.replaceChildren();
       }
     };
 
@@ -165,6 +171,7 @@ export default function Checkout() {
 
     return () => {
       script.onload = null;
+      if (host.isConnected) host.replaceChildren();
     };
   }, [razorpayKey, totalPrice]);
 
@@ -782,7 +789,7 @@ export default function Checkout() {
               {totalPrice > 0 && razorpayKey && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
-                  <div id="razorpay-affordability-widget" />
+                  <div ref={affordabilityHostRef} />
                 </div>
               )}
             </div>
