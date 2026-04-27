@@ -118,6 +118,8 @@ export default function Cart() {
               const product = item?.product || {};
               const quantity = Number(item?.quantity) || 1;
               const productId = item?.productId ?? product?.id;
+              const selectedSizeKey = String(item?.selectedSize || "").trim();
+              const cartItemKey = `${productId}-${selectedSizeKey || "nosize"}`;
               const price = Number(product?.price) || 0;
               const stock = Number(product?.stock);
               const sizeStock = product?.size_stock || product?.sizeStock || {};
@@ -136,7 +138,7 @@ export default function Cart() {
 
               return (
                 <motion.div
-                  key={productId}
+                  key={cartItemKey}
                   layout
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -172,7 +174,7 @@ export default function Cart() {
                     <div className="mt-3 flex items-center justify-between flex-wrap gap-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => updateQuantity(productId, quantity - 1)}
+                          onClick={() => updateQuantity(productId, quantity - 1, selectedSizeKey)}
                           disabled={quantity <= 1}
                           className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition"
                         >
@@ -180,7 +182,7 @@ export default function Cart() {
                         </button>
                         <span className="w-7 text-center text-sm font-medium">{quantity}</span>
                         <button
-                          onClick={() => updateQuantity(productId, quantity + 1)}
+                          onClick={() => updateQuantity(productId, quantity + 1, selectedSizeKey)}
                           disabled={quantity >= maxAllowed}
                           className="p-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition"
                         >
@@ -203,7 +205,7 @@ export default function Cart() {
                           )}
                         </div>
                         <button
-                          onClick={() => removeFromCart(productId)}
+                          onClick={() => removeFromCart(productId, selectedSizeKey)}
                           className="text-slate-400 hover:text-red-500 transition"
                           aria-label="Remove item"
                         >

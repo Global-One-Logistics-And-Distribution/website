@@ -132,6 +132,17 @@ function normalizeServerItems(payload) {
     .filter((it) => it.productId != null && it.quantity > 0);
 }
 
+function normalizeSize(value) {
+  return String(value || "").trim();
+}
+
+function sameCartItem(item, productId, selectedSize = "") {
+  return (
+    String(item?.productId) === String(productId) &&
+    normalizeSize(item?.selectedSize) === normalizeSize(selectedSize)
+  );
+}
+
 export function CartProvider({ children }) {
   const { user, token } = useAuth();
   const storageKey = keyForUser(user);
@@ -208,9 +219,11 @@ export function CartProvider({ children }) {
       const pid = product?.id;
       if (pid == null) return;
 
-      const existing = items.find((i) => String(i.productId) === String(pid));
+      const normalizedSize = normalizeSize(selectedSize);
+
+      const existing = items.find((i) => sameCartItem(i, pid, normalizedSize));
       const existingQty = Number(existing?.quantity) || 0;
-      const resolvedSize = selectedSize || existing?.selectedSize || "";
+      const resolvedSize = normalizedSize || normalizeSize(existing?.selectedSize);
       const maxAllowed = maxAllowedForProductSize(product || existing?.product, resolvedSize);
 
       if (maxAllowed < 1) {
@@ -227,10 +240,10 @@ export function CartProvider({ children }) {
       const quantityToAdd = nextQty - existingQty;
 
       setItems((prev) => {
-        const existingInState = prev.find((i) => String(i.productId) === String(pid));
+        const existingInState = prev.find((i) => sameCartItem(i, pid, resolvedSize));
         if (existingInState) {
           return prev.map((i) =>
-            String(i.productId) === String(pid)
+            sameCartItem(i, pid, resolvedSize)
               ? { ...i, quantity: nextQty, selectedSize: resolvedSize, product: i.product || product || null }
               : i
           );
@@ -279,11 +292,12 @@ export function CartProvider({ children }) {
   );
 
   const updateQuantity = useCallback(
-    async (productId, quantity) => {
+    async (productId, quantity, selectedSize = "") => {
       const q = Number(quantity);
       if (!Number.isFinite(q) || q < 1) return;
 
-      const existing = items.find((i) => String(i.productId) === String(productId));
+      const normalizedSize = normalizeSize(selectedSize);
+      const existing = items.find((i) => sameCartItem(i, productId, normalizedSize));
       const maxAllowed = maxAllowedForProductSize(existing?.product, existing?.selectedSize || "");
       if (maxAllowed < 1) {
         toast.error("This product is out of stock");
@@ -297,7 +311,7 @@ export function CartProvider({ children }) {
 
       setItems((prev) =>
         prev.map((i) =>
-          String(i.productId) === String(productId) ? { ...i, quantity: bounded } : i
+          sameCartItem(i, productId, normalizedSize) ? { ...i, quantity: bounded } : i
         )
       );
 
@@ -332,8 +346,9 @@ export function CartProvider({ children }) {
   );
 
   const removeFromCart = useCallback(
-    async (productId) => {
-      setItems((prev) => prev.filter((i) => String(i.productId) !== String(productId)));
+    async (productId, selectedSize = "") => {
+      const normalizedSize = normalizeSize(selectedSize);
+      setItems((prev) => prev.filter((i) => !sameCartItem(i, productId, normalizedSize)));
       toast.success("Removed from cart");
 
       if (user && token) {

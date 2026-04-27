@@ -163,18 +163,24 @@ export default function ProductDetails() {
     const host = affordabilityHostRef.current;
     if (!host) return;
 
-    const targetId = "razorpay-affordability-widget-product-runtime";
+    let disposed = false;
+
+    const targetId = `razorpay-affordability-widget-product-runtime-${Math.random().toString(36).slice(2)}`;
     const mount = document.createElement("div");
     mount.id = targetId;
     host.replaceChildren(mount);
 
     const renderAffordabilityWidget = () => {
+      if (disposed || !host.isConnected || !mount.isConnected) return;
+
       if (!window.RazorpayAffordabilitySuite || !razorpayKey || productAmountInPaise <= 0) {
-        if (mount.isConnected) mount.replaceChildren();
+        mount.replaceChildren();
         return;
       }
 
-      if (mount.isConnected) mount.replaceChildren();
+      mount.replaceChildren();
+      if (!document.getElementById(targetId)) return;
+
       const widgetConfig = {
         key: razorpayKey,
         amount: productAmountInPaise,
@@ -184,7 +190,7 @@ export default function ProductDetails() {
         const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
         affordabilitySuite.render();
       } catch {
-        if (mount.isConnected) mount.replaceChildren();
+        mount.replaceChildren();
       }
     };
 
@@ -197,10 +203,13 @@ export default function ProductDetails() {
     const script = document.createElement("script");
     script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
     script.async = true;
-    script.onload = renderAffordabilityWidget;
+    script.onload = () => {
+      renderAffordabilityWidget();
+    };
     document.head.appendChild(script);
 
     return () => {
+      disposed = true;
       script.onload = null;
       if (host.isConnected) host.replaceChildren();
     };
