@@ -260,7 +260,7 @@ STORAGES = {
 
 # ── Email (ZeptoMail API) ─────────────────────────────────────────────────────
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
-EMAIL_VERIFICATION_REQUIRED = config("EMAIL_VERIFICATION_REQUIRED", default=False, cast=bool)
+EMAIL_VERIFICATION_REQUIRED = config("EMAIL_VERIFICATION_REQUIRED", default=True, cast=bool)
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL",
     default="no-reply@elitedrop.net.in",
