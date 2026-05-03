@@ -120,15 +120,27 @@ def signup(request):
         return Response({"error": "Email is already registered."}, status=status.HTTP_409_CONFLICT)
 
     user = serializer.save()
-    email_sent = send_verification_email(user)
-    payload = {
-        "requires_verification": True,
-        "user": UserSerializer(user).data,
-        "message": (
+    if getattr(settings, "EMAIL_VERIFICATION_REQUIRED", False):
+        email_sent = send_verification_email(user)
+        requires_verification = True
+        message = (
             "Verification code sent to your email. Please verify to finish signing up."
             if email_sent
             else "Account created, but we could not send the verification email right now. Please use resend code."
-        ),
+        )
+    else:
+        user.email_verified = True
+        user.email_verification_code = ""
+        user.email_verification_expires_at = None
+        user.save(update_fields=["email_verified", "email_verification_code", "email_verification_expires_at"])
+        email_sent = False
+        requires_verification = False
+        message = "Account created successfully. Email verification is currently disabled."
+
+    payload = {
+        "requires_verification": requires_verification,
+        "user": UserSerializer(user).data,
+        "message": message,
         "email_sent": email_sent,
     }
     return Response(payload, status=status.HTTP_201_CREATED)
@@ -154,29 +166,38 @@ def signin(request):
     if user is None:
         return Response({"error": "Invalid email or password."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    if not user.email_verified:
-        code_missing = not user.email_verification_code
-        code_expired = bool(
-            user.email_verification_expires_at
-            and timezone.now() > user.email_verification_expires_at
-        )
-        email_sent = True
-        if code_missing or code_expired:
-            email_sent = send_verification_email(user)
+    if not getattr(settings, "EMAIL_VERIFICATION_REQUIRED", False):
+        if not user.email_verified:
+            user.email_verified = True
+            user.email_verification_code = ""
+            user.email_verification_expires_at = None
+            user.save(update_fields=["email_verified", "email_verification_code", "email_verification_expires_at"])
+        return Response(_token_response_with_remember(user, remember_me=remember_me))
 
-        return Response(
-            {
-                "error": (
-                    "Email not verified. Enter the code sent to your inbox to continue."
-                    if email_sent
-                    else "Email not verified. We could not send a verification email right now. Try resend in a moment."
-                ),
-                "requires_verification": True,
-                "email": user.email,
-                "email_sent": email_sent,
-            },
-            status=status.HTTP_403_FORBIDDEN,
-        )
+    # EMAIL VERIFICATION DISABLED - Users can sign in without email verification
+    # if not user.email_verified:
+    #     code_missing = not user.email_verification_code
+    #     code_expired = bool(
+    #         user.email_verification_expires_at
+    #         and timezone.now() > user.email_verification_expires_at
+    #     )
+    #     email_sent = True
+    #     if code_missing or code_expired:
+    #         email_sent = send_verification_email(user)
+    #
+    #     return Response(
+    #         {
+    #             "error": (
+    #                 "Email not verified. Enter the code sent to your inbox to continue."
+    #                 if email_sent
+    #                 else "Email not verified. We could not send a verification email right now. Try resend in a moment."
+    #             ),
+    #             "requires_verification": True,
+    #             "email": user.email,
+    #             "email_sent": email_sent,
+    #         },
+    #         status=status.HTTP_403_FORBIDDEN,
+    #     )
 
     return Response(_token_response_with_remember(user, remember_me=remember_me))
 
@@ -278,6 +299,13 @@ def verify_email(request):
     if user.email_verified:
         return Response(_token_response(user), status=status.HTTP_200_OK)
 
+    if not getattr(settings, "EMAIL_VERIFICATION_REQUIRED", False):
+        user.email_verified = True
+        user.email_verification_code = ""
+        user.email_verification_expires_at = None
+        user.save(update_fields=["email_verified", "email_verification_code", "email_verification_expires_at"])
+        return Response(_token_response(user), status=status.HTTP_200_OK)
+
     if not user.email_verification_code:
         email_sent = send_verification_email(user)
         return Response(
@@ -338,6 +366,16 @@ def resend_verification(request):
     if user.email_verified:
         return Response({"message": "Email is already verified."}, status=status.HTTP_200_OK)
 
+    if not getattr(settings, "EMAIL_VERIFICATION_REQUIRED", False):
+        user.email_verified = True
+        user.email_verification_code = ""
+        user.email_verification_expires_at = None
+        user.save(update_fields=["email_verified", "email_verification_code", "email_verification_expires_at"])
+        return Response(
+            {"message": "Email verification is currently disabled.", "email_sent": False},
+            status=status.HTTP_200_OK,
+        )
+
     email_sent = send_verification_email(user)
     if not email_sent:
         return Response(
@@ -380,8 +418,11 @@ def update_profile(request):
     except IntegrityError:
         return Response({"error": "Email is already registered."}, status=status.HTTP_409_CONFLICT)
 
-    if email_changed:
+    if email_changed and getattr(settings, "EMAIL_VERIFICATION_REQUIRED", False):
         send_verification_email(user)
+    elif email_changed:
+        user.email_verified = True
+        user.save(update_fields=["email_verified"])
 
     return Response({"user": UserSerializer(user).data})
 
