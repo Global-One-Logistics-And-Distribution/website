@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const SITE_URL = "https://www.elitedrop.net.in";
 
 export default function CheckoutSuccess() {
   const { user, token } = useAuth();
@@ -131,6 +132,7 @@ export default function CheckoutSuccess() {
     <section className="container-pad py-20 flex justify-center">
       <Helmet>
         <title>Order Confirmed | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/checkout/success`} />
       </Helmet>
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}

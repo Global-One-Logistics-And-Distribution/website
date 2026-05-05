@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const SITE_URL = "https://www.elitedrop.net.in";
 
 export default function CompleteProfile() {
   const { user, token, login } = useAuth();
@@ -61,6 +62,7 @@ export default function CompleteProfile() {
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
         <title>Complete Profile | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/complete-profile`} />
       </Helmet>
 
       <motion.div

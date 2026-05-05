@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { getFirebaseAuthErrorMessage, isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const SITE_URL = "https://www.elitedrop.net.in";
 
 export default function SignIn() {
   const { login } = useAuth();
@@ -115,6 +116,7 @@ export default function SignIn() {
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
         <title>Sign In | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/signin`} />
       </Helmet>
 
       <motion.div

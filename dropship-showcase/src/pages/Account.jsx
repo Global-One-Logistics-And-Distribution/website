@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const SITE_URL = "https://www.elitedrop.net.in";
 
 export default function Account() {
   const { user, token, login, logout } = useAuth();
@@ -25,6 +26,7 @@ export default function Account() {
       <section className="container-pad py-16 text-center">
         <Helmet>
           <title>Account | EliteDrop</title>
+          <link rel="canonical" href={`${SITE_URL}/account`} />
         </Helmet>
         <p className="text-slate-500 dark:text-slate-400 mb-4">
           Please sign in to view your account.
@@ -104,6 +106,7 @@ export default function Account() {
     <section className="container-pad py-10 max-w-2xl mx-auto">
       <Helmet>
         <title>Account | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/account`} />
       </Helmet>
 
       <motion.h1

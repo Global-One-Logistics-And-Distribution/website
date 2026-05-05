@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Building2, ShieldCheck, Globe2, ShoppingBag } from "lucide-react";
 
 export default function About() {
+  const siteUrl = "https://www.elitedrop.net.in";
   const faqItems = [
     {
       question: "Are products authentic?",
@@ -25,6 +26,25 @@ export default function About() {
         "Return and exchange eligibility varies by product. Check the Return Policy for details before purchase.",
     },
   ];
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "EliteDrop",
+    url: siteUrl,
+    logo: `${siteUrl}/android-chrome-512x512.png`,
+  };
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
 
   return (
     <section className="container-pad py-10">
@@ -35,6 +55,9 @@ export default function About() {
           content="Learn about EliteDrop."
         />
         <link rel="canonical" href="https://www.elitedrop.net.in/about" />
+        <script type="application/ld+json">
+          {JSON.stringify([organizationSchema, faqSchema])}
+        </script>
       </Helmet>
 
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 bg-white dark:bg-slate-900">

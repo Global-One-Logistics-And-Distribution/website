@@ -13,6 +13,7 @@ const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "htt
 const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
 const CHECKOUT_FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='Arial,sans-serif' font-size='8' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+const SITE_URL = "https://www.elitedrop.net.in";
 
 function getProductImage(product) {
   const raw = product?.image_url || product?.image;
@@ -282,6 +283,7 @@ export default function Checkout() {
       <section className="container-pad py-16 text-center">
         <Helmet>
           <title>Checkout | EliteDrop</title>
+          <link rel="canonical" href={`${SITE_URL}/checkout`} />
         </Helmet>
         <ShoppingCart className="w-14 h-14 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
@@ -567,6 +569,7 @@ export default function Checkout() {
     <section className="container-pad py-10">
       <Helmet>
         <title>Checkout | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/checkout`} />
       </Helmet>
 
       <motion.h1

@@ -9,6 +9,8 @@ import { getMRP } from "../utils/product";
 import { getProductSlug } from "../utils/slug";
 
 /** Delivery date = today + 3-5 business days */
+const SITE_URL = "https://www.elitedrop.net.in";
+
 function estimatedDelivery() {
   const d = new Date();
   d.setDate(d.getDate() + 4);
@@ -46,6 +48,7 @@ export default function Cart() {
       <section className="container-pad py-16 text-center">
         <Helmet>
           <title>Cart | EliteDrop</title>
+          <link rel="canonical" href={`${SITE_URL}/cart`} />
         </Helmet>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -81,6 +84,7 @@ export default function Cart() {
     <section className="container-pad py-10">
       <Helmet>
         <title>{`Cart (${totalItems}) | EliteDrop`}</title>
+        <link rel="canonical" href={`${SITE_URL}/cart`} />
       </Helmet>
 
       <motion.h1

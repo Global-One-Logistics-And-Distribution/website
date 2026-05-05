@@ -11,6 +11,7 @@ const getApiBaseUrl = () =>
   import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
 
 const API = getApiBaseUrl();
+const SITE_URL = "https://www.elitedrop.net.in";
 
 export default function SignUp() {
   const { login } = useAuth();
@@ -184,6 +185,7 @@ export default function SignUp() {
     <section className="container-pad py-16 flex justify-center">
       <Helmet>
         <title>Sign Up | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/signup`} />
       </Helmet>
 
       <motion.div

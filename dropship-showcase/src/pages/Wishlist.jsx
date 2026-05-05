@@ -8,6 +8,8 @@ import { formatINR } from "../utils/currency";
 import { useProducts } from "../hooks/useProducts";
 import { getProductSlug } from "../utils/slug";
 
+const SITE_URL = "https://www.elitedrop.net.in";
+
 export default function Wishlist() {
   const { wishlistIds, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -22,6 +24,7 @@ export default function Wishlist() {
     <section className="container-pad py-10">
       <Helmet>
         <title>Wishlist | EliteDrop</title>
+        <link rel="canonical" href={`${SITE_URL}/wishlist`} />
       </Helmet>
       <h1 className="text-3xl font-bold mb-6 flex items-center gap-3">
         <Heart className="w-7 h-7 text-red-500" fill="currentColor" />
