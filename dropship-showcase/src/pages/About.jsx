@@ -3,6 +3,29 @@ import { Link } from "react-router-dom";
 import { Building2, ShieldCheck, Globe2, ShoppingBag } from "lucide-react";
 
 export default function About() {
+  const faqItems = [
+    {
+      question: "Are products authentic?",
+      answer:
+        "Yes. EliteDrop focuses on verified listings and quality checks so customers can shop with confidence.",
+    },
+    {
+      question: "How long does delivery take?",
+      answer:
+        "Most orders arrive within 3 to 7 business days, depending on location and product availability.",
+    },
+    {
+      question: "What payment methods are supported?",
+      answer:
+        "We support secure checkout options including cards and UPI where available.",
+    },
+    {
+      question: "Can I return or exchange items?",
+      answer:
+        "Return and exchange eligibility varies by product. Check the Return Policy for details before purchase.",
+    },
+  ];
+
   return (
     <section className="container-pad py-10">
       <Helmet>
@@ -51,6 +74,55 @@ export default function About() {
             </p>
           </div>
         </div>
+
+        <section className="mt-10">
+          <h2 className="text-2xl font-bold mb-4">Shipping and Service Overview</h2>
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-900">
+                <tr>
+                  <th scope="col" className="px-4 py-3 font-semibold">Service</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Details</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Typical Timeline</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                <tr>
+                  <td className="px-4 py-3 font-medium">Standard Delivery</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Tracked shipping on most orders.</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">3 to 7 business days</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium">Customer Support</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Order help, product questions, and returns.</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Response within 2 to 3 days</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 font-medium">Secure Checkout</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Protected payments and confirmations.</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">Instant confirmation</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
+          <div className="grid gap-5 md:grid-cols-2">
+            {faqItems.map((item) => (
+              <div
+                key={item.question}
+                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5"
+              >
+                <h3 className="text-lg font-semibold">{item.question}</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  {item.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <Link
           to="/contact"

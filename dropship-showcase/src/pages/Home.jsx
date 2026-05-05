@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Phone, UserCircle2, ShieldCheck, Truck, RefreshCcw, Headphones, Star, ChevronRight } from "lucide-react";
+import { Mail, Phone, UserCircle2, ShieldCheck, Truck, Headphones, Star, ChevronRight } from "lucide-react";
 import ProductCard from "../components/ProductCard";
 import Carousel from "../components/Carousel";
 import AdSlider from "../components/AdSlider";
@@ -44,6 +44,19 @@ export default function Home() {
   const seoTitle = "EliteDrop | Premium Bags, Shoes, Wallets & Watches";
   const seoDescription =
     "Shop premium handbags, watches, shoes and accessories at EliteDrop. Discover curated collections with secure checkout and fast delivery.";
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "EliteDrop",
+    url: siteUrl,
+    logo: `${siteUrl}/android-chrome-512x512.png`,
+  };
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "EliteDrop",
+    url: siteUrl,
+  };
 
   const contacts = [
     { id: 1, name: "EliteDrop", role: "Customer Service", phone: "+91 7208999095", email: "support@elitedrop.net.in", accent: "from-indigo-500 to-blue-500" },
@@ -62,10 +75,9 @@ export default function Home() {
         <meta property="og:description" content={seoDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={`${siteUrl}/android-chrome-512x512.png`} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoTitle} />
-        <meta name="twitter:description" content={seoDescription} />
-        <meta name="twitter:image" content={`${siteUrl}/android-chrome-512x512.png`} />
+        <script type="application/ld+json">
+          {JSON.stringify([organizationSchema, websiteSchema])}
+        </script>
       </Helmet>
 
       {/* Ad / Promo Slider */}

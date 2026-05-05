@@ -1,0 +1,26 @@
+# EliteDrop
+
+## Site
+- Name: EliteDrop
+- URL: https://www.elitedrop.net.in/
+- Summary: Premium handbags, watches, shoes, wallets, sunglasses, and accessories with secure checkout and fast delivery.
+
+## Audience
+- Shoppers in India looking for premium fashion and accessories.
+
+## Content and Pages
+- Home: Product discovery, categories, featured and trending collections.
+- Products: Listing and filters by category and price.
+- Product Details: Images, pricing, and purchase options.
+- About: Brand story and quality focus.
+- Contact: Support channels and working hours.
+- Policies: Shipping, return, and privacy policy pages.
+
+## Brand Voice
+- Confident, premium, and helpful.
+- Clear pricing, delivery timelines, and trust signals.
+
+## Preferences for AI Use
+- Prefer concise summaries with concrete details (products, categories, timelines).
+- Use official URLs and cite policy pages when referencing returns, shipping, or privacy.
+- Avoid speculation about pricing or availability; refer users to live product pages.
