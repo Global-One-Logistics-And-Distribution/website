@@ -22227,12 +22227,6 @@ C:.
 |   |   |   |       |   |   |       agent.d.mts
 |   |   |   |       |   |   |       agent.mjs
               
-|   |   \---zip-stream
-|   |           index.js
-|   |           LICENSE
-|   |           package.json
-|   |           README.md
-|   |           
 |   +---public
 |   |       vite.svg
 |   |       _redirects
