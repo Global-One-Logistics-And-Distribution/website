@@ -13,7 +13,7 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me-in-production-!@#$%")
+SECRET_KEY = config("SECRET_KEY", default="q+7izv=m%r72y(41m4@cj8a7z_*)$9#k1s@!y3!7-z-&8^+0o8")
 
 DEBUG = config("DEBUG", default=True, cast=bool)
 
