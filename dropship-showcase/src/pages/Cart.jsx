@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, ShoppingCart, Truck, ChevronRight, ShieldCheck } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { formatINR } from "../utils/currency";
 import { getMRP } from "../utils/product";
@@ -18,11 +19,13 @@ const FREE_DELIVERY_THRESHOLD = 0;
 
 export default function Cart() {
   const cart = useCart() || {};
+  const { user } = useAuth();
   const items = Array.isArray(cart.items) ? cart.items : [];
   const totalItems = Number(cart.totalItems) || 0;
   const totalPrice = Number(cart.totalPrice) || 0;
   const updateQuantity = cart.updateQuantity || (() => {});
   const removeFromCart = cart.removeFromCart || (() => {});
+  const reloadCart = cart.reloadCart || (() => {});
 
   const finalPrice = totalPrice;
 
@@ -54,6 +57,15 @@ export default function Cart() {
           <p className="text-slate-500 dark:text-slate-400 mb-6">
             Add some products to get started.
           </p>
+          {user && (
+            <button
+              type="button"
+              onClick={() => reloadCart()}
+              className="inline-block px-6 py-3 rounded-xl border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition mr-3"
+            >
+              Recover Saved Cart
+            </button>
+          )}
           <Link
             to="/products"
             className="inline-block px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
@@ -219,9 +231,15 @@ export default function Cart() {
             })}
           </AnimatePresence>
 
+          {user && (
+            <div className="rounded-2xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-4 text-sm text-indigo-700 dark:text-indigo-300">
+              Signed in carts are recovered across devices and sessions. If anything looks missing, use the saved cart recovery action.
+            </div>
+          )}
+
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              Coupons are currently disabled.
+              You can apply coupons during checkout, and signed-in carts can be recovered from the saved session.
             </p>
           </div>
         </div>

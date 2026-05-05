@@ -375,6 +375,20 @@ export function CartProvider({ children }) {
     }
   }, [user, token]);
 
+  const reloadCart = useCallback(async () => {
+    if (!user || !token) return;
+    try {
+      const res = await fetch(`${API}/cart/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => ({}));
+      setItems(normalizeServerItems(data));
+    } catch {
+      // keep current cart state when refresh fails
+    }
+  }, [user, token]);
+
   const totalItems = useMemo(
     () => items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0),
     [items]
@@ -398,8 +412,9 @@ export function CartProvider({ children }) {
       updateQuantity,
       removeFromCart,
       clearCart,
+      reloadCart,
     }),
-    [items, totalItems, totalPrice, addToCart, updateQuantity, removeFromCart, clearCart]
+    [items, totalItems, totalPrice, addToCart, updateQuantity, removeFromCart, clearCart, reloadCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

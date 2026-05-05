@@ -15,9 +15,10 @@ def _inject_dashboard_stats(ctx, request):
     if not (request.user.is_authenticated and request.user.is_staff):
         return
     try:
-        from orders.models import Order
+        from orders.models import Order, Coupon, ReturnRequest
         from accounts.models import User
         from products.models import Product
+        from cart.models import CartItem
         from django.db.models import Sum
 
         now = timezone.now()
@@ -41,6 +42,8 @@ def _inject_dashboard_stats(ctx, request):
         today_orders = Order.objects.filter(created_at__date=today).count()
         recent_users = User.objects.filter(is_staff=False, created_at__gte=last_7_days).count()
         low_stock_products = Product.objects.filter(is_active=True, stock__lte=5).count()
+        abandoned_cart_threshold = now - timedelta(days=1)
+        abandoned_cart_items = CartItem.objects.filter(created_at__lt=abandoned_cart_threshold).count()
 
         ctx["dashboard_stats"] = {
             "total_orders": Order.objects.count(),
@@ -58,12 +61,22 @@ def _inject_dashboard_stats(ctx, request):
             "recent_users": recent_users,
             "active_products": Product.objects.filter(is_active=True).count(),
             "low_stock_products": low_stock_products,
+            "total_coupons": Coupon.objects.count(),
+            "active_coupons": Coupon.objects.filter(active=True).count(),
+            "pending_returns": ReturnRequest.objects.filter(status="requested").count(),
+            "approved_returns": ReturnRequest.objects.filter(status="approved").count(),
+            "refunded_returns": ReturnRequest.objects.filter(refund_status="refunded").count(),
+            "abandoned_cart_items": abandoned_cart_items,
         }
         ctx["recent_orders"] = (
             Order.objects.order_by("-created_at")
             .select_related("user")
             .prefetch_related("items")[:8]
         )
+        ctx["recent_returns"] = (
+            ReturnRequest.objects.order_by("-created_at").select_related("order", "user")[:8]
+        )
+        ctx["recent_coupons"] = Coupon.objects.order_by("-created_at")[:8]
     except Exception:
         logger.exception("Failed to inject admin dashboard stats")
 

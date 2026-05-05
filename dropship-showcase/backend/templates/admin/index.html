@@ -55,6 +55,22 @@
       <div style="font-size:1.6rem;font-weight:700;color:#c2410c;">{{ dashboard_stats.low_stock_products }}</div>
       <div style="font-size:0.8rem;color:#9a3412;font-weight:500;margin-top:2px;">Low Stock (<=5)</div>
     </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#2563eb;">{{ dashboard_stats.total_coupons }}</div>
+      <div style="font-size:0.8rem;color:#1d4ed8;font-weight:500;margin-top:2px;">Total Coupons</div>
+    </div>
+    <div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#0891b2;">{{ dashboard_stats.active_coupons }}</div>
+      <div style="font-size:0.8rem;color:#0e7490;font-weight:500;margin-top:2px;">Active Coupons</div>
+    </div>
+    <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#b45309;">{{ dashboard_stats.pending_returns }}</div>
+      <div style="font-size:0.8rem;color:#92400e;font-weight:500;margin-top:2px;">Pending Returns</div>
+    </div>
+    <div style="background:#fdf2f8;border:1px solid #f9a8d4;border-radius:10px;padding:16px 20px;">
+      <div style="font-size:1.6rem;font-weight:700;color:#be185d;">{{ dashboard_stats.abandoned_cart_items }}</div>
+      <div style="font-size:0.8rem;color:#9d174d;font-weight:500;margin-top:2px;">Abandoned Cart Items</div>
+    </div>
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px 20px;">
       <div style="font-size:1.6rem;font-weight:700;color:#c2410c;">{{ dashboard_stats.processing_orders }}</div>
       <div style="font-size:0.8rem;color:#9a3412;font-weight:500;margin-top:2px;">Processing</div>
@@ -93,6 +109,34 @@
           <td style="padding:8px 14px;">
             <a href="{% url 'admin:orders_order_change' order.pk %}" style="color:#4f46e5;text-decoration:none;font-size:0.8rem;">View -&gt;</a>
           </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if recent_coupons %}
+  <div style="margin-top:24px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+    <div style="padding:12px 16px;border-bottom:1px solid #e5e7eb;background:#f9fafb;">
+      <strong style="font-size:0.9rem;color:#374151;">Recent Coupons</strong>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+      <thead>
+        <tr style="background:#f3f4f6;color:#6b7280;text-align:left;">
+          <th style="padding:8px 14px;font-weight:600;">Code</th>
+          <th style="padding:8px 14px;font-weight:600;">Name</th>
+          <th style="padding:8px 14px;font-weight:600;">Status</th>
+          <th style="padding:8px 14px;font-weight:600;">Uses</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for coupon in recent_coupons %}
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:8px 14px;font-family:monospace;font-size:0.8rem;">{{ coupon.code }}</td>
+          <td style="padding:8px 14px;">{{ coupon.name }}</td>
+          <td style="padding:8px 14px;">{% if coupon.active %}Active{% else %}Inactive{% endif %}</td>
+          <td style="padding:8px 14px;">{{ coupon.usage_count }}</td>
         </tr>
         {% endfor %}
       </tbody>

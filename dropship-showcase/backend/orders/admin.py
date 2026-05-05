@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.utils.html import format_html
 from decimal import Decimal
-from .models import Order, OrderItem, AdminLog
+from .models import Order, OrderItem, AdminLog, Coupon, ReturnRequest
 from products.models import Product
 
 
@@ -98,6 +98,8 @@ class OrderAdmin(admin.ModelAdmin):
         "shipping_name",
         "status_badge",
         "total_amount",
+        "discount_amount",
+        "coupon_code",
         "created_at",
         "updated_at",
     ]
@@ -106,6 +108,8 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = [
         "order_number",
         "total_amount",
+        "discount_amount",
+        "coupon_code",
         "invoice_id",
         "invoice_number",
         "invoice_status",
@@ -125,7 +129,7 @@ class OrderAdmin(admin.ModelAdmin):
     ]
     fieldsets = (
         ("Order Info", {
-            "fields": ("order_number", "user", "status", "total_amount", "notes"),
+            "fields": ("order_number", "user", "status", "total_amount", "discount_amount", "coupon_code", "notes"),
         }),
         ("Invoice", {
             "fields": (
@@ -239,6 +243,91 @@ class OrderAdmin(admin.ModelAdmin):
     def mark_cancelled(self, request, queryset):
         self._change_status(request, queryset, "cancelled", "Cancelled")
     mark_cancelled.short_description = "Mark selected orders as Cancelled"
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = [
+        "code",
+        "name",
+        "discount_label",
+        "active",
+        "minimum_order_amount",
+        "usage_count",
+        "usage_limit_total",
+        "eligible_user_limit",
+        "starts_at",
+        "ends_at",
+    ]
+    list_filter = ["active", "discount_type", "starts_at", "ends_at"]
+    search_fields = ["code", "name", "description", "terms"]
+    readonly_fields = ["usage_count", "created_at", "updated_at"]
+    actions = ["activate_coupons", "deactivate_coupons"]
+    fieldsets = (
+        ("Coupon", {"fields": ("code", "name", "description", "terms", "active")} ),
+        ("Discount", {"fields": ("discount_type", "discount_value", "maximum_discount_amount", "minimum_order_amount")} ),
+        ("Eligibility", {"fields": ("usage_limit_total", "usage_limit_per_user", "eligible_user_limit", "allowed_emails", "allowed_product_ids")} ),
+        ("Schedule", {"fields": ("starts_at", "ends_at")} ),
+        ("Stats", {"fields": ("usage_count", "created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    def discount_label(self, obj):
+        if obj.discount_type == Coupon.DISCOUNT_FIXED:
+            return f"₹{obj.discount_value} off"
+        return f"{obj.discount_value}% off"
+    discount_label.short_description = "Discount"
+
+    def activate_coupons(self, request, queryset):
+        queryset.update(active=True)
+    activate_coupons.short_description = "Activate selected coupons"
+
+    def deactivate_coupons(self, request, queryset):
+        queryset.update(active=False)
+    deactivate_coupons.short_description = "Deactivate selected coupons"
+
+
+@admin.register(ReturnRequest)
+class ReturnRequestAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "order_number",
+        "customer_email",
+        "resolution",
+        "status",
+        "refund_status",
+        "refund_amount",
+        "created_at",
+        "resolved_at",
+    ]
+    list_filter = ["resolution", "status", "refund_status", "created_at"]
+    search_fields = ["order__order_number", "user__email", "reason", "notes"]
+    readonly_fields = ["order", "user", "created_at", "updated_at"]
+    actions = ["approve_requests", "reject_requests", "mark_refunded"]
+    fieldsets = (
+        ("Request", {"fields": ("order", "user", "reason", "resolution", "status", "refund_status", "refund_amount")} ),
+        ("Notes", {"fields": ("notes", "resolved_at")} ),
+        ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
+    )
+
+    def order_number(self, obj):
+        return obj.order.order_number
+    order_number.short_description = "Order #"
+
+    def customer_email(self, obj):
+        return obj.user.email
+    customer_email.short_description = "Customer"
+
+    def approve_requests(self, request, queryset):
+        queryset.update(status=ReturnRequest.STATUS_APPROVED, refund_status=ReturnRequest.REFUND_PENDING)
+    approve_requests.short_description = "Approve selected requests"
+
+    def reject_requests(self, request, queryset):
+        queryset.update(status=ReturnRequest.STATUS_REJECTED, refund_status=ReturnRequest.REFUND_FAILED)
+    reject_requests.short_description = "Reject selected requests"
+
+    def mark_refunded(self, request, queryset):
+        queryset.update(status=ReturnRequest.STATUS_RESOLVED, refund_status=ReturnRequest.REFUND_REFUNDED)
+    mark_refunded.short_description = "Mark selected requests as refunded"
 
 
 @admin.register(AdminLog)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, Home, XCircle, Loader2, ExternalLink } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, Home, XCircle, Loader2, Download, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -82,50 +82,86 @@ function TrackingBar({ status }) {
 
 function OrderCard({ order, token, onOrderPatched }) {
   const [expanded, setExpanded] = useState(false);
-  const [openingInvoice, setOpeningInvoice] = useState(false);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnResolution, setReturnResolution] = useState("refund");
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const returnRequests = Array.isArray(order.return_requests) ? order.return_requests : [];
+  const hasReturnRequest = returnRequests.length > 0;
+  const canRequestReturn = !hasReturnRequest;
 
-  const handleViewRazorpayInvoice = async () => {
+  const handleDownloadInvoice = async () => {
     if (!token) {
-      toast.error("Please sign in to open invoice.");
+      toast.error("Please sign in to download invoice.");
       return;
     }
 
-    if (order?.invoice_url) {
-      window.open(order.invoice_url, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    setOpeningInvoice(true);
+    setDownloadingInvoice(true);
     try {
-      const res = await fetch(`${API}/orders/${encodeURIComponent(order.order_number)}/invoice/create/`, {
-        method: "POST",
+      const res = await fetch(`${API}/orders/${encodeURIComponent(order.order_number)}/invoice/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Unable to download invoice.");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `invoice-${order.order_number}.html`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Invoice downloaded.");
+    } catch (error) {
+      toast.error(error?.message || "Unable to download invoice.");
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
+
+  const handleSubmitReturn = async () => {
+    const reason = String(returnReason || "").trim();
+    if (reason.length < 10) {
+      toast.error("Please provide a detailed return reason.");
+      return;
+    }
+
+    setReturnSubmitting(true);
+    try {
+      const res = await fetch(`${API}/orders/returns/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ order_number: order.order_number, reason, resolution: returnResolution }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || "Unable to create Razorpay invoice.");
+        throw new Error(data?.error || data?.errors?.reason?.[0] || "Unable to create return request.");
       }
 
-      const patchedOrder = {
-        ...order,
-        invoice_id: data?.invoice_id || "",
-        invoice_number: data?.invoice_number || "",
-        invoice_status: data?.invoice_status || "",
-        invoice_url: data?.invoice_url || "",
-      };
-      onOrderPatched?.(patchedOrder);
-
-      if (patchedOrder.invoice_url) {
-        window.open(patchedOrder.invoice_url, "_blank", "noopener,noreferrer");
-      } else {
-        toast.error("Invoice created but link is not available yet.");
+      const created = data?.request || null;
+      if (created) {
+        onOrderPatched?.({
+          ...order,
+          return_requests: [...returnRequests.filter((item) => item.id !== created.id), created],
+        });
       }
+      setReturnReason("");
+      setReturnResolution("Refund");
+      setShowReturnForm(false);
+      toast.success("Return request submitted");
     } catch (error) {
-      toast.error(error?.message || "Unable to open Razorpay invoice.");
+      toast.error(error?.message || "Unable to submit return request.");
     } finally {
-      setOpeningInvoice(false);
+      setReturnSubmitting(false);
     }
   };
 
@@ -136,10 +172,7 @@ function OrderCard({ order, token, onOrderPatched }) {
       className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden"
     >
       {/* Header */}
-      <button
-        className="w-full p-5 flex items-start justify-between gap-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"
-        onClick={() => setExpanded((v) => !v)}
-      >
+      <div className="w-full p-5 flex items-start justify-between gap-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap mb-1">
             <span className="font-semibold text-sm font-mono">{order.order_number}</span>
@@ -156,11 +189,18 @@ function OrderCard({ order, token, onOrderPatched }) {
             · {order.items?.length} {order.items?.length === 1 ? "item" : "items"}
           </p>
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 flex flex-col items-end gap-2">
           <p className="font-bold text-base">{formatINR(Number(order.total_amount))}</p>
-          {expanded ? <ChevronUp size={16} className="ml-auto mt-1 text-slate-400" /> : <ChevronDown size={16} className="ml-auto mt-1 text-slate-400" />}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            aria-label={expanded ? "Collapse order" : "Expand order"}
+          >
+            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
         </div>
-      </button>
+      </div>
 
       {/* Expanded */}
       {expanded && (
@@ -225,17 +265,96 @@ function OrderCard({ order, token, onOrderPatched }) {
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Razorpay Invoice: {order.invoice_status || (order.invoice_url ? "available" : "not created")}
+              Invoice: HTML download
             </p>
             <button
               type="button"
-              onClick={handleViewRazorpayInvoice}
-              disabled={openingInvoice}
+              onClick={handleDownloadInvoice}
+              disabled={downloadingInvoice}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 transition"
             >
-              {openingInvoice ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
-              {order.invoice_url ? "View Razorpay Invoice" : "Create & View Razorpay Invoice"}
+              {downloadingInvoice ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              Download Invoice
             </button>
+          </div>
+
+          {returnRequests.length > 0 && (
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
+              {returnRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="rounded-2xl border border-emerald-200/70 dark:border-emerald-900 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 dark:from-emerald-950/40 dark:via-slate-900 dark:to-cyan-950/30 p-4 text-sm shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                      {request.status?.replace(/_/g, " ") || "Requested"}
+                    </span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200">
+                      {request.resolution_display || request.resolution || "Refund"}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>Refund status: {request.refund_status?.replace(/_/g, " ") || "Pending"}</span>
+                    {request.resolved_at && <span>Resolved</span>}
+                  </div>
+                  <p className="mt-2 text-slate-700 dark:text-slate-200 line-clamp-3">{request.reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+            {showReturnForm ? (
+              <div className="space-y-3 rounded-2xl border border-indigo-200/70 dark:border-indigo-900 bg-gradient-to-br from-indigo-50 via-white to-amber-50 dark:from-indigo-950/40 dark:via-slate-900 dark:to-amber-950/30 p-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Return or Refund</label>
+                  <select
+                    value={returnResolution}
+                    onChange={(e) => setReturnResolution(e.target.value)}
+                    className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >
+                    <option value="refund">Refund</option>
+                    <option value="return">Return</option>
+                  </select>
+                </div>
+                <textarea
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  rows={3}
+                  placeholder="Tell us why you need a return or refund..."
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSubmitReturn}
+                    disabled={returnSubmitting}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 transition"
+                  >
+                    {returnSubmitting ? "Submitting..." : "Submit Refund Request"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReturnForm(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              canRequestReturn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowReturnForm(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition"
+                >
+                  <RotateCcw size={14} /> Initiate Refund
+                </button>
+              )
+            )}
           </div>
         </div>
       )}

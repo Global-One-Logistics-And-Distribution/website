@@ -1,5 +1,6 @@
+from decimal import Decimal
 from rest_framework import serializers
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Coupon, ReturnRequest
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -21,6 +22,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    return_requests = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
@@ -31,6 +33,8 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "status_display",
             "total_amount",
+            "discount_amount",
+            "coupon_code",
             "invoice_id",
             "invoice_number",
             "invoice_status",
@@ -45,9 +49,19 @@ class OrderSerializer(serializers.ModelSerializer):
             "shipping_state",
             "notes",
             "items",
+            "return_requests",
             "created_at",
             "updated_at",
         ]
+
+    def get_return_requests(self, obj):
+        requests = getattr(obj, "return_requests", None)
+        if requests is None:
+            return []
+        try:
+            return ReturnRequestSerializer(requests.all(), many=True).data
+        except Exception:
+            return []
 
 
 class ProductImageField(serializers.CharField):
@@ -77,6 +91,7 @@ class CreateOrderSerializer(serializers.Serializer):
     shipping_pincode = serializers.CharField(max_length=10)
     shipping_state = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+    coupon_code = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
     items = CreateOrderItemSerializer(many=True, required=False, default=list)
     payment_proof = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     razorpay_order_id = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
@@ -97,3 +112,76 @@ class CreateOrderSerializer(serializers.Serializer):
 
     def validate_items(self, value):
         return value
+
+
+class CouponSerializer(serializers.ModelSerializer):
+    discount_type_display = serializers.CharField(source="get_discount_type_display", read_only=True)
+
+    class Meta:
+        model = Coupon
+        fields = [
+            "id",
+            "code",
+            "name",
+            "description",
+            "terms",
+            "discount_type",
+            "discount_type_display",
+            "discount_value",
+            "minimum_order_amount",
+            "maximum_discount_amount",
+            "usage_limit_total",
+            "usage_limit_per_user",
+            "eligible_user_limit",
+            "allowed_emails",
+            "allowed_product_ids",
+            "active",
+            "starts_at",
+            "ends_at",
+            "usage_count",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class CouponValidationSerializer(serializers.Serializer):
+    coupon_code = serializers.CharField(max_length=50)
+    order_total = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
+
+
+class ReturnRequestSerializer(serializers.ModelSerializer):
+    order_number = serializers.CharField(source="order.order_number", read_only=True)
+    order_status = serializers.CharField(source="order.get_status_display", read_only=True)
+    resolution_display = serializers.CharField(source="get_resolution_display", read_only=True)
+
+    class Meta:
+        model = ReturnRequest
+        fields = [
+            "id",
+            "order",
+            "order_number",
+            "order_status",
+            "reason",
+            "resolution",
+            "resolution_display",
+            "status",
+            "refund_status",
+            "refund_amount",
+            "notes",
+            "created_at",
+            "updated_at",
+            "resolved_at",
+        ]
+        read_only_fields = ["order", "created_at", "updated_at", "resolved_at"]
+
+
+class CreateReturnRequestSerializer(serializers.Serializer):
+    order_number = serializers.CharField(max_length=20)
+    reason = serializers.CharField()
+    resolution = serializers.ChoiceField(choices=["refund", "return"], default="refund")
+
+    def validate_reason(self, value):
+        cleaned = str(value or "").strip()
+        if len(cleaned) < 10:
+            raise serializers.ValidationError("Please provide a detailed reason for the return.")
+        return cleaned

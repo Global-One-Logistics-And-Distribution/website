@@ -20,7 +20,6 @@ const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Account = lazy(() => import("./pages/Account"));
 const Orders = lazy(() => import("./pages/Orders"));
-const OrderInvoiceCreate = lazy(() => import("./pages/OrderInvoiceCreate"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
@@ -390,10 +389,6 @@ export default function App() {
               <Route
                 path="/orders"
                 element={<NoIndexRoute title="My Orders | EliteDrop"><Orders /></NoIndexRoute>}
-              />
-              <Route
-                path="/orders/:orderNumber/invoice/create"
-                element={<NoIndexRoute title="Create Invoice | EliteDrop"><OrderInvoiceCreate /></NoIndexRoute>}
               />
               <Route path="/return-policy" element={<ReturnPolicy />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />

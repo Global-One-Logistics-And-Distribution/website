@@ -1,5 +1,6 @@
 import uuid
 import time
+from decimal import Decimal
 from django.db import models
 from django.conf import settings
 
@@ -24,6 +25,8 @@ class Order(models.Model):
     order_number = models.CharField(max_length=20, unique=True, editable=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    coupon_code = models.CharField(max_length=50, blank=True, default="", db_index=True)
     invoice_id = models.CharField(max_length=100, blank=True, default="", db_index=True)
     invoice_number = models.CharField(max_length=100, blank=True, default="")
     invoice_status = models.CharField(max_length=50, blank=True, default="")
@@ -66,6 +69,112 @@ class Order(models.Model):
     def __str__(self):
         customer = self.user.email if self.user else self.shipping_email
         return f"{self.order_number} ({customer})"
+
+
+class Coupon(models.Model):
+    DISCOUNT_PERCENT = "percent"
+    DISCOUNT_FIXED = "fixed"
+    DISCOUNT_CHOICES = [
+        (DISCOUNT_PERCENT, "Percentage"),
+        (DISCOUNT_FIXED, "Fixed Amount"),
+    ]
+
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True, default="")
+    terms = models.TextField(blank=True, default="")
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_CHOICES, default=DISCOUNT_PERCENT)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    minimum_order_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    maximum_discount_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    usage_limit_total = models.PositiveIntegerField(null=True, blank=True)
+    usage_limit_per_user = models.PositiveIntegerField(null=True, blank=True)
+    eligible_user_limit = models.PositiveIntegerField(null=True, blank=True)
+    allowed_emails = models.JSONField(default=list, blank=True)
+    allowed_product_ids = models.JSONField(default=list, blank=True)
+    active = models.BooleanField(default=True, db_index=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    usage_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "coupons"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["active", "code"]),
+            models.Index(fields=["active", "starts_at", "ends_at"]),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.code = str(self.code or "").strip().upper()
+        self.allowed_emails = [str(email).strip().lower() for email in (self.allowed_emails or []) if str(email).strip()]
+        self.allowed_product_ids = [int(product_id) for product_id in (self.allowed_product_ids or []) if str(product_id).strip().isdigit()]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.code
+
+
+class ReturnRequest(models.Model):
+    RESOLUTION_REFUND = "refund"
+    RESOLUTION_RETURN = "return"
+
+    STATUS_REQUESTED = "Requested"
+    STATUS_APPROVED = "Approved"
+    STATUS_REJECTED = "Rejected"
+    STATUS_RESOLVED = "Resolved"
+
+    REFUND_PENDING = "Pending"
+    REFUND_PROCESSING = "Processing"
+    REFUND_REFUNDED = "Refunded"
+    REFUND_FAILED = "Failed"
+
+    STATUS_CHOICES = [
+        (STATUS_REQUESTED, "Requested"),
+        (STATUS_APPROVED, "Approved"),
+        (STATUS_REJECTED, "Rejected"),
+        (STATUS_RESOLVED, "Resolved"),
+    ]
+    REFUND_STATUS_CHOICES = [
+        (REFUND_PENDING, "Pending"),
+        (REFUND_PROCESSING, "Processing"),
+        (REFUND_REFUNDED, "Refunded"),
+        (REFUND_FAILED, "Failed"),
+    ]
+    RESOLUTION_CHOICES = [
+        (RESOLUTION_REFUND, "Refund"),
+        (RESOLUTION_RETURN, "Return"),
+    ]
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="return_requests")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="return_requests",
+    )
+    reason = models.TextField()
+    resolution = models.CharField(max_length=10, choices=RESOLUTION_CHOICES, default=RESOLUTION_REFUND)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_REQUESTED)
+    refund_status = models.CharField(max_length=20, choices=REFUND_STATUS_CHOICES, default=REFUND_PENDING)
+    refund_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "return_requests"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["order", "status"]),
+            models.Index(fields=["user", "created_at"]),
+            models.Index(fields=["refund_status", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"ReturnRequest(order={self.order_id}, status={self.status})"
 
 
 class OrderItem(models.Model):

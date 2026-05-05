@@ -331,7 +331,17 @@ def google_merchant_feed(request):
 @permission_classes([AllowAny])
 @throttle_classes([])
 def site_maintenance_settings(request):
-    payload = SiteMaintenanceSettings.get_solo().as_public_payload()
+    try:
+        payload = SiteMaintenanceSettings.get_solo().as_public_payload()
+    except Exception:
+        payload = {
+            "whole_site": False,
+            "products": False,
+            "sign": False,
+            "checkout": False,
+            "message": "This section is under maintenance.",
+            "updated_at": None,
+        }
     response = Response({"maintenance": payload})
     response["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
     return response

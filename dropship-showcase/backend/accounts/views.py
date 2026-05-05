@@ -355,7 +355,10 @@ def resend_verification(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def me(request):
-    return Response({"user": UserSerializer(request.user).data})
+    try:
+        return Response({"user": UserSerializer(request.user).data})
+    except Exception:
+        return Response({"error": "Unable to load profile."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["PATCH"])
