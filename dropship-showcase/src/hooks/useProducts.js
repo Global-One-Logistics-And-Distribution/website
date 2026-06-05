@@ -33,7 +33,7 @@ export function useProducts() {
 
 export function useProduct(productId) {
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {

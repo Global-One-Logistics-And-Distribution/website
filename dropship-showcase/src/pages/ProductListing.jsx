@@ -11,6 +11,7 @@ import { useCart } from "../context/CartContext";
 import { getDiscount, getMRP } from "../utils/product";
 import { useProducts } from "../hooks/useProducts";
 import { getProductSlug } from "../utils/slug";
+import { fetchProductById } from "../utils/productsApi";
 
 function ListProductCard({ product }) {
   const { addToCart } = useCart();
@@ -29,12 +30,22 @@ function ListProductCard({ product }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
     >
-      <Link to={productPath} className="shrink-0">
+      <Link
+        to={productPath}
+        className="shrink-0"
+        onMouseEnter={() => fetchProductById(product.id).catch(() => {})}
+        onFocus={() => fetchProductById(product.id).catch(() => {})}
+      >
         <img src={imageUrl} alt={product.name} className="w-28 h-28 object-cover rounded-xl bg-slate-100" />
       </Link>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-slate-500">{product.brand} • {product.category}</p>
-        <Link to={productPath} className="font-semibold leading-snug hover:text-indigo-600 transition line-clamp-2 text-sm mt-0.5 block">
+        <Link
+          to={productPath}
+          className="font-semibold leading-snug hover:text-indigo-600 transition line-clamp-2 text-sm mt-0.5 block"
+          onMouseEnter={() => fetchProductById(product.id).catch(() => {})}
+          onFocus={() => fetchProductById(product.id).catch(() => {})}
+        >
           {product.name}
         </Link>
         <div className="flex items-center gap-1.5 mt-1">
@@ -70,6 +81,8 @@ function ListProductCard({ product }) {
         <Link
           to={productPath}
           className="text-center px-3 py-2 rounded-lg border border-slate-300 text-sm hover:bg-slate-50 transition"
+          onMouseEnter={() => fetchProductById(product.id).catch(() => {})}
+          onFocus={() => fetchProductById(product.id).catch(() => {})}
         >
           Details
         </Link>

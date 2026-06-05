@@ -3,8 +3,10 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
+from unittest.mock import patch
 
 from accounts.models import User
+from .models import Coupon
 from products.models import Product
 
 
@@ -118,3 +120,129 @@ class OrdersTestCase(TestCase):
         self.assertIn("text/html", invoice_res["Content-Type"])
         self.assertIn("attachment; filename=\"invoice-", invoice_res["Content-Disposition"])
         self.assertIn(order_number, invoice_res.content.decode("utf-8"))
+
+
+class CouponTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="coupon@example.com",
+            name="Coupon User",
+            password="Secure123",
+            email_verified=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {get_token(self.user)}")
+        self.validate_url = reverse("coupon-validate")
+        self.orders_url = reverse("order-list")
+        self.product = Product.objects.create(
+            name="Luxury Wallet",
+            category="Accessories",
+            price="1000.00",
+            stock=10,
+            is_active=True,
+        )
+
+    def test_coupon_validate_returns_discount(self):
+        coupon = Coupon.objects.create(
+            code="SAVE10",
+            name="Save 10%",
+            discount_type=Coupon.DISCOUNT_PERCENT,
+            discount_value="10",
+            minimum_order_amount="500",
+            active=True,
+        )
+
+        res = self.client.post(
+            self.validate_url,
+            {"coupon_code": coupon.code, "order_total": "1000.00"},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["code"], "SAVE10")
+        self.assertEqual(res.data["discount_amount"], "100.00")
+
+
+class RazorpayFlowTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="payment@example.com",
+            name="Payment User",
+            password="Secure123",
+            email_verified=True,
+        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {get_token(self.user)}")
+        self.create_order_url = reverse("razorpay-create-order")
+        self.verify_url = reverse("razorpay-verify-payment")
+        self.product = Product.objects.create(
+            name="Luxury Bag",
+            category="Accessories",
+            price="2500.00",
+            stock=10,
+            is_active=True,
+        )
+        self.coupon = Coupon.objects.create(
+            code="PAY50",
+            name="Pay 50",
+            discount_type=Coupon.DISCOUNT_FIXED,
+            discount_value="50",
+            active=True,
+        )
+
+    @patch("orders.views._get_razorpay_client")
+    def test_create_razorpay_order_returns_gateway_payload(self, mock_get_client):
+        class DummyOrderAPI:
+            @staticmethod
+            def create(payload):
+                return {
+                    "id": "order_test_123",
+                    "amount": payload["amount"],
+                    "currency": payload["currency"],
+                    "receipt": payload["receipt"],
+                }
+
+        class DummyClient:
+            order = DummyOrderAPI()
+
+        mock_get_client.return_value = DummyClient()
+
+        res = self.client.post(
+            self.create_order_url,
+            {"coupon_code": self.coupon.code},
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["order_id"], "order_test_123")
+        self.assertEqual(res.data["currency"], "INR")
+
+    @patch("orders.views._get_razorpay_client")
+    def test_verify_payment_without_pending_order_returns_clear_error(self, mock_get_client):
+        class DummyPaymentAPI:
+            @staticmethod
+            def fetch(payment_id):
+                return {
+                    "order_id": "order_test_123",
+                    "amount": 245000,
+                    "currency": "INR",
+                    "status": "captured",
+                }
+
+        class DummyClient:
+            payment = DummyPaymentAPI()
+
+        mock_get_client.return_value = DummyClient()
+
+        res = self.client.post(
+            self.verify_url,
+            {
+                "razorpay_order_id": "order_test_123",
+                "razorpay_payment_id": "pay_test_123",
+                "razorpay_signature": "sig",
+            },
+            format="json",
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("expired", str(res.data).lower())

@@ -6,6 +6,7 @@ import { useCart } from "../context/CartContext";
 import { formatINR } from "../utils/currency";
 import { getDiscount, getMRP, getReviewCount } from "../utils/product";
 import { getProductSlug } from "../utils/slug";
+import { fetchProductById } from "../utils/productsApi";
 
 /** Stock label from product.stock. */
 function stockInfo(stock) {
@@ -65,6 +66,8 @@ export default function ProductCard({ product }) {
         to={productPath}
         state={{ from: location.pathname + location.search }}
         className="block overflow-hidden"
+        onMouseEnter={() => fetchProductById(product.id).catch(() => {})}
+        onFocus={() => fetchProductById(product.id).catch(() => {})}
       >
         <img
           src={imageUrl}

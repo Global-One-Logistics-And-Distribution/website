@@ -345,7 +345,7 @@ export default function Checkout() {
           razorpay_order_id: razorpayOrderId,
           razorpay_payment_id: razorpayPaymentId,
         };
-        const res = await fetch(`${API}/orders/`, {
+      const res = await fetch(`${API}/orders/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -356,6 +356,10 @@ export default function Checkout() {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          if (appliedCoupon?.code && String(data?.error || "").toLowerCase().includes("coupon")) {
+            setAppliedCoupon(null);
+            setCouponMessage("Coupon was rejected by the server. Please apply it again.");
+          }
           const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
           if (res.status === 403 && errorMessage.includes("verify")) {
             navigate("/verify-email", {
@@ -437,6 +441,10 @@ export default function Checkout() {
         }
 
         if (!createOrderRes.ok || !createOrderData?.order_id) {
+          if (appliedCoupon?.code && String(createOrderData?.error || "").toLowerCase().includes("coupon")) {
+            setAppliedCoupon(null);
+            setCouponMessage("Coupon was rejected by the server. Please apply it again.");
+          }
           const message = parseBackendError(createOrderData) || "Could not initialize payment.";
           setOrderFailure(
             buildOrderFailureNotice({
