@@ -432,11 +432,16 @@ export default function Checkout() {
 
         const createOrderData = await createOrderRes.json().catch(() => ({}));
         if (createOrderRes.status === 503) {
-          toast("Online payment is temporarily disabled. Placing order directly.");
-          const placed = await submitOrder();
-          if (!placed) {
-            setPlacing(false);
-          }
+          const message = parseBackendError(createOrderData) || "Online payment is temporarily unavailable.";
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message,
+              statusCode: createOrderRes.status,
+              paymentMethod,
+            })
+          );
+          toast.error(message);
+          setPlacing(false);
           return;
         }
 

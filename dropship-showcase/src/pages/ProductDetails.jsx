@@ -235,7 +235,9 @@ export default function ProductDetails() {
     setQuantity((q) => Math.min(maxSelectableQty, Math.max(1, q)));
   }, [isOutOfStock, maxSelectableQty]);
 
-  if (loading) {
+  const shouldShowSkeleton = loading && !hydratedProduct;
+
+  if (shouldShowSkeleton) {
     return (
       <>
         <Helmet><title>Loading Product | EliteDrop</title></Helmet>
