@@ -102,75 +102,12 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [couponMessage, setCouponMessage] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
   const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
   const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
   const affordabilityHostRef = useRef(null);
-  const discountAmount = Number(appliedCoupon?.discount_amount) || 0;
-  const finalPrice = Math.max(0, totalPrice - discountAmount);
-
-  useEffect(() => {
-    if (!appliedCoupon) return;
-    if (Number(appliedCoupon.base_total) !== Number(totalPrice)) {
-      setAppliedCoupon(null);
-      setCouponMessage("Cart changed, please reapply your coupon.");
-    }
-  }, [appliedCoupon, totalPrice]);
-
-  const validateCoupon = async () => {
-    if (!user || !token) {
-      setCouponMessage("Sign in to apply a coupon.");
-      return;
-    }
-
-    const code = String(couponCode || "").trim();
-    if (!code) {
-      setCouponMessage("Enter a coupon code first.");
-      return;
-    }
-
-    setCouponLoading(true);
-    try {
-      const res = await fetch(`${API}/orders/coupons/validate/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ coupon_code: code, order_total: totalPrice }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const message = parseBackendError(data) || "Coupon could not be applied.";
-        setAppliedCoupon(null);
-        setCouponMessage(message);
-        toast.error(message);
-        return;
-      }
-
-      setAppliedCoupon({
-        code: data?.code || code.toUpperCase(),
-        discount_amount: Number(data?.discount_amount) || 0,
-        discounted_total: Number(data?.discounted_total) || totalPrice,
-        base_total: Number(totalPrice),
-        terms: data?.terms || "",
-        description: data?.description || "",
-      });
-      setCouponMessage(`Coupon applied. You saved ${formatINR(Number(data?.discount_amount) || 0)}.`);
-      toast.success("Coupon applied");
-    } catch {
-      const message = "Unable to validate coupon right now.";
-      setCouponMessage(message);
-      toast.error(message);
-    } finally {
-      setCouponLoading(false);
-    }
-  };
+  const finalPrice = Math.max(0, totalPrice);
 
   const getValidRazorpayPrefill = () => {
     const prefill = {};
@@ -340,12 +277,11 @@ export default function Checkout() {
         const payload = {
           ...form,
           notes: notesOverride ?? form.notes,
-          coupon_code: appliedCoupon?.code || "",
           payment_proof: paymentProof,
           razorpay_order_id: razorpayOrderId,
           razorpay_payment_id: razorpayPaymentId,
         };
-      const res = await fetch(`${API}/orders/`, {
+        const res = await fetch(`${API}/orders/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -356,10 +292,6 @@ export default function Checkout() {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          if (appliedCoupon?.code && String(data?.error || "").toLowerCase().includes("coupon")) {
-            setAppliedCoupon(null);
-            setCouponMessage("Coupon was rejected by the server. Please apply it again.");
-          }
           const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
           if (res.status === 403 && errorMessage.includes("verify")) {
             navigate("/verify-email", {
@@ -427,29 +359,20 @@ export default function Checkout() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ coupon_code: appliedCoupon?.code || "" }),
+          body: JSON.stringify({}),
         });
 
         const createOrderData = await createOrderRes.json().catch(() => ({}));
         if (createOrderRes.status === 503) {
-          const message = parseBackendError(createOrderData) || "Online payment is temporarily unavailable.";
-          setOrderFailure(
-            buildOrderFailureNotice({
-              message,
-              statusCode: createOrderRes.status,
-              paymentMethod,
-            })
-          );
-          toast.error(message);
-          setPlacing(false);
+          toast("Online payment is temporarily disabled. Placing order directly.");
+          const placed = await submitOrder();
+          if (!placed) {
+            setPlacing(false);
+          }
           return;
         }
 
         if (!createOrderRes.ok || !createOrderData?.order_id) {
-          if (appliedCoupon?.code && String(createOrderData?.error || "").toLowerCase().includes("coupon")) {
-            setAppliedCoupon(null);
-            setCouponMessage("Coupon was rejected by the server. Please apply it again.");
-          }
           const message = parseBackendError(createOrderData) || "Could not initialize payment.";
           setOrderFailure(
             buildOrderFailureNotice({
@@ -751,36 +674,9 @@ export default function Checkout() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Coupon Code</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="Enter coupon code"
-                    className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={validateCoupon}
-                    disabled={couponLoading || !couponCode.trim() || !user || !token}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-sm font-semibold disabled:opacity-60 transition"
-                  >
-                    {couponLoading ? "Checking..." : "Apply"}
-                  </button>
-                </div>
-              </div>
-              {couponMessage && (
-                <p className={`text-xs ${appliedCoupon ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
-                  {couponMessage}
-                </p>
-              )}
-              {appliedCoupon?.terms && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Terms: {appliedCoupon.terms}
-                </p>
-              )}
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Checkout now uses a simple payment flow without coupons.
+              </p>
             </div>
 
             {!user && (
@@ -898,12 +794,6 @@ export default function Checkout() {
                 <span>Subtotal</span>
                 <span>{totalPrice > 0 ? formatINR(totalPrice) : "—"}</span>
               </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                  <span>Coupon Discount</span>
-                  <span>- {formatINR(discountAmount)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Shipping</span>
                 <span className="text-emerald-600 dark:text-emerald-400">Free</span>

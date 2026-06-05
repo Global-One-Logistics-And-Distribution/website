@@ -34,7 +34,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "status_display",
             "total_amount",
             "discount_amount",
-            "coupon_code",
             "invoice_id",
             "invoice_number",
             "invoice_status",
@@ -91,7 +90,6 @@ class CreateOrderSerializer(serializers.Serializer):
     shipping_pincode = serializers.CharField(max_length=10)
     shipping_state = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")
-    coupon_code = serializers.CharField(max_length=50, required=False, allow_blank=True, default="")
     items = CreateOrderItemSerializer(many=True, required=False, default=list)
     payment_proof = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
     razorpay_order_id = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
@@ -142,11 +140,6 @@ class CouponSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-
-
-class CouponValidationSerializer(serializers.Serializer):
-    coupon_code = serializers.CharField(max_length=50)
-    order_total = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
 
 
 class ReturnRequestSerializer(serializers.ModelSerializer):
