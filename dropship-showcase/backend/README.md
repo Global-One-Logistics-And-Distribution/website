@@ -32,7 +32,7 @@ For production, use `.env.production.example` as a template.
 psql -U postgres -c "CREATE DATABASE dropship;"
 ```
 
-If you use a different local PostgreSQL user or password, update `DATABASE_URL` in your backend environment.
+If you use a different local PostgreSQL user or password, update `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, and `DB_PORT` in your backend environment.
 
 ### 5. Run migrations
 
@@ -70,7 +70,11 @@ See `DEPLOYMENT_VPS.md` for a full production setup.
 | `SECRET_KEY` | Django secret key (required in production) | insecure default |
 | `DEBUG` | Debug mode | `True` |
 | `ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
-| `DATABASE_URL` | Full PostgreSQL URL (required) | — |
+| `DB_NAME` | PostgreSQL database name | `dropship` |
+| `DB_USER` | PostgreSQL user | `postgres` |
+| `DB_PASSWORD` | PostgreSQL password | — |
+| `DB_HOST` | PostgreSQL host | `127.0.0.1` |
+| `DB_PORT` | PostgreSQL port | `5432` |
 | `DB_CONN_MAX_AGE` | Persistent DB connections max age in seconds | `600` |
 | `DB_CONN_HEALTH_CHECKS` | Enable connection health checks | `True` |
 | `PGBOUNCER_TRANSACTION_POOLING` | Enable pgBouncer transaction-pooling compatibility | `False` |

@@ -4,7 +4,6 @@ Django settings for the Dropship backend.
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
-import dj_database_url
 
 try:
     import whitenoise  # noqa: F401
@@ -82,31 +81,18 @@ TEMPLATES = [
 WSGI_APPLICATION = "dropship_backend.wsgi.application"
 
 # ── Database ──────────────────────────────────────────────────────────────────
-# Prefer DATABASE_URL when present so the app matches common VPS deployment setups.
-DATABASE_URL = config("DATABASE_URL", default="")
-if DATABASE_URL:
-    DATABASES = {
-        "default": {
-            **dj_database_url.parse(
-                DATABASE_URL,
-                conn_max_age=config("DB_CONN_MAX_AGE", default=600, cast=int),
-                conn_health_checks=config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool),
-            ),
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("DB_NAME", default="dropship"),
+        "USER": config("DB_USER", default="postgres"),
+        "PASSWORD": config("DB_PASSWORD", default=""),
+        "HOST": config("DB_HOST", default="127.0.0.1"),
+        "PORT": config("DB_PORT", default="5432"),
+        "CONN_MAX_AGE": config("DB_CONN_MAX_AGE", default=600, cast=int),
+        "CONN_HEALTH_CHECKS": config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool),
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("DB_NAME", default="dropship"),
-            "USER": config("DB_USER", default="postgres"),
-            "PASSWORD": config("DB_PASSWORD", default=""),
-            "HOST": config("DB_HOST", default="127.0.0.1"),
-            "PORT": config("DB_PORT", default="5432"),
-            "CONN_MAX_AGE": config("DB_CONN_MAX_AGE", default=600, cast=int),
-            "CONN_HEALTH_CHECKS": config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool),
-        }
-    }
+}
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.User"
