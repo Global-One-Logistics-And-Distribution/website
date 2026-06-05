@@ -4,6 +4,7 @@ Django settings for the Dropship backend.
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
+import dj_database_url
 
 try:
     import whitenoise  # noqa: F401
@@ -13,18 +14,16 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config("SECRET_KEY", default="q+7izv=m%r72y(41m4@cj8a7z_*)$9#k1s@!y3!7-z-&8^+0o8")
+SECRET_KEY = config("SECRET_KEY", default="dev-only-insecure-key")
 
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-if not DEBUG and SECRET_KEY == "django-insecure-change-me-in-production-!@#$%":
-    raise ValueError("SECRET_KEY must be set to a secure value when DEBUG=False")
+if not DEBUG and not SECRET_KEY:
+    raise ValueError("SECRET_KEY must be set in production")
 
-ALLOWED_HOSTS = config(
-    "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1,elitedrop-admin.onrender.com,elitedrop.net.in,www.elitedrop.net.in",
-    cast=Csv(),
-)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ValueError("ALLOWED_HOSTS must be set in production")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -83,50 +82,31 @@ TEMPLATES = [
 WSGI_APPLICATION = "dropship_backend.wsgi.application"
 
 # ── Database ──────────────────────────────────────────────────────────────────
-# Uses DATABASE_URL env var for PostgreSQL; falls back to SQLite for development
-DATABASE_URL = config("DATABASE_URL", default=None)
-DB_CONN_MAX_AGE = config("DB_CONN_MAX_AGE", default=600, cast=int)
-DB_CONN_HEALTH_CHECKS = config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool)
-
+# Prefer DATABASE_URL when present so the app matches common VPS deployment setups.
+DATABASE_URL = config("DATABASE_URL", default="")
 if DATABASE_URL:
-    import dj_database_url
     DATABASES = {
-        "default": dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=DB_CONN_MAX_AGE,
-            conn_health_checks=DB_CONN_HEALTH_CHECKS,
-        )
+        "default": {
+            **dj_database_url.parse(
+                DATABASE_URL,
+                conn_max_age=config("DB_CONN_MAX_AGE", default=600, cast=int),
+                conn_health_checks=config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool),
+            ),
+        }
     }
-    if config("PGBOUNCER_TRANSACTION_POOLING", default=False, cast=bool):
-        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
-    # Allow individual env vars for PostgreSQL; fall back to SQLite for quick dev setup
-    _pg_name = config("DB_NAME", default="")
-    if _pg_name:
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.postgresql",
-                "NAME": config("DB_NAME", default="EliteDrop"),
-                "USER": config("DB_USER", default="EliteDrop"),
-                "PASSWORD": config("DB_PASSWORD", default="EliteDrop@2026"),
-                "HOST": config("DB_HOST", default="db.uhicntqrshlkvvxtmdqy.supabase.co"),
-                "PORT": config("DB_PORT", default="5432"),
-                "CONN_MAX_AGE": DB_CONN_MAX_AGE,
-                "CONN_HEALTH_CHECKS": DB_CONN_HEALTH_CHECKS,
-                'OPTIONS': {
-                          'sslmode': 'require',  # needed for Supabase
-                 },
-            }
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="dropship"),
+            "USER": config("DB_USER", default="postgres"),
+            "PASSWORD": config("DB_PASSWORD", default=""),
+            "HOST": config("DB_HOST", default="127.0.0.1"),
+            "PORT": config("DB_PORT", default="5432"),
+            "CONN_MAX_AGE": config("DB_CONN_MAX_AGE", default=600, cast=int),
+            "CONN_HEALTH_CHECKS": config("DB_CONN_HEALTH_CHECKS", default=True, cast=bool),
         }
-        if config("PGBOUNCER_TRANSACTION_POOLING", default=False, cast=bool):
-            DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
-    else:
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "db.sqlite3",
-            }
-        }
+    }
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 AUTH_USER_MODEL = "accounts.User"
@@ -235,7 +215,7 @@ SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=not DEBUG, cast=
 CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", default=not DEBUG, cast=bool)
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=not DEBUG, cast=bool)
+SECURE_SSL_REDIRECT = False
 SECURE_REFERRER_POLICY = config("SECURE_REFERRER_POLICY", default="strict-origin-when-cross-origin")
 
 # ── Static ────────────────────────────────────────────────────────────────────

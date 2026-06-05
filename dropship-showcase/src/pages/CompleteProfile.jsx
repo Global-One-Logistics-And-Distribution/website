@@ -6,8 +6,8 @@ import { User, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
-const SITE_URL = "https://www.elitedrop.net.in";
+const API = import.meta.env.VITE_API_URL || "/api";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 export default function CompleteProfile() {
   const { user, token, login } = useAuth();

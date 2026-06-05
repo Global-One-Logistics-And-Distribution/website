@@ -27,14 +27,14 @@ function ListProductCard({ product }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm"
+      className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
     >
       <Link to={productPath} className="shrink-0">
-        <img src={imageUrl} alt={product.name} className="w-28 h-28 object-cover rounded-xl bg-slate-100 dark:bg-slate-800" />
+        <img src={imageUrl} alt={product.name} className="w-28 h-28 object-cover rounded-xl bg-slate-100" />
       </Link>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-slate-500 dark:text-slate-400">{product.brand} • {product.category}</p>
-        <Link to={productPath} className="font-semibold leading-snug hover:text-indigo-600 dark:hover:text-indigo-400 transition line-clamp-2 text-sm mt-0.5 block">
+        <p className="text-xs text-slate-500">{product.brand} • {product.category}</p>
+        <Link to={productPath} className="font-semibold leading-snug hover:text-indigo-600 transition line-clamp-2 text-sm mt-0.5 block">
           {product.name}
         </Link>
         <div className="flex items-center gap-1.5 mt-1">
@@ -43,14 +43,14 @@ function ListProductCard({ product }) {
           </span>
         </div>
         <div className="flex items-baseline gap-2 mt-1 flex-wrap">
-          <span className="font-bold text-slate-900 dark:text-white">{formatINR(price)}</span>
+          <span className="font-bold text-slate-900">{formatINR(price)}</span>
           <span className="text-xs text-slate-400 line-through">{formatINR(mrp)}</span>
           <span className="text-xs font-medium text-red-500">-{discount}%</span>
         </div>
-        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+        <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
           <Truck size={11} /> FREE Delivery
         </p>
-        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">
+        <p className="text-sm text-slate-600 line-clamp-2 mt-1">
           {product.shortDescription || product.short_description || product.description}
         </p>
       </div>
@@ -63,13 +63,13 @@ function ListProductCard({ product }) {
             <ShoppingCart size={14} /> Add to Cart
           </button>
         ) : (
-          <span className="text-center px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 text-sm font-medium cursor-not-allowed">
+          <span className="text-center px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium cursor-not-allowed">
             Out of Stock
           </span>
         )}
         <Link
           to={productPath}
-          className="text-center px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+          className="text-center px-3 py-2 rounded-lg border border-slate-300 text-sm hover:bg-slate-50 transition"
         >
           Details
         </Link>
@@ -179,17 +179,17 @@ export default function ProductListing() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="hidden sm:flex items-center rounded-lg border border-slate-200 overflow-hidden">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 transition ${viewMode === "grid" ? "bg-indigo-600 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              className={`p-2 transition ${viewMode === "grid" ? "bg-indigo-600 text-white" : "hover:bg-slate-50"}`}
               title="Grid view"
             >
               <LayoutGrid size={16} />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`p-2 transition ${viewMode === "list" ? "bg-indigo-600 text-white" : "hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              className={`p-2 transition ${viewMode === "list" ? "bg-indigo-600 text-white" : "hover:bg-slate-50"}`}
               title="List view"
             >
               <List size={16} />
@@ -198,7 +198,7 @@ export default function ProductListing() {
 
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition lg:hidden"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 text-sm hover:bg-slate-50 transition lg:hidden"
           >
             <SlidersHorizontal size={15} />
             Filters
@@ -207,16 +207,16 @@ export default function ProductListing() {
       </div>
 
       {/* Search */}
-      <div className="relative mb-4">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="relative mb-4 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_35px_rgba(15,23,42,0.12)]">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
         <input
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="w-full pl-11 pr-10 py-3 rounded-2xl border border-transparent bg-transparent text-sm text-slate-800 placeholder:text-slate-500/85 focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
           placeholder="Search by product name, brand..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         {search && (
-          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+          <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800">
             <X size={15} />
           </button>
         )}
@@ -248,25 +248,25 @@ export default function ProductListing() {
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className="text-xs text-slate-500">Active filters:</span>
           {selectedCategory !== "All" && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium">
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">
               {selectedCategory}
               <button onClick={() => setSelectedCategory("All")}><X size={11} /></button>
             </span>
           )}
           {selectedBrand !== "All" && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium">
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">
               {selectedBrand}
               <button onClick={() => setSelectedBrand("All")}><X size={11} /></button>
             </span>
           )}
           {minRating > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium">
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-medium">
               ★ {minRating}+
               <button onClick={() => setMinRating(0)}><X size={11} /></button>
             </span>
           )}
           {maxPrice < maxProductPrice && (
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-medium">
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
               ≤ {formatINR(maxPrice)}
               <button onClick={() => setMaxPrice(maxProductPrice)}><X size={11} /></button>
             </span>
@@ -283,7 +283,7 @@ export default function ProductListing() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-lg font-semibold mb-2">No products found</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Try adjusting your search or filters.</p>
+          <p className="text-sm text-slate-500 mb-4">Try adjusting your search or filters.</p>
           <button onClick={clearAllFilters} className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition">
             Clear Filters
           </button>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, SiteMaintenanceSettings
+from .models import Product, SiteMaintenanceSettings, HeroSlide
 
 
 @admin.register(Product)
@@ -139,3 +139,76 @@ class SiteMaintenanceSettingsAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(HeroSlide)
+class HeroSlideAdmin(admin.ModelAdmin):
+    list_display = [
+        "title",
+        "sort_order",
+        "is_active",
+        "slide_preview",
+        "updated_at",
+    ]
+    list_filter = ["is_active"]
+    search_fields = ["title", "subtitle", "eyebrow", "cta_label"]
+    list_editable = ["sort_order", "is_active"]
+    ordering = ["sort_order", "-created_at"]
+    readonly_fields = ["slide_preview_large", "created_at", "updated_at"]
+    fieldsets = (
+        (
+            "Content",
+            {
+                "fields": ("title", "subtitle", "eyebrow", "cta_label", "cta_url"),
+            },
+        ),
+        (
+            "Image",
+            {
+                "fields": ("image_file", "image_url", "slide_preview_large"),
+                "description": "Upload image_file or provide image_url. Uploaded file takes priority.",
+            },
+        ),
+        (
+            "Visibility",
+            {
+                "fields": ("is_active", "sort_order"),
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def _resolved_image(self, obj):
+        if obj.image_file:
+            try:
+                return obj.image_file.url
+            except ValueError:
+                return ""
+        return obj.image_url
+
+    def slide_preview(self, obj):
+        image = self._resolved_image(obj)
+        if image:
+            return format_html(
+                '<img src="{}" style="width:64px;height:40px;object-fit:cover;border-radius:6px;" />',
+                image,
+            )
+        return "-"
+
+    def slide_preview_large(self, obj):
+        image = self._resolved_image(obj)
+        if image:
+            return format_html(
+                '<img src="{}" style="max-width:560px;max-height:280px;object-fit:cover;border-radius:10px;" />',
+                image,
+            )
+        return "No image"
+
+    slide_preview.short_description = "Preview"
+    slide_preview_large.short_description = "Image Preview"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product
+from .models import Product, HeroSlide
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -42,3 +42,30 @@ class ProductSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class HeroSlideSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HeroSlide
+        fields = [
+            "id",
+            "title",
+            "subtitle",
+            "eyebrow",
+            "cta_label",
+            "cta_url",
+            "image",
+            "sort_order",
+        ]
+
+    def get_image(self, obj):
+        image_path = obj.resolve_image_url()
+        if not image_path:
+            return ""
+
+        request = self.context.get("request")
+        if request and image_path.startswith("/"):
+            return request.build_absolute_uri(image_path)
+        return image_path

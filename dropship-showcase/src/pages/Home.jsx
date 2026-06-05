@@ -10,9 +10,9 @@ import ProductGridSkeleton from "../components/ProductGridSkeleton";
 import { useProducts } from "../hooks/useProducts";
 
 const TRUST_BADGES = [
-  { icon: ShieldCheck, label: "100% Authentic", sub: "Only verified genuine products", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30" },
-  { icon: Truck, label: "Free Delivery", sub: "On all orders", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30" },
-  { icon: Headphones, label: "Customer Support", sub: "Dedicated customer care", color: "text-rose-600 bg-rose-50 dark:bg-rose-900/30" },
+  { icon: ShieldCheck, label: "100% Authentic", sub: "Only verified genuine products", color: "text-indigo-600 bg-indigo-50" },
+  { icon: Truck, label: "Free Delivery", sub: "On all orders", color: "text-emerald-600 bg-emerald-50" },
+  { icon: Headphones, label: "Customer Support", sub: "Dedicated customer care", color: "text-rose-600 bg-rose-50" },
 ];
 
 const TESTIMONIALS = [
@@ -81,12 +81,15 @@ export default function Home() {
       </Helmet>
 
       {/* Ad / Promo Slider */}
-      <AdSlider />
+      <div className="-mt-24 md:-mt-28">
+        <AdSlider />
+      </div>
 
       {/* Trust badges strip */}
-      <section className="border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <div className="container-pad py-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="relative -mt-8 md:-mt-12">
+        <div className="container-pad">
+          <div className="rounded-3xl border border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_18px_50px_rgba(15,23,42,0.10)] px-4 py-5 md:px-6 md:py-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {TRUST_BADGES.map(({ icon: Icon, label, sub, color }) => (
               <motion.div
                 key={label}
@@ -98,10 +101,11 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold leading-tight">{label}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{sub}</p>
+                  <p className="text-xs text-slate-500">{sub}</p>
                 </div>
               </motion.div>
             ))}
+          </div>
           </div>
         </div>
       </section>
@@ -110,7 +114,7 @@ export default function Home() {
       <section className="container-pad py-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Shop by Category</h2>
-          <Link to="/products" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+          <Link to="/products" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
             All products <ChevronRight size={14} />
           </Link>
         </div>
@@ -119,7 +123,7 @@ export default function Home() {
             <button
               key={c}
               onClick={() => goToCategory(c)}
-              className="px-4 py-2 rounded-full border border-slate-300 dark:border-slate-700 text-sm hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition font-medium"
+              className="px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-700 text-sm hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 transition font-medium"
             >
               {c}
             </button>
@@ -131,7 +135,7 @@ export default function Home() {
       <section className="container-pad py-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Featured Products</h2>
-          <Link to="/products" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+          <Link to="/products" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
             View all <ChevronRight size={14} />
           </Link>
         </div>
@@ -160,7 +164,7 @@ export default function Home() {
       <section className="container-pad py-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Top Rated ⭐</h2>
-          <Link to="/products?sort=ratingHigh" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+          <Link to="/products?sort=ratingHigh" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
             See more <ChevronRight size={14} />
           </Link>
         </div>
@@ -186,16 +190,16 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1, duration: 0.35 }}
-              className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
               <div className="flex items-center gap-1 text-amber-500 mb-3">
                 {Array.from({ length: t.rating }).map((_, i) => (
                   <Star key={i} size={14} fill="currentColor" />
                 ))}
               </div>
-              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">"{t.text}"</p>
+              <p className="text-sm text-slate-700 leading-relaxed">"{t.text}"</p>
               <div className="mt-3 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-600">
                   {t.name[0]}
                 </div>
                 <div>
@@ -221,30 +225,30 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ delay: idx * 0.1, duration: 0.35 }}
               whileHover={{ y: -6, scale: 1.01 }}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
               <div className={`absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r ${person.accent}`} />
 
               <div className="flex items-start gap-4">
-                <div className="rounded-xl p-3 bg-slate-100 dark:bg-slate-800 group-hover:scale-105 transition">
-                  <UserCircle2 className="w-7 h-7 text-slate-700 dark:text-slate-200" />
+                <div className="rounded-xl p-3 bg-slate-100 group-hover:scale-105 transition">
+                  <UserCircle2 className="w-7 h-7 text-slate-700" />
                 </div>
 
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold">{person.name}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{person.role}</p>
+                  <p className="text-sm text-slate-500 mt-0.5">{person.role}</p>
 
                   <div className="mt-4 space-y-2">
                     <a
                       href={`tel:${person.phone.replace(/\s+/g, "")}`}
-                      className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                      className="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 transition"
                     >
                       <Phone size={15} />
                       <span>{person.phone}</span>
                     </a>
                     <a
                       href={`mailto:${person.email}`}
-                      className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                      className="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 transition"
                     >
                       <Mail size={15} />
                       <span>{person.email}</span>
@@ -253,7 +257,7 @@ export default function Home() {
 
                   <Link
                     to="/contact"
-                    className="mt-4 inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition"
+                    className="mt-4 inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium bg-slate-900 text-white hover:opacity-90 transition"
                   >
                     Contact {person.name}
                   </Link>

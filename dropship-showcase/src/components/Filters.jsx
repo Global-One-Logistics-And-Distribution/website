@@ -16,10 +16,10 @@ export default function Filters({
   priceStep = 500,
 }) {
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6 p-4 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-xl shadow-[0_10px_30px_rgba(15,23,42,0.10)]">
       {/* Category */}
       <select
-        className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="px-3 py-2 rounded-lg border border-slate-200/70 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
         value={selectedCategory}
         onChange={(e) => setSelectedCategory(e.target.value)}
       >
@@ -29,7 +29,7 @@ export default function Filters({
 
       {/* Brand */}
       <select
-        className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="px-3 py-2 rounded-lg border border-slate-200/70 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
         value={selectedBrand}
         onChange={(e) => setSelectedBrand(e.target.value)}
       >
@@ -39,7 +39,7 @@ export default function Filters({
 
       {/* Sort */}
       <select
-        className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="px-3 py-2 rounded-lg border border-slate-200/70 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
       >
@@ -52,7 +52,7 @@ export default function Filters({
 
       {/* Min rating */}
       <select
-        className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        className="px-3 py-2 rounded-lg border border-slate-200/70 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400/70"
         value={minRating}
         onChange={(e) => setMinRating(Number(e.target.value))}
       >
@@ -64,9 +64,9 @@ export default function Filters({
 
       {/* Price range */}
       <div className="flex flex-col gap-1">
-        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex justify-between text-xs text-slate-500">
           <span>Max Price</span>
-          <span className="font-semibold text-slate-700 dark:text-slate-200">₹{maxPrice.toLocaleString("en-IN")}</span>
+          <span className="font-semibold text-slate-700">₹{maxPrice.toLocaleString("en-IN")}</span>
         </div>
         <input
           type="range"

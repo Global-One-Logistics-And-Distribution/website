@@ -115,3 +115,32 @@ class SiteMaintenanceSettings(models.Model):
             "message": message,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class HeroSlide(models.Model):
+    title = models.CharField(max_length=160)
+    subtitle = models.CharField(max_length=255, blank=True, default="")
+    eyebrow = models.CharField(max_length=80, blank=True, default="")
+    cta_label = models.CharField(max_length=50, blank=True, default="")
+    cta_url = models.CharField(max_length=300, blank=True, default="")
+    image_url = models.URLField(max_length=1000, blank=True, default="")
+    image_file = models.ImageField(upload_to="hero_slides/", blank=True, null=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    sort_order = models.PositiveIntegerField(default=0, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "hero_slides"
+        ordering = ["sort_order", "-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    def resolve_image_url(self):
+        if self.image_file:
+            try:
+                return self.image_file.url
+            except ValueError:
+                return ""
+        return self.image_url or ""

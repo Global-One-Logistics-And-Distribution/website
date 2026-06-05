@@ -8,10 +8,10 @@ import { useAuth } from "../context/AuthContext";
 import { getFirebaseAuthErrorMessage, isFirebaseAuthConfigured, signInWithGoogleFirebase } from "../lib/firebase";
 
 const getApiBaseUrl = () =>
-  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+  import.meta.env.VITE_API_URL || "/api";
 
 const API = getApiBaseUrl();
-const SITE_URL = "https://www.elitedrop.net.in";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 export default function SignUp() {
   const { login } = useAuth();
@@ -182,31 +182,76 @@ export default function SignUp() {
   const strengthColor = ["", "bg-red-500", "bg-amber-400", "bg-yellow-400", "bg-emerald-500"][strengthScore];
 
   return (
-    <section className="container-pad py-16 flex justify-center">
+    <section className="relative overflow-hidden py-10 md:py-14">
       <Helmet>
         <title>Sign Up | EliteDrop</title>
         <link rel="canonical" href={`${SITE_URL}/signup`} />
       </Helmet>
 
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.18),transparent_28%),radial-gradient(circle_at_left,rgba(56,189,248,0.18),transparent_42%),linear-gradient(135deg,#f8fbff_0%,#eef6ff_45%,#ffffff_100%)]" />
+      <div className="absolute inset-0 -z-10 opacity-55 bg-[linear-gradient(rgba(15,23,42,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] bg-[size:72px_72px]" />
+
+      <div className="container-pad relative z-10 grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="order-2 lg:order-1 text-slate-700 lg:pr-8">
+          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-4 py-1 text-[11px] font-semibold tracking-[0.24em] uppercase backdrop-blur-md text-slate-600 shadow-sm">
+            Join the marketplace
+          </span>
+          <h1 className="mt-5 text-4xl md:text-6xl font-semibold leading-tight max-w-xl text-slate-900">
+            Create your account and shop with style.
+          </h1>
+          <p className="mt-4 max-w-lg text-slate-600 text-sm md:text-base leading-relaxed">
+            Unlock fast checkout, curated collections, and a polished storefront experience built for premium ecommerce.
+          </p>
+
+          <div className="mt-8 grid grid-cols-2 gap-4 max-w-xl">
+            {[
+              { label: "New arrivals", value: "Daily" },
+              { label: "Secure sign up", value: "Instant" },
+              { label: "Wishlist sync", value: "Live" },
+              { label: "Delivery updates", value: "Auto" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-2xl border border-slate-200 bg-white/90 p-4 backdrop-blur-xl shadow-[0_18px_40px_rgba(15,23,42,0.10)]">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
+                <p className="mt-2 text-xl font-semibold text-slate-900">{item.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            {[
+              "Premium catalog",
+              "Gift-ready packages",
+              "Member perks",
+              "Secure checkout",
+            ].map((tag) => (
+              <span key={tag} className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 backdrop-blur-md shadow-sm">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
+        className="order-1 lg:order-2 w-full max-w-md mx-auto"
       >
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
-          <div className="mb-8 text-center">
-            <UserPlus className="w-10 h-10 mx-auto text-indigo-500 mb-3" />
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/92 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-2xl text-slate-900">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.15),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.8),transparent_36%)] pointer-events-none" />
+
+          <div className="relative mb-8 text-center">
+            <UserPlus className="w-10 h-10 mx-auto text-emerald-500 mb-3" />
             <h1 className="text-3xl font-bold">Create an account</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
+            <p className="text-slate-500 mt-1 text-sm">
               Sign up with email and password, then verify your email
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium mb-1.5 text-slate-700">
                 Email address
               </label>
               <div className="relative">
@@ -220,17 +265,17 @@ export default function SignUp() {
                   placeholder="you@example.com"
                   aria-invalid={Boolean(errors.email)}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                    errors.email ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+                  className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
+                    errors.email ? "border-red-400" : "border-slate-200"
                   }`}
                 />
-                {errors.email && <p id="email-error" role="alert" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.email}</p>}
+                {errors.email && <p id="email-error" role="alert" className="absolute right-3 top-3 text-xs text-red-600 bg-red-50 px-1 rounded">{errors.email}</p>}
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1.5">
+              <label htmlFor="password" className="block text-sm font-medium mb-1.5 text-slate-700">
                 Password
               </label>
               <div className="relative">
@@ -242,14 +287,14 @@ export default function SignUp() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  className={`w-full px-4 py-2.5 pr-11 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                    errors.password ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+                  className={`w-full px-4 py-3 pr-11 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
+                    errors.password ? "border-red-400" : "border-slate-200"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -257,7 +302,7 @@ export default function SignUp() {
               {/* Strength bar */}
               {form.password.length > 0 && (
                 <div className="mt-2">
-                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                     <motion.div
                       className={`h-full ${strengthColor} rounded-full`}
                       initial={{ width: 0 }}
@@ -268,12 +313,12 @@ export default function SignUp() {
                   <p className="text-xs mt-1 text-slate-500">{strengthLabel}</p>
                 </div>
               )}
-              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
+              {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirm" className="block text-sm font-medium mb-1.5">
+              <label htmlFor="confirm" className="block text-sm font-medium mb-1.5 text-slate-700">
                 Confirm Password
               </label>
               <div className="relative">
@@ -287,20 +332,20 @@ export default function SignUp() {
                   aria-invalid={!!errors.confirm}
                   aria-describedby={errors.confirm ? "confirm-error" : undefined}
                   placeholder="Repeat your password"
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                    errors.confirm ? "border-red-500" : "border-slate-300 dark:border-slate-700"
+                  className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
+                    errors.confirm ? "border-red-400" : "border-slate-200"
                   }`}
                 />
-                {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-500 bg-white dark:bg-slate-800 px-1">{errors.confirm}</p>}
+                {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-600 bg-red-50 px-1 rounded">{errors.confirm}</p>}
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+            <label className="flex items-center gap-2 text-sm text-slate-600">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4"
+                className="h-4 w-4 rounded border-slate-300 text-cyan-500 focus:ring-cyan-400"
               />
               Remember me
             </label>
@@ -310,14 +355,14 @@ export default function SignUp() {
               type="submit"
               disabled={loading}
               whileTap={{ scale: 0.97 }}
-              className="w-full py-3 rounded-xl bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 disabled:opacity-60 transition"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-sky-600 text-white font-semibold text-sm hover:brightness-110 disabled:opacity-60 transition shadow-[0_14px_35px_rgba(34,197,94,0.20)]"
             >
               {loading ? "Creating account…" : "Create Account"}
             </motion.button>
 
             <div className="relative py-1">
-              <div className="h-px bg-slate-200 dark:bg-slate-700" />
-              <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white dark:bg-slate-900 px-2 text-xs text-slate-500">
+              <div className="h-px bg-slate-200" />
+              <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white px-2 text-xs text-slate-500 rounded">
                 OR
               </span>
             </div>
@@ -327,7 +372,7 @@ export default function SignUp() {
                 type="button"
                 onClick={handleGoogleSignup}
                 disabled={loading}
-                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 transition"
+                className="w-full py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition backdrop-blur-md"
               >
                 Continue with Google
               </button>
@@ -335,26 +380,27 @@ export default function SignUp() {
               <button
                 type="button"
                 disabled
-                className="w-full py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm text-slate-400"
+                className="w-full py-2.5 rounded-2xl border border-slate-200 text-sm text-slate-400"
               >
                 Continue with Google (Firebase not configured)
               </button>
             )}
-            {errors.form && <p className="text-xs text-red-500 text-right">{errors.form}</p>}
+            {errors.form && <p className="text-xs text-red-600 text-right">{errors.form}</p>}
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p className="relative mt-6 text-center text-sm text-slate-600">
             Already have an account?{" "}
             <Link
               to={`/signin?redirectTo=${encodeURIComponent(redirectTo)}`}
               state={{ redirectTo }}
-              className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+              className="text-cyan-600 font-medium hover:underline"
             >
               Sign in
             </Link>
           </p>
         </div>
       </motion.div>
+      </div>
     </section>
   );
 }

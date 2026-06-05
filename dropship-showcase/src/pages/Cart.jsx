@@ -9,7 +9,7 @@ import { getMRP } from "../utils/product";
 import { getProductSlug } from "../utils/slug";
 
 /** Delivery date = today + 3-5 business days */
-const SITE_URL = "https://www.elitedrop.net.in";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 function estimatedDelivery() {
   const d = new Date();

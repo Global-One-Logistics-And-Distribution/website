@@ -129,9 +129,6 @@ def _frontend_base_url(request):
         if parsed.scheme and parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
 
-    if getattr(settings, "DEBUG", False):
-        return "http://localhost:5173"
-
     return getattr(settings, "STOREFRONT_URL", "").rstrip("/")
 
 

@@ -8,7 +8,7 @@ import { formatINR } from "../utils/currency";
 import { useProducts } from "../hooks/useProducts";
 import { getProductSlug } from "../utils/slug";
 
-const SITE_URL = "https://www.elitedrop.net.in";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 export default function Wishlist() {
   const { wishlistIds, toggleWishlist } = useWishlist();

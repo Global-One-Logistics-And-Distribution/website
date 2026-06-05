@@ -13,5 +13,6 @@ PyJWT==2.12.1
 requests==2.33.1
 firebase-admin==6.6.0
 razorpay==1.4.2
+Pillow==12.2.0
 setuptools>=70,<81
 setuptools<81

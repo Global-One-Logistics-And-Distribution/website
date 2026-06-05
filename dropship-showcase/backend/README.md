@@ -22,13 +22,17 @@ cp .env.example .env
 # Edit .env with your actual values
 ```
 
-Never commit a populated `.env` file. Keep secrets only in your deployment platform secret manager (for example, Render environment variables).
+Never commit a populated `.env` file. Keep secrets only in your deployment secret manager.
 
-### 4. Create database
+For production, use `.env.production.example` as a template.
+
+### 4. Create local database
 
 ```bash
 psql -U postgres -c "CREATE DATABASE dropship;"
 ```
+
+If you use a different local PostgreSQL user or password, update `DATABASE_URL` in your backend environment.
 
 ### 5. Run migrations
 
@@ -55,6 +59,10 @@ gunicorn dropship_backend.wsgi:application --bind 0.0.0.0:8000
 The API will be available at `http://localhost:8000/api/`.
 Django Admin panel at `http://localhost:8000/admin/`.
 
+## VPS Deployment (Ubuntu 24.04 + Nginx + PM2)
+
+See `DEPLOYMENT_VPS.md` for a full production setup.
+
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -62,12 +70,7 @@ Django Admin panel at `http://localhost:8000/admin/`.
 | `SECRET_KEY` | Django secret key (required in production) | insecure default |
 | `DEBUG` | Debug mode | `True` |
 | `ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
-| `DATABASE_URL` | Full PostgreSQL URL (overrides individual DB vars) | — |
-| `DB_NAME` | Database name | `dropship` |
-| `DB_USER` | Database user | `postgres` |
-| `DB_PASSWORD` | Database password | — |
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `5432` |
+| `DATABASE_URL` | Full PostgreSQL URL (required) | — |
 | `DB_CONN_MAX_AGE` | Persistent DB connections max age in seconds | `600` |
 | `DB_CONN_HEALTH_CHECKS` | Enable connection health checks | `True` |
 | `PGBOUNCER_TRANSACTION_POOLING` | Enable pgBouncer transaction-pooling compatibility | `False` |
@@ -161,6 +164,11 @@ Keep sender identity aligned with a verified ZeptoMail domain/sender.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/products/merchant/google.xml` | XML product feed for Google Merchant Center |
+
+### Homepage Hero Slides
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/products/hero-slides/` | Returns active hero carousel slides managed in Django admin |
 
 Merchant feed notes:
 - Feed now includes `g:shipping` per item using `MERCHANT_FEED_SHIPPING_COUNTRIES`.

@@ -4,9 +4,23 @@
 
 :root {
   color-scheme: light;
+  background: #ffffff;
+  color: #0f172a;
 }
 .dark {
   color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #0f172a;
 }
 
 .container-pad {

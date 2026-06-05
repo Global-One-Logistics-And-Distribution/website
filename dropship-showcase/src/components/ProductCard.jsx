@@ -38,7 +38,7 @@ export default function ProductCard({ product }) {
     <motion.article
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm relative group"
+      className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm relative group"
     >
       {/* Discount badge */}
       {price > 0 && (
@@ -51,7 +51,7 @@ export default function ProductCard({ product }) {
       <motion.button
         whileTap={{ scale: 0.85 }}
         onClick={() => toggleWishlist(product)}
-        className="absolute top-2.5 right-2.5 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 shadow-sm hover:scale-105 transition"
+        className="absolute top-2.5 right-2.5 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/95 border border-slate-200 shadow-sm hover:scale-105 transition"
         aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
       >
         <Heart
@@ -78,7 +78,7 @@ export default function ProductCard({ product }) {
 
       <div className="p-4 space-y-1.5">
         {/* Brand & category */}
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-slate-500">
           {product.brand} • {product.category}
         </p>
 
@@ -90,7 +90,7 @@ export default function ProductCard({ product }) {
           <span className="flex items-center gap-0.5 bg-emerald-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
             {product.rating ?? "4.3"} <Star size={9} fill="currentColor" className="ml-0.5" />
           </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-slate-500">
             ({reviewCount.toLocaleString("en-IN")})
           </span>
         </div>
@@ -98,11 +98,11 @@ export default function ProductCard({ product }) {
         {/* Price block */}
         {price > 0 ? (
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-base font-extrabold text-slate-900 dark:text-white">
+            <span className="text-base font-extrabold text-slate-900">
               {formatINR(price)}
             </span>
             <span className="text-xs text-slate-400 line-through">{formatINR(mrp)}</span>
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-medium text-emerald-600">
               Save {formatINR(savings)}
             </span>
           </div>
@@ -113,7 +113,7 @@ export default function ProductCard({ product }) {
         {/* Stock status & free delivery */}
         <div className="flex items-center justify-between text-xs pt-0.5">
           <span className={`font-medium ${stockCls}`}>{stockLabel}</span>
-          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+          <span className="flex items-center gap-1 text-emerald-600 font-medium">
             <Truck size={11} /> FREE Delivery
           </span>
         </div>
@@ -130,7 +130,7 @@ export default function ProductCard({ product }) {
               Add to Cart
             </motion.button>
           ) : (
-            <span className="flex-1 text-center px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 text-sm font-medium cursor-not-allowed">
+            <span className="flex-1 text-center px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium cursor-not-allowed">
               Out of Stock
             </span>
           )}
@@ -138,7 +138,7 @@ export default function ProductCard({ product }) {
           <Link
             to={productPath}
             state={{ from: location.pathname + location.search }}
-            className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+            className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50 transition"
           >
             Details
           </Link>

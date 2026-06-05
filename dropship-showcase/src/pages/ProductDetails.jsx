@@ -211,7 +211,6 @@ export default function ProductDetails() {
     return () => {
       disposed = true;
       script.onload = null;
-      if (host.isConnected) host.replaceChildren();
     };
   }, [productAmountInPaise, razorpayKey]);
 

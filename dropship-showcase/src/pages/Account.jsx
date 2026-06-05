@@ -6,8 +6,8 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
-const SITE_URL = "https://www.elitedrop.net.in";
+const API = import.meta.env.VITE_API_URL || "/api";
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 export default function Account() {
   const { user, token, login, logout } = useAuth();

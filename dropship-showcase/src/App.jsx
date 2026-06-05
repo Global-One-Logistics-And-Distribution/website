@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, useLocation, useNavigationType } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { MessageCircle } from "lucide-react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import MaintenanceNotice from "./components/MaintenanceNotice";
@@ -25,8 +26,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 
 const API = (
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api")
+  import.meta.env.VITE_API_URL || "/api"
 ).replace(/\/$/, "");
 
 
@@ -41,13 +41,13 @@ function MaintenanceGate({ enabled, title, message, children }) {
 function PageFallback() {
   return (
     <section className="container-pad py-12" aria-busy="true" aria-live="polite">
-      <div className="h-8 w-56 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
-      <div className="mt-4 h-4 w-80 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+      <div className="h-8 w-56 rounded-lg bg-slate-200 animate-pulse" />
+      <div className="mt-4 h-4 w-80 rounded bg-slate-200 animate-pulse" />
       <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, idx) => (
           <div
             key={idx}
-            className="h-40 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+            className="h-40 rounded-2xl border border-slate-200 bg-white"
           />
         ))}
       </div>
@@ -75,12 +75,12 @@ function NotFoundPage() {
         <meta name="robots" content="noindex, follow" />
       </Helmet>
       <h1 className="text-3xl font-bold">404 - Page not found</h1>
-      <p className="mt-3 text-slate-600 dark:text-slate-300">
+      <p className="mt-3 text-slate-600">
         The page you requested does not exist or may have moved.
       </p>
       <a
         href="/"
-        className="inline-block mt-6 px-5 py-2.5 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+        className="inline-block mt-6 px-5 py-2.5 rounded-lg bg-slate-900 text-white"
       >
         Go to Home
       </a>
@@ -246,7 +246,7 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] text-slate-900">
       <Helmet>
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="shortcut icon" href="/favicon.ico" />
@@ -254,7 +254,7 @@ export default function App() {
       </Helmet>
       <Navbar />
       <ScrollToTop />
-      <main className="flex-1">
+      <main className="flex-1 pt-24 md:pt-28">
         {!maintenanceLoaded ? (
           <PageFallback />
         ) : (
@@ -400,6 +400,16 @@ export default function App() {
           )
         )}
       </main>
+      <a
+        href="https://wa.me/917208999095"
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat on WhatsApp"
+        className="fixed right-4 bottom-4 md:right-6 md:bottom-6 z-50 inline-flex items-center gap-2 rounded-full border border-white/60 bg-emerald-500/90 px-4 py-3 text-white shadow-[0_18px_45px_rgba(16,185,129,0.35)] backdrop-blur-md transition hover:scale-105 hover:bg-emerald-500"
+      >
+        <MessageCircle size={18} />
+        <span className="hidden sm:inline text-sm font-semibold">WhatsApp</span>
+      </a>
       <Footer />
     </div>
   );
