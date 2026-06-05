@@ -108,6 +108,7 @@ export default function Checkout() {
   const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
   const affordabilityHostRef = useRef(null);
   const finalPrice = Math.max(0, totalPrice);
+  const authToken = token || sessionStorage.getItem("token") || localStorage.getItem("token") || "";
 
   const getValidRazorpayPrefill = () => {
     const prefill = {};
@@ -135,7 +136,6 @@ export default function Checkout() {
     if (!host) return;
 
     let disposed = false;
-
     const targetId = `razorpay-affordability-widget-runtime-${Math.random().toString(36).slice(2)}`;
     const mount = document.createElement("div");
     mount.id = targetId;
@@ -143,14 +143,10 @@ export default function Checkout() {
 
     const renderAffordabilityWidget = () => {
       if (disposed || !host.isConnected || !mount.isConnected) return;
-
       if (!window.RazorpayAffordabilitySuite || !razorpayKey || amountInPaise <= 0) {
         mount.replaceChildren();
         return;
       }
-
-      mount.replaceChildren();
-      if (!document.getElementById(targetId)) return;
 
       const widgetConfig = {
         key: razorpayKey,
@@ -174,9 +170,7 @@ export default function Checkout() {
     const script = document.createElement("script");
     script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
     script.async = true;
-    script.onload = () => {
-      renderAffordabilityWidget();
-    };
+    script.onload = renderAffordabilityWidget;
     document.head.appendChild(script);
 
     return () => {
@@ -236,7 +230,7 @@ export default function Checkout() {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
-    if (!user || !token) {
+    if (!user || !authToken) {
       toast.error("Please sign in to place an order.");
       navigate(`/signin?redirectTo=${encodeURIComponent(checkoutPath)}`, {
         state: { redirectTo: checkoutPath },
@@ -273,7 +267,7 @@ export default function Checkout() {
 
     setPlacing(true);
     try {
-      const submitOrder = async ({ notesOverride = null, paymentProof = "", razorpayOrderId = "", razorpayPaymentId = "" } = {}) => {
+      const submitOrder = async ({ notesOverride = null } = {}) => {
         const payload = {
           ...form,
           notes: notesOverride ?? form.notes,
@@ -285,7 +279,7 @@ export default function Checkout() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify(payload),
         });
@@ -332,157 +326,158 @@ export default function Checkout() {
         });
       };
 
-      if (paymentMethod === "razorpay") {
-        if (!razorpayKey) {
-          toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID to test payment.");
-          setPlacing(false);
-          return;
-        }
-
-        const loaded = await loadRazorpayScript();
-        if (!loaded) {
-          toast.error("Unable to load Razorpay checkout. Please try again.");
-          setPlacing(false);
-          return;
-        }
-
-        const finalAmountInPaise = Math.round(finalPrice * 100);
-        if (!finalAmountInPaise || finalAmountInPaise < 100) {
-          toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
-          setPlacing(false);
-          return;
-        }
-
-        const createOrderRes = await fetch(`${API}/checkout/create-order`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({}),
-        });
-
-        const createOrderData = await createOrderRes.json().catch(() => ({}));
-        if (createOrderRes.status === 503) {
-          toast("Online payment is temporarily disabled. Placing order directly.");
-          const placed = await submitOrder();
-          if (!placed) {
-            setPlacing(false);
-          }
-          return;
-        }
-
-        if (!createOrderRes.ok || !createOrderData?.order_id) {
-          const message = parseBackendError(createOrderData) || "Could not initialize payment.";
-          setOrderFailure(
-            buildOrderFailureNotice({
-              message,
-              statusCode: createOrderRes.status || 500,
-              paymentMethod,
-            })
-          );
-          toast.error(message);
-          setPlacing(false);
-          return;
-        }
-
-        const options = {
-          key: razorpayKey,
-          amount: createOrderData.amount,
-          currency: createOrderData.currency,
-          order_id: createOrderData.order_id,
-          name: "EliteDrop",
-          description: "Order payment",
-          prefill: getValidRazorpayPrefill(),
-          theme: {
-            color: "#4f46e5",
-          },
-          retry: {
-            enabled: true,
-          },
-          modal: {
-            ondismiss: () => {
-              toast("Payment cancelled.");
-              setPlacing(false);
-            },
-          },
-          handler: async (response) => {
-            const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response?.razorpay_order_id,
-                razorpay_payment_id: response?.razorpay_payment_id,
-                razorpay_signature: response?.razorpay_signature,
-              }),
-            });
-
-            const verifyData = await verifyRes.json().catch(() => ({}));
-            if (!verifyRes.ok || !verifyData?.success) {
-              const message = parseBackendError(verifyData) || "Payment verification failed.";
-              setOrderFailure(
-                buildOrderFailureNotice({
-                  message,
-                  statusCode: verifyRes.status || 400,
-                  paymentMethod,
-                })
-              );
-              toast.error(message);
-              setPlacing(false);
-              return;
-            }
-
-            const paymentProof = verifyData?.payment_proof || "";
-            if (!paymentProof) {
-              const message = "Payment verification proof missing. Please retry payment.";
-              setOrderFailure(
-                buildOrderFailureNotice({
-                  message,
-                  statusCode: 400,
-                  paymentMethod,
-                })
-              );
-              toast.error(message);
-              setPlacing(false);
-              return;
-            }
-
-            await submitOrder({
-              paymentProof,
-              razorpayOrderId: response?.razorpay_order_id || "",
-              razorpayPaymentId: response?.razorpay_payment_id || "",
-            });
-            setPlacing(false);
-          },
-        };
-
-        const razorpay = new window.Razorpay(options);
-        razorpay.on("payment.failed", (resp) => {
-          const gatewayReason = resp?.error?.description || "Payment failed.";
-          const code = resp?.error?.code ? ` (${resp.error.code})` : "";
-          const reason = `${gatewayReason}${code}`;
-          const helpText = isRazorpayTestMode
-            ? "You are in Razorpay test mode. Use only Razorpay test cards/UPI IDs from their docs; real cards can be rejected in test mode."
-            : "Please verify card details, bank limits, and OTP/3DS authentication, then retry.";
-
-          setOrderFailure(
-            buildOrderFailureNotice({
-              message: `${reason} ${helpText}`,
-              statusCode: 402,
-              paymentMethod,
-            })
-          );
-          toast.error(reason);
-          setPlacing(false);
-        });
-        razorpay.open();
+      if (!razorpayKey) {
+        toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID in the frontend env.");
+        setPlacing(false);
         return;
       }
 
-      await submitOrder();
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        toast.error("Unable to load Razorpay checkout. Please try again.");
+        setPlacing(false);
+        return;
+      }
+
+      const finalAmountInPaise = Math.round(finalPrice * 100);
+      if (!finalAmountInPaise || finalAmountInPaise < 100) {
+        toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
+        setPlacing(false);
+        return;
+      }
+
+      const createOrderRes = await fetch(`${API}/checkout/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const createOrderData = await createOrderRes.json().catch(() => ({}));
+      if (!createOrderRes.ok || !createOrderData?.order_id) {
+        const message = parseBackendError(createOrderData) || "Could not initialize payment.";
+        setOrderFailure(
+          buildOrderFailureNotice({
+            message,
+            statusCode: createOrderRes.status || 500,
+            paymentMethod,
+          })
+        );
+        toast.error(message);
+        setPlacing(false);
+        return;
+      }
+
+      const checkoutProof = createOrderData?.checkout_proof || "";
+      if (!checkoutProof) {
+        const message = "Payment session proof missing from server. Please retry checkout.";
+        setOrderFailure(
+          buildOrderFailureNotice({
+            message,
+            statusCode: 502,
+            paymentMethod,
+          })
+        );
+        toast.error(message);
+        setPlacing(false);
+        return;
+      }
+
+      const options = {
+        key: razorpayKey,
+        amount: createOrderData.amount,
+        currency: createOrderData.currency,
+        order_id: createOrderData.order_id,
+        name: "EliteDrop",
+        description: "Order payment",
+        prefill: getValidRazorpayPrefill(),
+        theme: { color: "#4f46e5" },
+        retry: { enabled: true },
+        modal: {
+          ondismiss: () => {
+            toast("Payment cancelled.");
+            setPlacing(false);
+          },
+        },
+        handler: async (response) => {
+        const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response?.razorpay_order_id,
+              razorpay_payment_id: response?.razorpay_payment_id,
+              razorpay_signature: response?.razorpay_signature,
+              checkout_proof: checkoutProof,
+            }),
+          });
+
+          const verifyData = await verifyRes.json().catch(() => ({}));
+          if (!verifyRes.ok || !verifyData?.success) {
+            const message = parseBackendError(verifyData) || "Payment verification failed.";
+            setOrderFailure(
+              buildOrderFailureNotice({
+                message,
+                statusCode: verifyRes.status || 400,
+                paymentMethod,
+              })
+            );
+            toast.error(message);
+            setPlacing(false);
+            return;
+          }
+
+          const paymentProof = verifyData?.payment_proof || "";
+          if (!paymentProof) {
+            const message = "Payment verification proof missing. Please retry payment.";
+            setOrderFailure(
+              buildOrderFailureNotice({
+                message,
+                statusCode: 400,
+                paymentMethod,
+              })
+            );
+            toast.error(message);
+            setPlacing(false);
+            return;
+          }
+
+          const placed = await submitOrder({
+            paymentProof,
+            razorpayOrderId: response?.razorpay_order_id || "",
+            razorpayPaymentId: response?.razorpay_payment_id || "",
+          });
+          if (placed) {
+            cart.clearCart?.();
+          }
+          setPlacing(false);
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on("payment.failed", (resp) => {
+        const gatewayReason = resp?.error?.description || "Payment failed.";
+        const code = resp?.error?.code ? ` (${resp.error.code})` : "";
+        const reason = `${gatewayReason}${code}`;
+        const helpText = isRazorpayTestMode
+          ? "Use Razorpay test payment methods only."
+          : "Please verify card details, bank limits, and OTP/3DS authentication, then retry.";
+
+        setOrderFailure(
+          buildOrderFailureNotice({
+            message: `${reason} ${helpText}`,
+            statusCode: 402,
+            paymentMethod,
+          })
+        );
+        toast.error(reason);
+        setPlacing(false);
+      });
+      razorpay.open();
     } catch {
       const message = "Network error. Please try again.";
       setOrderFailure(
@@ -494,9 +489,7 @@ export default function Checkout() {
       );
       toast.error(message);
     } finally {
-      if (paymentMethod !== "razorpay") {
-        setPlacing(false);
-      }
+      setPlacing(false);
     }
   };
 

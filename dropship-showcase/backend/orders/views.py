@@ -4,14 +4,13 @@ import hashlib
 import hmac
 import json
 import logging
-import secrets
 import time
 from urllib.parse import urlsplit
 from django.conf import settings
-from django.core.cache import cache
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
+from django.core import signing
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -40,7 +39,6 @@ except Exception:  # pragma: no cover - handled at runtime
 SHOE_SIZES = {"7", "8", "9", "10", "11"}
 PROOF_TTL_SECONDS = 15 * 60
 PENDING_ORDER_TTL_SECONDS = 20 * 60
-USED_PAYMENT_TTL_SECONDS = 7 * 24 * 60 * 60
 RETURN_WINDOW_DAYS = 7
 
 
@@ -61,18 +59,6 @@ class PaymentVerifyThrottle(UserRateThrottle):
     scope = "payment_verify"
 
 
-def _pending_order_cache_key(user_id, order_id):
-    return f"rzp:pending:{user_id}:{order_id}"
-
-
-def _payment_proof_cache_key(user_id, proof_token):
-    return f"rzp:proof:{user_id}:{proof_token}"
-
-
-def _used_payment_cache_key(payment_id):
-    return f"rzp:used:{payment_id}"
-
-
 def _get_razorpay_client():
     key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
     key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
@@ -90,6 +76,21 @@ def _payment_error(message, status_code, debug=None, success=False):
     if debug and getattr(settings, "DEBUG", False):
         payload["debug"] = str(debug)
     return Response(payload, status=status_code)
+
+
+def _sign_payment_payload(payload):
+    return signing.dumps(payload, salt="orders.razorpay.payment")
+
+
+def _unsign_payment_payload(token, max_age):
+    return signing.loads(token, salt="orders.razorpay.payment", max_age=max_age)
+
+
+def _order_notes_contain_payment_id(payment_id):
+    payment_id = str(payment_id or "").strip()
+    if not payment_id:
+        return False
+    return Order.objects.filter(notes__icontains=f"Payment ID: {payment_id}").exists()
 
 
 def _frontend_base_url(request):
@@ -221,6 +222,128 @@ def _build_trusted_cart_snapshot(user, lock_rows=False):
     )
 
 
+def _build_snapshot_from_items(items, lock_rows=False):
+    if not isinstance(items, list) or not items:
+        return None, Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
+
+    normalized_items = []
+    requested_quantities = {}
+    requested_size_quantities = {}
+
+    product_ids = []
+    for item in items:
+        try:
+            product_id = int(item.get("product_id"))
+            quantity = int(item.get("quantity") or 0)
+        except Exception:
+            return None, Response({"error": "Invalid cart items."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if product_id <= 0 or quantity <= 0:
+            return None, Response({"error": "Invalid cart quantity."}, status=status.HTTP_400_BAD_REQUEST)
+
+        product_ids.append(product_id)
+        requested_quantities[product_id] = requested_quantities.get(product_id, 0) + quantity
+
+    products_qs = Product.objects.filter(id__in=product_ids, is_active=True).only(
+        "id", "category", "name", "price", "image_url", "stock", "size_stock"
+    )
+    if lock_rows:
+        products_qs = products_qs.select_for_update()
+
+    products_by_id = {product.id: product for product in products_qs}
+    missing_ids = sorted({product_id for product_id in product_ids if product_id not in products_by_id})
+    if missing_ids:
+        return (
+            None,
+            Response(
+                {"errors": {"items": [f"Product {pid} is unavailable." for pid in missing_ids]}},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            ),
+        )
+
+    for item in items:
+        product_id = int(item.get("product_id"))
+        quantity = int(item.get("quantity") or 0)
+        product = products_by_id[product_id]
+        shoe_size = str(item.get("selected_size") or item.get("selectedSize") or item.get("shoe_size") or "").strip()
+
+        if _is_shoe_category(product.category):
+            if not shoe_size:
+                return (
+                    None,
+                    Response(
+                        {"errors": {"items": [f"Shoe size is required for product {product_id}."]}},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    ),
+                )
+            if shoe_size not in SHOE_SIZES:
+                return (
+                    None,
+                    Response(
+                        {"errors": {"items": [f"Invalid shoe size '{shoe_size}' for product {product_id}."]}},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    ),
+                )
+            requested_size_quantities[(product_id, shoe_size)] = (
+                requested_size_quantities.get((product_id, shoe_size), 0) + quantity
+            )
+
+        normalized_items.append(
+            {
+                "product_id": product.id,
+                "product_name": product.name,
+                "product_image": product.image_url or "",
+                "price": product.price,
+                "quantity": quantity,
+                "shoe_size": shoe_size,
+            }
+        )
+
+    for product_id, quantity in requested_quantities.items():
+        product = products_by_id[product_id]
+        if _is_shoe_category(product.category):
+            continue
+        if int(product.stock or 0) < quantity:
+            return (
+                None,
+                Response(
+                    {"errors": {"items": [f"Only {product.stock} unit(s) left for product {product_id}."]}},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                ),
+            )
+
+    for (product_id, shoe_size), quantity in requested_size_quantities.items():
+        product = products_by_id[product_id]
+        available = _size_stock_qty(product, shoe_size)
+        if available < quantity:
+            return (
+                None,
+                Response(
+                    {
+                        "errors": {
+                            "items": [f"Only {available} unit(s) left for product {product_id} in size {shoe_size}."]
+                        }
+                    },
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                ),
+            )
+
+    total = sum((item["price"] * item["quantity"] for item in normalized_items), Decimal("0"))
+    total_paise = int((total * 100).to_integral_value())
+    return (
+        {
+            "normalized_items": normalized_items,
+            "requested_quantities": requested_quantities,
+            "requested_size_quantities": requested_size_quantities,
+            "products_by_id": products_by_id,
+            "total": total,
+            "total_paise": total_paise,
+            "currency": "INR",
+        },
+        None,
+    )
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def order_list(request):
@@ -266,8 +389,18 @@ def order_list(request):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            proof_payload = cache.get(_payment_proof_cache_key(user.id, payment_proof))
-            if not proof_payload:
+            proof_order_id = ""
+            proof_payment_id = ""
+            proof_amount = 0
+            proof_currency = "INR"
+            try:
+                proof_payload = _unsign_payment_payload(payment_proof, PROOF_TTL_SECONDS)
+            except signing.SignatureExpired:
+                return Response(
+                    {"error": "Payment verification expired. Please retry payment."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except signing.BadSignature:
                 return Response(
                     {"error": "Payment verification expired. Please retry payment."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -277,12 +410,14 @@ def order_list(request):
             proof_payment_id = str(proof_payload.get("payment_id", ""))
             proof_amount = int(proof_payload.get("amount", 0) or 0)
             proof_currency = str(proof_payload.get("currency", "INR")).upper()
+            proof_user_id = int(proof_payload.get("user_id") or 0)
+            if proof_user_id != int(user.id):
+                return Response({"error": "Payment proof does not belong to this account."}, status=status.HTTP_400_BAD_REQUEST)
             if request_order_id and request_order_id != proof_order_id:
                 return Response({"error": "Payment order mismatch."}, status=status.HTTP_400_BAD_REQUEST)
             if request_payment_id and request_payment_id != proof_payment_id:
                 return Response({"error": "Payment transaction mismatch."}, status=status.HTTP_400_BAD_REQUEST)
-
-            if cache.get(_used_payment_cache_key(proof_payment_id)):
+            if _order_notes_contain_payment_id(proof_payment_id):
                 return Response({"error": "Payment has already been used."}, status=status.HTTP_400_BAD_REQUEST)
 
             data["shipping_email"] = user.email
@@ -307,7 +442,9 @@ def order_list(request):
 
                 note = (data.get("notes") or "").strip()
                 payment_note = (
-                    f"Paid via Razorpay. Order ID: {proof_order_id}, Payment ID: {proof_payment_id}"
+                    "Paid via dummy checkout."
+                    if dummy_payment
+                    else f"Paid via Razorpay. Order ID: {proof_order_id}, Payment ID: {proof_payment_id}"
                 )
                 data["notes"] = f"{note}\n{payment_note}".strip()
 
@@ -343,9 +480,6 @@ def order_list(request):
                     product.save(update_fields=["size_stock", "stock", "updated_at"])
 
                 CartItem.objects.filter(user=user).delete()
-                cache.delete(_payment_proof_cache_key(user.id, payment_proof))
-                cache.set(_used_payment_cache_key(proof_payment_id), order.order_number, timeout=USED_PAYMENT_TTL_SECONDS)
-
             try:
                 send_order_invoice_email(order)
             except Exception:
@@ -466,29 +600,72 @@ def create_razorpay_order(request):
         try:
             order = client.order.create(order_payload)
         except Exception as exc:
-            logger.exception("Razorpay order create failed for user_id=%s", request.user.id)
-            return _payment_error("Failed to create Razorpay order.", status.HTTP_503_SERVICE_UNAVAILABLE, debug=exc)
+            logger.exception(
+                "Razorpay order create failed for user_id=%s amount=%s currency=%s payload=%s",
+                request.user.id,
+                final_total_paise,
+                snapshot["currency"],
+                order_payload,
+            )
+            return _payment_error(
+                "Failed to create Razorpay order.",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                debug=exc,
+            )
 
         order_id = str(order.get("id") or "").strip()
         if not order_id:
             return _payment_error("Invalid order response from gateway.", status.HTTP_502_BAD_GATEWAY)
 
-        cache.set(
-            _pending_order_cache_key(request.user.id, order_id),
-            {
-                "amount": int(order.get("amount") or 0),
-                "currency": str(order.get("currency") or snapshot["currency"]).upper(),
-                "receipt": str(order.get("receipt") or receipt),
-                "order_total": str(snapshot["total"]),
-                "final_total": str(final_total),
-            },
-            timeout=PENDING_ORDER_TTL_SECONDS,
-        )
+        gateway_amount = int(order.get("amount") or 0)
+        gateway_currency = str(order.get("currency") or snapshot["currency"]).upper()
+        if gateway_amount != final_total_paise:
+            logger.warning(
+                "Razorpay amount mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
+                request.user.id,
+                final_total_paise,
+                gateway_amount,
+                order_id,
+            )
+        if gateway_currency != snapshot["currency"].upper():
+            logger.warning(
+                "Razorpay currency mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
+                request.user.id,
+                snapshot["currency"],
+                gateway_currency,
+                order_id,
+            )
 
-        return Response({"order_id": order_id, "amount": order.get("amount"), "currency": order.get("currency")}, status=status.HTTP_200_OK)
+        checkout_payload = {
+            "user_id": int(request.user.id),
+            "order_id": order_id,
+            "amount": gateway_amount,
+            "currency": gateway_currency,
+            "receipt": str(order.get("receipt") or receipt),
+            "order_total": str(snapshot["total"]),
+            "final_total": str(final_total),
+        }
+
+        return Response(
+            {
+                "order_id": order_id,
+                "amount": order.get("amount"),
+                "currency": order.get("currency"),
+                "checkout_proof": _sign_payment_payload(checkout_payload),
+            },
+            status=status.HTTP_200_OK,
+        )
     except Exception as exc:
-        logger.exception("Razorpay create order failed for user_id=%s", request.user.id)
-        return _payment_error("Failed to create Razorpay order.", status.HTTP_503_SERVICE_UNAVAILABLE, debug=exc)
+        user_id = getattr(request.user, "id", None)
+        logger.exception("Razorpay create order failed for user_id=%s", user_id)
+        return Response(
+            {
+                "success": False,
+                "error": "Failed to create Razorpay order.",
+                **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
 
 @api_view(["POST"])
@@ -510,18 +687,11 @@ def verify_razorpay_payment(request):
         if not key_secret:
             return _payment_error("Razorpay secret is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        pending_payload = cache.get(_pending_order_cache_key(request.user.id, str(order_id)))
-        if not pending_payload:
-            return _payment_error("Order session expired. Please try payment again.", status.HTTP_400_BAD_REQUEST)
-
         payload = f"{order_id}|{payment_id}".encode("utf-8")
         expected_signature = hmac.new(key_secret.encode("utf-8"), payload, hashlib.sha256).hexdigest()
 
         if not hmac.compare_digest(expected_signature, str(signature)):
             return _payment_error("Invalid payment signature.", status.HTTP_400_BAD_REQUEST)
-
-        if cache.get(_used_payment_cache_key(str(payment_id))):
-            return _payment_error("Payment has already been used.", status.HTTP_400_BAD_REQUEST)
 
         client = _get_razorpay_client()
         if not client:
@@ -529,8 +699,28 @@ def verify_razorpay_payment(request):
 
         payment = client.payment.fetch(str(payment_id))
     except Exception as exc:
-        logger.exception("Razorpay payment fetch failed for payment_id=%s", payment_id)
-        return _payment_error("Unable to validate payment with gateway.", status.HTTP_502_BAD_GATEWAY, debug=exc, success=False)
+        logger.exception("Razorpay payment fetch failed for payment_id=%s order_id=%s", payment_id, order_id)
+        return Response(
+            {
+                "success": False,
+                "error": "Unable to validate payment with gateway.",
+                **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+            },
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    try:
+        checkout_payload = _unsign_payment_payload(
+            request.data.get("checkout_proof") or "",
+            PENDING_ORDER_TTL_SECONDS,
+        )
+    except signing.SignatureExpired:
+        checkout_payload = {}
+    except signing.BadSignature:
+        checkout_payload = {}
+
+    if checkout_payload and int(checkout_payload.get("user_id") or 0) != int(request.user.id):
+        return _payment_error("Payment session does not belong to this account.", status.HTTP_400_BAD_REQUEST)
 
     gateway_order_id = str(payment.get("order_id") or "")
     gateway_amount = int(payment.get("amount") or 0)
@@ -540,27 +730,26 @@ def verify_razorpay_payment(request):
     if gateway_order_id != str(order_id):
         return _payment_error("Gateway order mismatch.", status.HTTP_400_BAD_REQUEST)
 
-    if gateway_amount != int(pending_payload.get("amount") or 0):
+    expected_amount = int(checkout_payload.get("amount") or 0)
+    if expected_amount and gateway_amount != expected_amount:
         return _payment_error("Gateway amount mismatch.", status.HTTP_400_BAD_REQUEST)
 
-    if gateway_currency != str(pending_payload.get("currency") or "INR").upper():
+    expected_currency = str(checkout_payload.get("currency") or "INR").upper()
+    if expected_currency and gateway_currency != expected_currency:
         return _payment_error("Gateway currency mismatch.", status.HTTP_400_BAD_REQUEST)
 
     if gateway_status not in {"authorized", "captured"}:
         return _payment_error("Payment is not authorized/captured yet.", status.HTTP_400_BAD_REQUEST)
 
-    proof_token = secrets.token_urlsafe(32)
-    cache.set(
-        _payment_proof_cache_key(request.user.id, proof_token),
+    proof_token = _sign_payment_payload(
         {
+            "user_id": int(request.user.id),
             "order_id": str(order_id),
             "payment_id": str(payment_id),
             "amount": gateway_amount,
             "currency": gateway_currency,
-        },
-        timeout=PROOF_TTL_SECONDS,
+        }
     )
-    cache.delete(_pending_order_cache_key(request.user.id, str(order_id)))
 
     return Response(
         {"success": True, "payment_proof": proof_token, "razorpay_order_id": str(order_id), "razorpay_payment_id": str(payment_id)},
@@ -594,5 +783,16 @@ def razorpay_webhook(request):
         return Response({"error": "Invalid webhook payload."}, status=status.HTTP_400_BAD_REQUEST)
 
     event = str(payload.get("event") or "")
+    if event not in {
+        "payment.authorized",
+        "payment.captured",
+        "order.paid",
+        "payment.failed",
+        "refund.created",
+        "refund.processed",
+    }:
+        logger.info("Razorpay webhook ignored: event=%s", event)
+        return Response({"success": True, "ignored": True}, status=status.HTTP_200_OK)
+
     logger.info("Razorpay webhook received: event=%s", event)
     return Response({"success": True}, status=status.HTTP_200_OK)

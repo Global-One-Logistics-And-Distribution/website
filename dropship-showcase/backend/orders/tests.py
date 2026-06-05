@@ -1,3 +1,6 @@
+import hashlib
+import hmac
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -6,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from unittest.mock import patch
 
 from accounts.models import User
+from cart.models import CartItem
 from .models import Coupon
 from products.models import Product
 
@@ -182,6 +186,7 @@ class RazorpayFlowTestCase(TestCase):
             stock=10,
             is_active=True,
         )
+        CartItem.objects.create(user=self.user, product_id=self.product.id, quantity=1)
         self.coupon = Coupon.objects.create(
             code="PAY50",
             name="Pay 50",
@@ -216,15 +221,16 @@ class RazorpayFlowTestCase(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["order_id"], "order_test_123")
         self.assertEqual(res.data["currency"], "INR")
+        self.assertIn("checkout_proof", res.data)
 
     @patch("orders.views._get_razorpay_client")
-    def test_verify_payment_without_pending_order_returns_clear_error(self, mock_get_client):
+    def test_verify_payment_returns_signed_proof(self, mock_get_client):
         class DummyPaymentAPI:
             @staticmethod
             def fetch(payment_id):
                 return {
                     "order_id": "order_test_123",
-                    "amount": 245000,
+                    "amount": 250000,
                     "currency": "INR",
                     "status": "captured",
                 }
@@ -234,15 +240,31 @@ class RazorpayFlowTestCase(TestCase):
 
         mock_get_client.return_value = DummyClient()
 
-        res = self.client.post(
-            self.verify_url,
-            {
-                "razorpay_order_id": "order_test_123",
-                "razorpay_payment_id": "pay_test_123",
-                "razorpay_signature": "sig",
-            },
+        create_res = self.client.post(
+            self.create_order_url,
+            {"coupon_code": self.coupon.code},
             format="json",
         )
+        self.assertEqual(create_res.status_code, status.HTTP_200_OK)
+        order_id = create_res.data["order_id"]
+        secret = "test_secret"
+        signature = hmac.new(
+            secret.encode("utf-8"),
+            f"{order_id}|pay_test_123".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
 
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("expired", str(res.data).lower())
+        with patch("orders.views.settings.RAZORPAY_KEY_SECRET", secret):
+            res = self.client.post(
+                self.verify_url,
+                {
+                    "razorpay_order_id": order_id,
+                    "razorpay_payment_id": "pay_test_123",
+                    "razorpay_signature": signature,
+                },
+                format="json",
+            )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["success"])
+        self.assertIn("payment_proof", res.data)
