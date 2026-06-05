@@ -130,7 +130,7 @@ export default function AdSlider() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative overflow-hidden h-[88vh] min-h-[680px] md:h-[106vh] select-none">
+      <div className="relative overflow-hidden h-[72vh] min-h-[520px] md:h-[82vh] select-none">
         <img
           src={slide.image}
           alt="Hero slide"

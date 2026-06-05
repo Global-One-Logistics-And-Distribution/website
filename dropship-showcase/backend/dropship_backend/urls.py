@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.utils import timezone
 from datetime import timedelta
 import logging
@@ -98,8 +99,13 @@ admin.AdminSite.each_context = _patched_each_context
 def health_check(request):
     return JsonResponse({"status": "ok"})
 
+
+def legacy_admin_redirect(request, *args, **kwargs):
+    return redirect("/admin/", permanent=False)
+
 urlpatterns = [
-    path("dropship/login/admin/", admin.site.urls),
+    path("admin/", admin.site.urls),
+    path("dropship/login/admin/", legacy_admin_redirect),
     path("api/auth/", include("accounts.urls")),
     path("api/cart/", include("cart.urls")),
     path("api/wishlist/", include("wishlist.urls")),
