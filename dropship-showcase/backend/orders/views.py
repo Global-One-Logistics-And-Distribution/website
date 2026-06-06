@@ -595,30 +595,57 @@ def order_invoice_download(request, order_number):
 @permission_classes([IsAuthenticated])
 @throttle_classes([PaymentCreateOrderThrottle])
 def create_razorpay_order(request):
+    user_id = getattr(request.user, "id", None)
     try:
         with transaction.atomic():
-            snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=True)
+            requested_items = request.data.get("items") or []
+            if requested_items:
+                snapshot, snapshot_error = _build_snapshot_from_items(requested_items, lock_rows=True)
+            else:
+                snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=True)
+
             if snapshot_error is not None:
                 return snapshot_error
 
             final_total = snapshot["total"].quantize(Decimal("0.01"))
             final_total_paise = int((final_total * 100).to_integral_value())
             if final_total_paise < 100:
-                return _payment_error("Amount must be at least 100 paise.", status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"success": False, "gateway_available": False, "error": "Amount must be at least 100 paise."},
+                    status=status.HTTP_200_OK,
+                )
+
+            receipt = f"rcpt_{request.user.id}_{int(time.time())}"[:40]
+            base_payload = {
+                "user_id": int(request.user.id),
+                "amount": final_total_paise,
+                "currency": snapshot["currency"].upper(),
+                "receipt": receipt,
+                "order_total": str(snapshot["total"]),
+                "final_total": str(final_total),
+            }
 
             key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
             key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
-            if not key_id or not key_secret:
-                return _payment_error("Razorpay is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
+            client = _get_razorpay_client() if key_id and key_secret else None
 
-            client = _get_razorpay_client()
             if not client:
-                return _payment_error("Razorpay is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
+                logger.warning("Razorpay unavailable for user_id=%s; returning fallback checkout session", user_id)
+                return Response(
+                    {
+                        "success": False,
+                        "gateway_available": False,
+                        "error": "Payment gateway is temporarily unavailable. Please try again.",
+                        "amount": final_total_paise,
+                        "currency": snapshot["currency"].upper(),
+                        "checkout_proof": _sign_payment_payload(base_payload),
+                    },
+                    status=status.HTTP_200_OK,
+                )
 
-            receipt = f"rcpt_{request.user.id}_{int(time.time())}"[:40]
             order_payload = {
                 "amount": final_total_paise,
-                "currency": snapshot["currency"],
+                "currency": snapshot["currency"].upper(),
                 "receipt": receipt,
                 "notes": {"user_id": str(request.user.id)},
             }
@@ -633,64 +660,64 @@ def create_razorpay_order(request):
                     snapshot["currency"],
                     order_payload,
                 )
-                return _payment_error(
-                    "Failed to create Razorpay order.",
-                    status.HTTP_503_SERVICE_UNAVAILABLE,
-                    debug=exc,
+                return Response(
+                    {
+                        "success": False,
+                        "gateway_available": False,
+                        "error": "Failed to create payment session. Please try again.",
+                        "amount": final_total_paise,
+                        "currency": snapshot["currency"].upper(),
+                        "checkout_proof": _sign_payment_payload(base_payload),
+                        **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
             order_id = str(order.get("id") or "").strip()
             if not order_id:
-                return _payment_error("Invalid order response from gateway.", status.HTTP_502_BAD_GATEWAY)
+                logger.error("Razorpay returned empty order id for user_id=%s", user_id)
+                return Response(
+                    {
+                        "success": False,
+                        "gateway_available": False,
+                        "error": "Payment session could not be initialized.",
+                        "amount": final_total_paise,
+                        "currency": snapshot["currency"].upper(),
+                        "checkout_proof": _sign_payment_payload(base_payload),
+                    },
+                    status=status.HTTP_200_OK,
+                )
 
-            gateway_amount = int(order.get("amount") or 0)
+            gateway_amount = int(order.get("amount") or final_total_paise)
             gateway_currency = str(order.get("currency") or snapshot["currency"]).upper()
-            if gateway_amount != final_total_paise:
-                logger.warning(
-                    "Razorpay amount mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
-                    request.user.id,
-                    final_total_paise,
-                    gateway_amount,
-                    order_id,
-                )
-            if gateway_currency != snapshot["currency"].upper():
-                logger.warning(
-                    "Razorpay currency mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
-                    request.user.id,
-                    snapshot["currency"],
-                    gateway_currency,
-                    order_id,
-                )
-
             checkout_payload = {
-                "user_id": int(request.user.id),
+                **base_payload,
                 "order_id": order_id,
                 "amount": gateway_amount,
                 "currency": gateway_currency,
-                "receipt": str(order.get("receipt") or receipt),
-                "order_total": str(snapshot["total"]),
-                "final_total": str(final_total),
             }
 
             return Response(
                 {
+                    "success": True,
+                    "gateway_available": True,
                     "order_id": order_id,
-                    "amount": order.get("amount"),
-                    "currency": order.get("currency"),
+                    "amount": gateway_amount,
+                    "currency": gateway_currency,
                     "checkout_proof": _sign_payment_payload(checkout_payload),
                 },
                 status=status.HTTP_200_OK,
             )
     except Exception as exc:
-        user_id = getattr(request.user, "id", None)
-        logger.exception("Razorpay create order failed for user_id=%s", user_id)
+        logger.exception("Unexpected create-order failure for user_id=%s", user_id)
         return Response(
             {
                 "success": False,
-                "error": "Failed to create Razorpay order.",
+                "gateway_available": False,
+                "error": "Unable to start checkout right now. Please retry.",
                 **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
             },
-            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status=status.HTTP_200_OK,
         )
 
 
