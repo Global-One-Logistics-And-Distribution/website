@@ -10,7 +10,6 @@ import { formatINR } from "../utils/currency";
 import { normalizeImageUrl } from "../utils/productsApi";
 
 const API = import.meta.env.VITE_API_URL || "/api";
-const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
 const CHECKOUT_FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='Arial,sans-serif' font-size='8' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
@@ -112,11 +111,7 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
-  const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
-  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
-  const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
-  const affordabilityHostRef = useRef(null);
   const finalPrice = Math.max(0, totalPrice);
   const authToken = token || sessionStorage.getItem("token") || localStorage.getItem("token") || "";
   const authHeaders = {
@@ -144,55 +139,6 @@ export default function Checkout() {
 
     return prefill;
   };
-
-  useEffect(() => {
-    const amountInPaise = Math.round(finalPrice * 100);
-    const host = affordabilityHostRef.current;
-    if (!host) return;
-
-    let disposed = false;
-    const targetId = `razorpay-affordability-widget-runtime-${Math.random().toString(36).slice(2)}`;
-    const mount = document.createElement("div");
-    mount.id = targetId;
-    host.replaceChildren(mount);
-
-    const renderAffordabilityWidget = () => {
-      if (disposed || !host.isConnected || !mount.isConnected) return;
-      if (!window.RazorpayAffordabilitySuite || !razorpayKey || amountInPaise <= 0) {
-        mount.replaceChildren();
-        return;
-      }
-
-      const widgetConfig = {
-        key: razorpayKey,
-        amount: amountInPaise,
-        target: `#${targetId}`,
-      };
-      try {
-        const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
-        affordabilitySuite.render();
-      } catch {
-        mount.replaceChildren();
-      }
-    };
-
-    const existingScript = document.querySelector(`script[src="${RAZORPAY_AFFORDABILITY_SCRIPT_SRC}"]`);
-    if (existingScript) {
-      renderAffordabilityWidget();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
-    script.async = true;
-    script.onload = renderAffordabilityWidget;
-    document.head.appendChild(script);
-
-    return () => {
-      disposed = true;
-      script.onload = null;
-    };
-  }, [razorpayKey, finalPrice]);
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -282,85 +228,6 @@ export default function Checkout() {
 
     setPlacing(true);
     try {
-      const submitOrder = async ({ notesOverride = null } = {}) => {
-        const payload = {
-          ...form,
-          notes: notesOverride ?? form.notes,
-          payment_proof: paymentProof,
-          razorpay_order_id: razorpayOrderId,
-          razorpay_payment_id: razorpayPaymentId,
-        };
-        const res = await fetch(`${API}/orders/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
-          if (res.status === 403 && errorMessage.includes("verify")) {
-            navigate("/verify-email", {
-              state: { email: user.email, redirectTo: "/checkout" },
-            });
-          }
-          const parsedMessage = parseBackendError(data);
-          setOrderFailure(
-            buildOrderFailureNotice({
-              message: parsedMessage,
-              statusCode: res.status,
-              paymentMethod,
-            })
-          );
-          toast.error(parsedMessage);
-          return false;
-        }
-
-        setOrderFailure(null);
-        cart.clearCart?.();
-        toast.success("Order placed successfully!");
-        const orderNumber = data?.order?.order_number;
-        const successPath = orderNumber
-          ? `/checkout/success?order=${encodeURIComponent(orderNumber)}`
-          : "/checkout/success";
-        navigate(successPath, { state: { order: data.order } });
-        return true;
-      };
-
-      const loadRazorpayScript = () => {
-        if (window.Razorpay) return Promise.resolve(true);
-        return new Promise((resolve) => {
-          const script = document.createElement("script");
-          script.src = "https://checkout.razorpay.com/v1/checkout.js";
-          script.onload = () => resolve(true);
-          script.onerror = () => resolve(false);
-          document.head.appendChild(script);
-        });
-      };
-
-      if (!razorpayKey) {
-        toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID in the frontend env.");
-        setPlacing(false);
-        return;
-      }
-
-      const loaded = await loadRazorpayScript();
-      if (!loaded) {
-        toast.error("Unable to load Razorpay checkout. Please try again.");
-        setPlacing(false);
-        return;
-      }
-
-      const finalAmountInPaise = Math.round(finalPrice * 100);
-      if (!finalAmountInPaise || finalAmountInPaise < 100) {
-        toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
-        setPlacing(false);
-        return;
-      }
-
       const createOrderRes = await fetch(`${API}/checkout/create-order`, {
         method: "POST",
         headers: authHeaders,
@@ -369,7 +236,7 @@ export default function Checkout() {
 
       const createOrderBody = await readResponseBody(createOrderRes);
       const createOrderData = createOrderBody.data;
-      if (!createOrderRes.ok || !createOrderData?.order_id) {
+      if (!createOrderRes.ok || !createOrderData?.checkout_proof) {
         const message =
           parseBackendError(createOrderData) ||
           createOrderBody.raw ||
@@ -382,7 +249,6 @@ export default function Checkout() {
           buildOrderFailureNotice({
             message,
             statusCode: createOrderRes.status || 500,
-            paymentMethod,
           })
         );
         toast.error(message);
@@ -390,126 +256,54 @@ export default function Checkout() {
         return;
       }
 
-      const checkoutProof = createOrderData?.checkout_proof || "";
-      if (!checkoutProof) {
-        const message = "Payment session proof missing from server. Please retry checkout.";
+      const paymentProof = createOrderData?.checkout_proof || "";
+      const placed = await fetch(`${API}/orders/`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          ...form,
+          payment_proof: paymentProof,
+          razorpay_order_id: createOrderData?.order_id || "",
+          razorpay_payment_id: createOrderData?.payment_id || "",
+          notes: form.notes,
+          items,
+        }),
+      });
+
+      const placedBody = await readResponseBody(placed);
+      const placedData = placedBody.data;
+      if (!placed.ok) {
+        const message = parseBackendError(placedData) || placedBody.raw || "Could not place order.";
+        console.error("order placement failed", {
+          status: placed.status,
+          body: placedBody.raw,
+        });
         setOrderFailure(
           buildOrderFailureNotice({
             message,
-            statusCode: 502,
-            paymentMethod,
+            statusCode: placed.status || 500,
           })
         );
         toast.error(message);
         setPlacing(false);
         return;
-      }
-
-      const options = {
-        key: razorpayKey,
-        amount: createOrderData.amount,
-        currency: createOrderData.currency,
-        order_id: createOrderData.order_id,
-        name: "EliteDrop",
-        description: "Order payment",
-        prefill: getValidRazorpayPrefill(),
-        theme: { color: "#4f46e5" },
-        retry: { enabled: true },
-        modal: {
-          ondismiss: () => {
-            toast("Payment cancelled.");
-            setPlacing(false);
-          },
-        },
-        handler: async (response) => {
-          const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
-            method: "POST",
-            headers: authHeaders,
-            body: JSON.stringify({
-              razorpay_order_id: response?.razorpay_order_id,
-              razorpay_payment_id: response?.razorpay_payment_id,
-              razorpay_signature: response?.razorpay_signature,
-              checkout_proof: checkoutProof,
-            }),
-          });
-
-          const verifyBody = await readResponseBody(verifyRes);
-          const verifyData = verifyBody.data;
-          if (!verifyRes.ok || !verifyData?.success) {
-            const message =
-              parseBackendError(verifyData) ||
-              verifyBody.raw ||
-              "Payment verification failed.";
-            console.error("verify-payment failed", {
-              status: verifyRes.status,
-              body: verifyBody.raw,
-            });
-            setOrderFailure(
-              buildOrderFailureNotice({
-                message,
-                statusCode: verifyRes.status || 400,
-                paymentMethod,
-              })
-            );
-            toast.error(message);
-            setPlacing(false);
-            return;
-          }
-
-          const paymentProof = verifyData?.payment_proof || "";
-          if (!paymentProof) {
-            const message = "Payment verification proof missing. Please retry payment.";
-            setOrderFailure(
-              buildOrderFailureNotice({
-                message,
-                statusCode: 400,
-                paymentMethod,
-              })
-            );
-            toast.error(message);
-            setPlacing(false);
-            return;
-          }
-
-          const placed = await submitOrder({
-            paymentProof,
-            razorpayOrderId: response?.razorpay_order_id || "",
-            razorpayPaymentId: response?.razorpay_payment_id || "",
-          });
-          if (placed) {
-            cart.clearCart?.();
-          }
-          setPlacing(false);
-        },
       };
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.on("payment.failed", (resp) => {
-        const gatewayReason = resp?.error?.description || "Payment failed.";
-        const code = resp?.error?.code ? ` (${resp.error.code})` : "";
-        const reason = `${gatewayReason}${code}`;
-        const helpText = isRazorpayTestMode
-          ? "Use Razorpay test payment methods only."
-          : "Please verify card details, bank limits, and OTP/3DS authentication, then retry.";
-
-        setOrderFailure(
-          buildOrderFailureNotice({
-            message: `${reason} ${helpText}`,
-            statusCode: 402,
-            paymentMethod,
-          })
-        );
-        toast.error(reason);
-        setPlacing(false);
-      });
-      razorpay.open();
+      setOrderFailure(null);
+      cart.clearCart?.();
+      toast.success("Order placed successfully!");
+      const orderNumber = placedData?.order?.order_number;
+      const successPath = orderNumber
+        ? `/checkout/success?order=${encodeURIComponent(orderNumber)}`
+        : "/checkout/success";
+      navigate(successPath, { state: { order: placedData.order } });
+      setPlacing(false);
     } catch {
       const message = "Network error. Please try again.";
       setOrderFailure(
         buildOrderFailureNotice({
           message,
           statusCode: 0,
-          paymentMethod,
         })
       );
       toast.error(message);
@@ -677,23 +471,13 @@ export default function Checkout() {
             <div>
               <label className="block text-sm font-medium mb-2">Payment Method</label>
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/20 px-4 py-3 text-sm">
-                Razorpay (Online Payment Only)
+                Direct checkout enabled
               </div>
-              {isRazorpayTestMode && (
-                <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">
-                  Test mode is enabled. Use Razorpay test payment methods only.
-                </p>
-              )}
-              {!razorpayKey && (
-                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.
-                </p>
-              )}
             </div>
 
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Checkout now uses a simple payment flow without coupons.
+                Checkout now uses a simple direct order flow without Razorpay.
               </p>
             </div>
 
@@ -754,18 +538,9 @@ export default function Checkout() {
               {placing ? (
                 <><Loader2 size={16} className="animate-spin" /> Placing Order…</>
               ) : (
-                <>Pay & Place Order <ArrowRight size={16} /></>
+                <>Place Order <ArrowRight size={16} /></>
               )}
             </button>
-            <div className="mt-2 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span>Secure payments with</span>
-              <img
-                src="https://cdn.razorpay.com/logo.svg"
-                alt="Razorpay"
-                className="h-4 w-auto"
-                loading="lazy"
-              />
-            </div>
           </motion.div>
 
           {/* Order summary */}
@@ -823,10 +598,7 @@ export default function Checkout() {
                 </span>
               </div>
               {totalPrice > 0 && razorpayKey && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
-                  <div ref={affordabilityHostRef} />
-                </div>
+                null
               )}
             </div>
           </motion.div>

@@ -611,100 +611,31 @@ def create_razorpay_order(request):
             final_total_paise = int((final_total * 100).to_integral_value())
             if final_total_paise < 100:
                 return Response(
-                    {"success": False, "gateway_available": False, "error": "Amount must be at least 100 paise."},
-                    status=status.HTTP_200_OK,
+                    {"success": False, "error": "Amount must be at least 100 paise."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            receipt = f"rcpt_{request.user.id}_{int(time.time())}"[:40]
-            base_payload = {
+            order_id = f"ord_dummy_{request.user.id}_{int(time.time())}"
+            checkout_payload = {
                 "user_id": int(request.user.id),
+                "order_id": order_id,
+                "payment_id": f"pay_dummy_{request.user.id}_{int(time.time())}",
                 "amount": final_total_paise,
                 "currency": snapshot["currency"].upper(),
-                "receipt": receipt,
+                "receipt": f"rcpt_{request.user.id}_{int(time.time())}"[:40],
                 "order_total": str(snapshot["total"]),
                 "final_total": str(final_total),
-            }
-
-            key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
-            key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
-            client = _get_razorpay_client() if key_id and key_secret else None
-
-            if not client:
-                logger.warning("Razorpay unavailable for user_id=%s; returning fallback checkout session", user_id)
-                return Response(
-                    {
-                        "success": False,
-                        "gateway_available": False,
-                        "error": "Payment gateway is temporarily unavailable. Please try again.",
-                        "amount": final_total_paise,
-                        "currency": snapshot["currency"].upper(),
-                        "checkout_proof": _sign_payment_payload(base_payload),
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            order_payload = {
-                "amount": final_total_paise,
-                "currency": snapshot["currency"].upper(),
-                "receipt": receipt,
-                "notes": {"user_id": str(request.user.id)},
-            }
-
-            try:
-                order = client.order.create(order_payload)
-            except Exception as exc:
-                logger.exception(
-                    "Razorpay order create failed for user_id=%s amount=%s currency=%s payload=%s",
-                    request.user.id,
-                    final_total_paise,
-                    snapshot["currency"],
-                    order_payload,
-                )
-                return Response(
-                    {
-                        "success": False,
-                        "gateway_available": False,
-                        "error": "Failed to create payment session. Please try again.",
-                        "amount": final_total_paise,
-                        "currency": snapshot["currency"].upper(),
-                        "checkout_proof": _sign_payment_payload(base_payload),
-                        **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            order_id = str(order.get("id") or "").strip()
-            if not order_id:
-                logger.error("Razorpay returned empty order id for user_id=%s", user_id)
-                return Response(
-                    {
-                        "success": False,
-                        "gateway_available": False,
-                        "error": "Payment session could not be initialized.",
-                        "amount": final_total_paise,
-                        "currency": snapshot["currency"].upper(),
-                        "checkout_proof": _sign_payment_payload(base_payload),
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-            gateway_amount = int(order.get("amount") or final_total_paise)
-            gateway_currency = str(order.get("currency") or snapshot["currency"]).upper()
-            checkout_payload = {
-                **base_payload,
-                "order_id": order_id,
-                "amount": gateway_amount,
-                "currency": gateway_currency,
             }
 
             return Response(
                 {
                     "success": True,
-                    "gateway_available": True,
+                    "gateway_available": False,
                     "order_id": order_id,
-                    "amount": gateway_amount,
-                    "currency": gateway_currency,
+                    "amount": final_total_paise,
+                    "currency": snapshot["currency"].upper(),
                     "checkout_proof": _sign_payment_payload(checkout_payload),
+                    "message": "Dummy checkout session created.",
                 },
                 status=status.HTTP_200_OK,
             )
