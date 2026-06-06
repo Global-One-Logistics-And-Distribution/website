@@ -35,6 +35,16 @@ function parseBackendError(data) {
   return "Failed to place order. Please try again.";
 }
 
+async function readResponseBody(res) {
+  const raw = await res.text().catch(() => "");
+  if (!raw) return { raw: "", data: {} };
+  try {
+    return { raw, data: JSON.parse(raw) };
+  } catch {
+    return { raw, data: raw };
+  }
+}
+
 function buildOrderFailureNotice({ message, statusCode, paymentMethod }) {
   const text = String(message || "").toLowerCase();
   const reasons = [];
@@ -109,6 +119,11 @@ export default function Checkout() {
   const affordabilityHostRef = useRef(null);
   const finalPrice = Math.max(0, totalPrice);
   const authToken = token || sessionStorage.getItem("token") || localStorage.getItem("token") || "";
+  const authHeaders = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
 
   const getValidRazorpayPrefill = () => {
     const prefill = {};
@@ -348,16 +363,21 @@ export default function Checkout() {
 
       const createOrderRes = await fetch(`${API}/checkout/create-order`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers: authHeaders,
         body: JSON.stringify({}),
       });
 
-      const createOrderData = await createOrderRes.json().catch(() => ({}));
+      const createOrderBody = await readResponseBody(createOrderRes);
+      const createOrderData = createOrderBody.data;
       if (!createOrderRes.ok || !createOrderData?.order_id) {
-        const message = parseBackendError(createOrderData) || "Could not initialize payment.";
+        const message =
+          parseBackendError(createOrderData) ||
+          createOrderBody.raw ||
+          "Could not initialize payment.";
+        console.error("create-order failed", {
+          status: createOrderRes.status,
+          body: createOrderBody.raw,
+        });
         setOrderFailure(
           buildOrderFailureNotice({
             message,
@@ -402,12 +422,9 @@ export default function Checkout() {
           },
         },
         handler: async (response) => {
-        const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
+          const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
+            headers: authHeaders,
             body: JSON.stringify({
               razorpay_order_id: response?.razorpay_order_id,
               razorpay_payment_id: response?.razorpay_payment_id,
@@ -416,9 +433,17 @@ export default function Checkout() {
             }),
           });
 
-          const verifyData = await verifyRes.json().catch(() => ({}));
+          const verifyBody = await readResponseBody(verifyRes);
+          const verifyData = verifyBody.data;
           if (!verifyRes.ok || !verifyData?.success) {
-            const message = parseBackendError(verifyData) || "Payment verification failed.";
+            const message =
+              parseBackendError(verifyData) ||
+              verifyBody.raw ||
+              "Payment verification failed.";
+            console.error("verify-payment failed", {
+              status: verifyRes.status,
+              body: verifyBody.raw,
+            });
             setOrderFailure(
               buildOrderFailureNotice({
                 message,

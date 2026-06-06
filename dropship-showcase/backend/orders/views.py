@@ -104,122 +104,147 @@ def _frontend_base_url(request):
 
 
 def _build_trusted_cart_snapshot(user, lock_rows=False):
-    cart_qs = CartItem.objects.filter(user=user).order_by("created_at")
-    if lock_rows:
-        cart_qs = cart_qs.select_for_update()
+    try:
+        cart_qs = CartItem.objects.filter(user=user).order_by("created_at")
+        if lock_rows:
+            cart_qs = cart_qs.select_for_update()
 
-    cart_items = list(cart_qs)
-    if not cart_items:
-        return None, Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
+        cart_items = list(cart_qs)
+        if not cart_items:
+            return None, Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
 
-    product_ids = [item.product_id for item in cart_items]
-    products_qs = Product.objects.filter(id__in=product_ids, is_active=True).only(
-        "id", "category", "name", "price", "image_url", "stock", "size_stock"
-    )
-    if lock_rows:
-        products_qs = products_qs.select_for_update()
+        product_ids = []
+        for item in cart_items:
+            product_id = int(getattr(item, "product_id", 0) or 0)
+            if product_id > 0:
+                product_ids.append(product_id)
 
-    products_by_id = {product.id: product for product in products_qs}
-    missing_ids = sorted({product_id for product_id in product_ids if product_id not in products_by_id})
-    if missing_ids:
+        if not product_ids:
+            return None, Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
+
+        products_qs = Product.objects.filter(id__in=product_ids, is_active=True).only(
+            "id", "category", "name", "price", "image_url", "stock", "size_stock"
+        )
+        if lock_rows:
+            products_qs = products_qs.select_for_update()
+
+        products_by_id = {product.id: product for product in products_qs}
+        missing_ids = sorted({product_id for product_id in product_ids if product_id not in products_by_id})
+        if missing_ids:
+            return (
+                None,
+                Response(
+                    {"errors": {"items": [f"Product {pid} is unavailable." for pid in missing_ids]}},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                ),
+            )
+
+        requested_quantities = {}
+        requested_size_quantities = {}
+        normalized_items = []
+
+        for cart_item in cart_items:
+            product_id = int(getattr(cart_item, "product_id", 0) or 0)
+            quantity = int(getattr(cart_item, "quantity", 0) or 0)
+            if product_id <= 0 or quantity <= 0:
+                return None, Response({"error": "Invalid cart quantity."}, status=status.HTTP_400_BAD_REQUEST)
+
+            requested_quantities[product_id] = requested_quantities.get(product_id, 0) + quantity
+
+            product = products_by_id[product_id]
+            shoe_size = str(getattr(cart_item, "selected_size", "") or "").strip()
+            if _is_shoe_category(product.category):
+                if not shoe_size:
+                    return (
+                        None,
+                        Response(
+                            {"errors": {"items": [f"Shoe size is required for product {product_id}."]}},
+                            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        ),
+                    )
+                if shoe_size not in SHOE_SIZES:
+                    return (
+                        None,
+                        Response(
+                            {"errors": {"items": [f"Invalid shoe size '{shoe_size}' for product {product_id}."]}},
+                            status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        ),
+                    )
+                requested_size_quantities[(product_id, shoe_size)] = (
+                    requested_size_quantities.get((product_id, shoe_size), 0) + quantity
+                )
+
+            normalized_items.append(
+                {
+                    "product_id": product.id,
+                    "product_name": product.name,
+                    "product_image": product.image_url or "",
+                    "price": product.price,
+                    "quantity": quantity,
+                    "shoe_size": shoe_size,
+                }
+            )
+
+        for product_id, quantity in requested_quantities.items():
+            product = products_by_id.get(product_id)
+            if not product:
+                continue
+            if _is_shoe_category(product.category):
+                continue
+            if int(product.stock or 0) < quantity:
+                return (
+                    None,
+                    Response(
+                        {"errors": {"items": [f"Only {product.stock} unit(s) left for product {product_id}."]}},
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    ),
+                )
+
+        for (product_id, shoe_size), quantity in requested_size_quantities.items():
+            product = products_by_id.get(product_id)
+            if not product:
+                continue
+            available = _size_stock_qty(product, shoe_size)
+            if available < quantity:
+                return (
+                    None,
+                    Response(
+                        {
+                            "errors": {
+                                "items": [f"Only {available} unit(s) left for product {product_id} in size {shoe_size}."]
+                            }
+                        },
+                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    ),
+                )
+
+        total = sum((item["price"] * item["quantity"] for item in normalized_items), Decimal("0"))
+        total_paise = int((total * 100).to_integral_value())
+
+        return (
+            {
+                "normalized_items": normalized_items,
+                "requested_quantities": requested_quantities,
+                "requested_size_quantities": requested_size_quantities,
+                "products_by_id": products_by_id,
+                "total": total,
+                "total_paise": total_paise,
+                "currency": "INR",
+            },
+            None,
+        )
+    except Exception as exc:
+        logger.exception("Failed to read trusted cart snapshot for user_id=%s", getattr(user, "id", None))
         return (
             None,
             Response(
-                {"errors": {"items": [f"Product {pid} is unavailable." for pid in missing_ids]}},
+                {
+                    "error": "Your cart could not be read. Please refresh your cart and try again.",
+                    **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+                },
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,
             ),
         )
-
-    requested_quantities = {}
-    requested_size_quantities = {}
-    normalized_items = []
-
-    for cart_item in cart_items:
-        product_id = cart_item.product_id
-        quantity = int(cart_item.quantity or 0)
-        if quantity <= 0:
-            return None, Response({"error": "Invalid cart quantity."}, status=status.HTTP_400_BAD_REQUEST)
-
-        requested_quantities[product_id] = requested_quantities.get(product_id, 0) + quantity
-
-        product = products_by_id[product_id]
-        shoe_size = str(cart_item.selected_size or "").strip()
-        if _is_shoe_category(product.category):
-            if not shoe_size:
-                return (
-                    None,
-                    Response(
-                        {"errors": {"items": [f"Shoe size is required for product {product_id}."]}},
-                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    ),
-                )
-            if shoe_size not in SHOE_SIZES:
-                return (
-                    None,
-                    Response(
-                        {"errors": {"items": [f"Invalid shoe size '{shoe_size}' for product {product_id}."]}},
-                        status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    ),
-                )
-            requested_size_quantities[(product_id, shoe_size)] = (
-                requested_size_quantities.get((product_id, shoe_size), 0) + quantity
-            )
-
-        normalized_items.append(
-            {
-                "product_id": product.id,
-                "product_name": product.name,
-                "product_image": product.image_url or "",
-                "price": product.price,
-                "quantity": quantity,
-                "shoe_size": shoe_size,
-            }
-        )
-
-    for product_id, quantity in requested_quantities.items():
-        product = products_by_id[product_id]
-        if _is_shoe_category(product.category):
-            continue
-        if int(product.stock or 0) < quantity:
-            return (
-                None,
-                Response(
-                    {"errors": {"items": [f"Only {product.stock} unit(s) left for product {product_id}."]}},
-                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                ),
-            )
-
-    for (product_id, shoe_size), quantity in requested_size_quantities.items():
-        product = products_by_id[product_id]
-        available = _size_stock_qty(product, shoe_size)
-        if available < quantity:
-            return (
-                None,
-                Response(
-                    {
-                        "errors": {
-                            "items": [f"Only {available} unit(s) left for product {product_id} in size {shoe_size}."]
-                        }
-                    },
-                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                ),
-            )
-
-    total = sum((item["price"] * item["quantity"] for item in normalized_items), Decimal("0"))
-    total_paise = int((total * 100).to_integral_value())
-
-    return (
-        {
-            "normalized_items": normalized_items,
-            "requested_quantities": requested_quantities,
-            "requested_size_quantities": requested_size_quantities,
-            "products_by_id": products_by_id,
-            "total": total,
-            "total_paise": total_paise,
-            "currency": "INR",
-        },
-        None,
-    )
 
 
 def _build_snapshot_from_items(items, lock_rows=False):
@@ -571,90 +596,91 @@ def order_invoice_download(request, order_number):
 @throttle_classes([PaymentCreateOrderThrottle])
 def create_razorpay_order(request):
     try:
-        snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=False)
-        if snapshot_error is not None:
-            return snapshot_error
+        with transaction.atomic():
+            snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=True)
+            if snapshot_error is not None:
+                return snapshot_error
 
-        final_total = snapshot["total"].quantize(Decimal("0.01"))
-        final_total_paise = int((final_total * 100).to_integral_value())
-        if final_total_paise < 100:
-            return _payment_error("Amount must be at least 100 paise.", status.HTTP_400_BAD_REQUEST)
+            final_total = snapshot["total"].quantize(Decimal("0.01"))
+            final_total_paise = int((final_total * 100).to_integral_value())
+            if final_total_paise < 100:
+                return _payment_error("Amount must be at least 100 paise.", status.HTTP_400_BAD_REQUEST)
 
-        key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
-        key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
-        if not key_id or not key_secret:
-            return _payment_error("Razorpay is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
+            key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
+            key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
+            if not key_id or not key_secret:
+                return _payment_error("Razorpay is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        client = _get_razorpay_client()
-        if not client:
-            return _payment_error("Razorpay is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
+            client = _get_razorpay_client()
+            if not client:
+                return _payment_error("Razorpay is not configured on server.", status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        receipt = f"rcpt_{request.user.id}_{int(time.time())}"[:40]
-        order_payload = {
-            "amount": final_total_paise,
-            "currency": snapshot["currency"],
-            "receipt": receipt,
-            "notes": {"user_id": str(request.user.id)},
-        }
+            receipt = f"rcpt_{request.user.id}_{int(time.time())}"[:40]
+            order_payload = {
+                "amount": final_total_paise,
+                "currency": snapshot["currency"],
+                "receipt": receipt,
+                "notes": {"user_id": str(request.user.id)},
+            }
 
-        try:
-            order = client.order.create(order_payload)
-        except Exception as exc:
-            logger.exception(
-                "Razorpay order create failed for user_id=%s amount=%s currency=%s payload=%s",
-                request.user.id,
-                final_total_paise,
-                snapshot["currency"],
-                order_payload,
-            )
-            return _payment_error(
-                "Failed to create Razorpay order.",
-                status.HTTP_503_SERVICE_UNAVAILABLE,
-                debug=exc,
-            )
+            try:
+                order = client.order.create(order_payload)
+            except Exception as exc:
+                logger.exception(
+                    "Razorpay order create failed for user_id=%s amount=%s currency=%s payload=%s",
+                    request.user.id,
+                    final_total_paise,
+                    snapshot["currency"],
+                    order_payload,
+                )
+                return _payment_error(
+                    "Failed to create Razorpay order.",
+                    status.HTTP_503_SERVICE_UNAVAILABLE,
+                    debug=exc,
+                )
 
-        order_id = str(order.get("id") or "").strip()
-        if not order_id:
-            return _payment_error("Invalid order response from gateway.", status.HTTP_502_BAD_GATEWAY)
+            order_id = str(order.get("id") or "").strip()
+            if not order_id:
+                return _payment_error("Invalid order response from gateway.", status.HTTP_502_BAD_GATEWAY)
 
-        gateway_amount = int(order.get("amount") or 0)
-        gateway_currency = str(order.get("currency") or snapshot["currency"]).upper()
-        if gateway_amount != final_total_paise:
-            logger.warning(
-                "Razorpay amount mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
-                request.user.id,
-                final_total_paise,
-                gateway_amount,
-                order_id,
-            )
-        if gateway_currency != snapshot["currency"].upper():
-            logger.warning(
-                "Razorpay currency mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
-                request.user.id,
-                snapshot["currency"],
-                gateway_currency,
-                order_id,
-            )
+            gateway_amount = int(order.get("amount") or 0)
+            gateway_currency = str(order.get("currency") or snapshot["currency"]).upper()
+            if gateway_amount != final_total_paise:
+                logger.warning(
+                    "Razorpay amount mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
+                    request.user.id,
+                    final_total_paise,
+                    gateway_amount,
+                    order_id,
+                )
+            if gateway_currency != snapshot["currency"].upper():
+                logger.warning(
+                    "Razorpay currency mismatch after create for user_id=%s expected=%s got=%s order_id=%s",
+                    request.user.id,
+                    snapshot["currency"],
+                    gateway_currency,
+                    order_id,
+                )
 
-        checkout_payload = {
-            "user_id": int(request.user.id),
-            "order_id": order_id,
-            "amount": gateway_amount,
-            "currency": gateway_currency,
-            "receipt": str(order.get("receipt") or receipt),
-            "order_total": str(snapshot["total"]),
-            "final_total": str(final_total),
-        }
-
-        return Response(
-            {
+            checkout_payload = {
+                "user_id": int(request.user.id),
                 "order_id": order_id,
-                "amount": order.get("amount"),
-                "currency": order.get("currency"),
-                "checkout_proof": _sign_payment_payload(checkout_payload),
-            },
-            status=status.HTTP_200_OK,
-        )
+                "amount": gateway_amount,
+                "currency": gateway_currency,
+                "receipt": str(order.get("receipt") or receipt),
+                "order_total": str(snapshot["total"]),
+                "final_total": str(final_total),
+            }
+
+            return Response(
+                {
+                    "order_id": order_id,
+                    "amount": order.get("amount"),
+                    "currency": order.get("currency"),
+                    "checkout_proof": _sign_payment_payload(checkout_payload),
+                },
+                status=status.HTTP_200_OK,
+            )
     except Exception as exc:
         user_id = getattr(request.user, "id", None)
         logger.exception("Razorpay create order failed for user_id=%s", user_id)
