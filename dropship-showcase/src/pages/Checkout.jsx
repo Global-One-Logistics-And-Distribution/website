@@ -336,6 +336,12 @@ export default function Checkout() {
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          if (data.EXACT_DATABASE_ERROR) {
+            console.error("--- BACKEND CRASH ---");
+            console.error("ERROR:", data.EXACT_DATABASE_ERROR);
+            console.error("TRACEBACK:", data.TRACEBACK_LINE);
+            console.error("---------------------");
+          }
           const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
           if (res.status === 403 && errorMessage.includes("verify")) {
             navigate("/verify-email", {
