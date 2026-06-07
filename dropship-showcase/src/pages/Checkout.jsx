@@ -101,75 +101,11 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [couponMessage, setCouponMessage] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
   const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
   const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
   const affordabilityHostRef = useRef(null);
-  const discountAmount = Number(appliedCoupon?.discount_amount) || 0;
-  const finalPrice = Math.max(0, totalPrice - discountAmount);
-
-  useEffect(() => {
-    if (!appliedCoupon) return;
-    if (Number(appliedCoupon.base_total) !== Number(totalPrice)) {
-      setAppliedCoupon(null);
-      setCouponMessage("Cart changed, please reapply your coupon.");
-    }
-  }, [appliedCoupon, totalPrice]);
-
-  const validateCoupon = async () => {
-    if (!user || !token) {
-      setCouponMessage("Sign in to apply a coupon.");
-      return;
-    }
-
-    const code = String(couponCode || "").trim();
-    if (!code) {
-      setCouponMessage("Enter a coupon code first.");
-      return;
-    }
-
-    setCouponLoading(true);
-    try {
-      const res = await fetch(`${API}/orders/coupons/validate/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ coupon_code: code, order_total: totalPrice }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const message = parseBackendError(data) || "Coupon could not be applied.";
-        setAppliedCoupon(null);
-        setCouponMessage(message);
-        toast.error(message);
-        return;
-      }
-
-      setAppliedCoupon({
-        code: data?.code || code.toUpperCase(),
-        discount_amount: Number(data?.discount_amount) || 0,
-        discounted_total: Number(data?.discounted_total) || totalPrice,
-        base_total: Number(totalPrice),
-        terms: data?.terms || "",
-        description: data?.description || "",
-      });
-      setCouponMessage(`Coupon applied. You saved ${formatINR(Number(data?.discount_amount) || 0)}.`);
-      toast.success("Coupon applied");
-    } catch {
-      const message = "Unable to validate coupon right now.";
-      setCouponMessage(message);
-      toast.error(message);
-    } finally {
-      setCouponLoading(false);
-    }
-  };
 
   const getValidRazorpayPrefill = () => {
     const prefill = {};
@@ -192,28 +128,22 @@ export default function Checkout() {
   };
 
   useEffect(() => {
-    const amountInPaise = Math.round(finalPrice * 100);
+    const amountInPaise = Math.round(totalPrice * 100);
     const host = affordabilityHostRef.current;
     if (!host) return;
 
-    let disposed = false;
-
-    const targetId = `razorpay-affordability-widget-runtime-${Math.random().toString(36).slice(2)}`;
+    const targetId = "razorpay-affordability-widget-runtime";
     const mount = document.createElement("div");
     mount.id = targetId;
     host.replaceChildren(mount);
 
     const renderAffordabilityWidget = () => {
-      if (disposed || !host.isConnected || !mount.isConnected) return;
-
       if (!window.RazorpayAffordabilitySuite || !razorpayKey || amountInPaise <= 0) {
-        mount.replaceChildren();
+        if (mount.isConnected) mount.replaceChildren();
         return;
       }
 
-      mount.replaceChildren();
-      if (!document.getElementById(targetId)) return;
-
+      if (mount.isConnected) mount.replaceChildren();
       const widgetConfig = {
         key: razorpayKey,
         amount: amountInPaise,
@@ -223,7 +153,7 @@ export default function Checkout() {
         const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
         affordabilitySuite.render();
       } catch {
-        mount.replaceChildren();
+        if (mount.isConnected) mount.replaceChildren();
       }
     };
 
@@ -236,17 +166,14 @@ export default function Checkout() {
     const script = document.createElement("script");
     script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
     script.async = true;
-    script.onload = () => {
-      renderAffordabilityWidget();
-    };
+    script.onload = renderAffordabilityWidget;
     document.head.appendChild(script);
 
     return () => {
-      disposed = true;
       script.onload = null;
       if (host.isConnected) host.replaceChildren();
     };
-  }, [razorpayKey, finalPrice]);
+  }, [razorpayKey, totalPrice]);
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -339,7 +266,6 @@ export default function Checkout() {
         const payload = {
           ...form,
           notes: notesOverride ?? form.notes,
-          coupon_code: appliedCoupon?.code || "",
           payment_proof: paymentProof,
           razorpay_order_id: razorpayOrderId,
           razorpay_payment_id: razorpayPaymentId,
@@ -409,8 +335,8 @@ export default function Checkout() {
           return;
         }
 
-        const finalAmountInPaise = Math.round(finalPrice * 100);
-        if (!finalAmountInPaise || finalAmountInPaise < 100) {
+        const amountInPaise = Math.round(totalPrice * 100);
+        if (!amountInPaise || amountInPaise < 100) {
           toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
           setPlacing(false);
           return;
@@ -422,7 +348,7 @@ export default function Checkout() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ coupon_code: appliedCoupon?.code || "" }),
+          body: JSON.stringify({}),
         });
 
         const createOrderData = await createOrderRes.json().catch(() => ({}));
@@ -735,39 +661,6 @@ export default function Checkout() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Coupon Code</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="Enter coupon code"
-                    className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={validateCoupon}
-                    disabled={couponLoading || !couponCode.trim() || !user || !token}
-                    className="px-4 py-2.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-sm font-semibold disabled:opacity-60 transition"
-                  >
-                    {couponLoading ? "Checking..." : "Apply"}
-                  </button>
-                </div>
-              </div>
-              {couponMessage && (
-                <p className={`text-xs ${appliedCoupon ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>
-                  {couponMessage}
-                </p>
-              )}
-              {appliedCoupon?.terms && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Terms: {appliedCoupon.terms}
-                </p>
-              )}
-            </div>
-
             {!user && (
               <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-xl px-4 py-3">
                 You need to{" "}
@@ -883,12 +776,6 @@ export default function Checkout() {
                 <span>Subtotal</span>
                 <span>{totalPrice > 0 ? formatINR(totalPrice) : "—"}</span>
               </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                  <span>Coupon Discount</span>
-                  <span>- {formatINR(discountAmount)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Shipping</span>
                 <span className="text-emerald-600 dark:text-emerald-400">Free</span>
@@ -896,7 +783,7 @@ export default function Checkout() {
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200 dark:border-slate-800">
                 <span>Total</span>
                 <span className="text-indigo-600 dark:text-indigo-400">
-                  {finalPrice > 0 ? formatINR(finalPrice) : "—"}
+                  {totalPrice > 0 ? formatINR(totalPrice) : "—"}
                 </span>
               </div>
               {totalPrice > 0 && razorpayKey && (
