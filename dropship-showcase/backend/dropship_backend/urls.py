@@ -1,9 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
 from django.http import JsonResponse
-from django.shortcuts import redirect
 from django.utils import timezone
 from datetime import timedelta
 import logging
@@ -99,13 +96,8 @@ admin.AdminSite.each_context = _patched_each_context
 def health_check(request):
     return JsonResponse({"status": "ok"})
 
-
-def legacy_admin_redirect(request, *args, **kwargs):
-    return redirect("/admin/", permanent=False)
-
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("dropship/login/admin/", legacy_admin_redirect),
+    path("dropship/login/admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/cart/", include("cart.urls")),
     path("api/wishlist/", include("wishlist.urls")),
@@ -116,6 +108,3 @@ urlpatterns = [
     path("api/checkout/webhook", order_views.razorpay_webhook, name="razorpay-webhook"),
     path("api/health/", health_check),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

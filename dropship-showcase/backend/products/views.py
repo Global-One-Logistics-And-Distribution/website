@@ -9,8 +9,8 @@ from django.utils.text import slugify
 from xml.etree import ElementTree as ET
 
 from .models import Product
-from .models import SiteMaintenanceSettings, HeroSlide
-from .serializers import ProductSerializer, ProductListSerializer, HeroSlideSerializer
+from .models import SiteMaintenanceSettings
+from .serializers import ProductSerializer, ProductListSerializer
 from .services import (
     TOP_CATEGORIES_CACHE_KEY,
     TOP_CATEGORIES_CACHE_TTL,
@@ -24,7 +24,6 @@ from .services import (
 PRODUCT_LIST_CACHE_TTL = 120
 PRODUCT_DETAIL_CACHE_TTL = 180
 MERCHANT_FEED_CACHE_TTL = 900
-HERO_SLIDES_CACHE_TTL = 300
 
 APPAREL_KEYWORDS = (
     "apparel",
@@ -246,31 +245,6 @@ def top_categories(request):
     payload = build_top_categories_payload()
     cache.set(TOP_CATEGORIES_CACHE_KEY, payload, TOP_CATEGORIES_CACHE_TTL)
     return _cached_response(payload, TOP_CATEGORIES_CACHE_TTL)
-
-
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def hero_slides(request):
-    cache_key = "products:hero-slides"
-    cached_payload = cache.get(cache_key)
-    if cached_payload is not None:
-        return _cached_response(cached_payload, HERO_SLIDES_CACHE_TTL)
-
-    slides = HeroSlide.objects.filter(is_active=True).only(
-        "id",
-        "title",
-        "subtitle",
-        "eyebrow",
-        "cta_label",
-        "cta_url",
-        "image_url",
-        "image_file",
-        "sort_order",
-        "created_at",
-    )
-    payload = {"slides": HeroSlideSerializer(slides, many=True, context={"request": request}).data}
-    cache.set(cache_key, payload, HERO_SLIDES_CACHE_TTL)
-    return _cached_response(payload, HERO_SLIDES_CACHE_TTL)
 
 
 def google_merchant_feed(request):
