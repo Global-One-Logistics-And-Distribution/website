@@ -137,7 +137,7 @@ def _frontend_base_url(request):
 def _build_trusted_cart_snapshot(user, lock_rows=False):
     cart_qs = CartItem.objects.filter(user=user).order_by("created_at")
     if lock_rows:
-        cart_qs = cart_qs.select_for_update()
+        cart_qs = cart_qs.select_for_update(nowait=True)
 
     cart_items = list(cart_qs)
     if not cart_items:
@@ -148,7 +148,7 @@ def _build_trusted_cart_snapshot(user, lock_rows=False):
         "id", "category", "name", "price", "image_url", "stock", "size_stock"
     )
     if lock_rows:
-        products_qs = products_qs.select_for_update()
+        products_qs = products_qs.select_for_update(nowait=True)
 
     products_by_id = {product.id: product for product in products_qs}
     missing_ids = sorted({product_id for product_id in product_ids if product_id not in products_by_id})
@@ -394,10 +394,14 @@ def order_list(request):
 
         except Exception as exc:
             logger.exception("Order placement failed for user_id=%s", getattr(user, "id", None))
+
+            # This forces Python to send the real error straight to your browser network tab!
+            import traceback
             return Response(
                 {
                     "error": "Unable to place order right now. Please try again.",
-                    **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+                    "EXACT_DATABASE_ERROR": str(exc),
+                    "TRACEBACK_LINE": traceback.format_exc()
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
