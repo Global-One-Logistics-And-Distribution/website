@@ -9,10 +9,10 @@ import { useAuth } from "../context/AuthContext";
 import { formatINR } from "../utils/currency";
 import { normalizeImageUrl } from "../utils/productsApi";
 
-const API = import.meta.env.VITE_API_URL || "/api";
+const API = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "https://elitedrop-admin.onrender.com/api");
+const RAZORPAY_AFFORDABILITY_SCRIPT_SRC = "https://cdn.razorpay.com/widgets/affordability/affordability.js";
 const CHECKOUT_FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='Arial,sans-serif' font-size='8' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
-const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 function getProductImage(product) {
   const raw = product?.image_url || product?.image;
@@ -32,16 +32,6 @@ function parseBackendError(data) {
     return Object.values(data.errors).flat().join(", ");
   }
   return "Failed to place order. Please try again.";
-}
-
-async function readResponseBody(res) {
-  const raw = await res.text().catch(() => "");
-  if (!raw) return { raw: "", data: {} };
-  try {
-    return { raw, data: JSON.parse(raw) };
-  } catch {
-    return { raw, data: raw };
-  }
 }
 
 function buildOrderFailureNotice({ message, statusCode, paymentMethod }) {
@@ -111,14 +101,11 @@ export default function Checkout() {
   });
   const [errors, setErrors] = useState({});
   const [placing, setPlacing] = useState(false);
+  const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
-  const finalPrice = Math.max(0, totalPrice);
-  const authToken = token || sessionStorage.getItem("token") || localStorage.getItem("token") || "";
-  const authHeaders = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  };
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+  const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
+  const affordabilityHostRef = useRef(null);
 
   const getValidRazorpayPrefill = () => {
     const prefill = {};
@@ -139,6 +126,54 @@ export default function Checkout() {
 
     return prefill;
   };
+
+  useEffect(() => {
+    const amountInPaise = Math.round(totalPrice * 100);
+    const host = affordabilityHostRef.current;
+    if (!host) return;
+
+    const targetId = "razorpay-affordability-widget-runtime";
+    const mount = document.createElement("div");
+    mount.id = targetId;
+    host.replaceChildren(mount);
+
+    const renderAffordabilityWidget = () => {
+      if (!window.RazorpayAffordabilitySuite || !razorpayKey || amountInPaise <= 0) {
+        if (mount.isConnected) mount.replaceChildren();
+        return;
+      }
+
+      if (mount.isConnected) mount.replaceChildren();
+      const widgetConfig = {
+        key: razorpayKey,
+        amount: amountInPaise,
+        target: `#${targetId}`,
+      };
+      try {
+        const affordabilitySuite = new window.RazorpayAffordabilitySuite(widgetConfig);
+        affordabilitySuite.render();
+      } catch {
+        if (mount.isConnected) mount.replaceChildren();
+      }
+    };
+
+    const existingScript = document.querySelector(`script[src="${RAZORPAY_AFFORDABILITY_SCRIPT_SRC}"]`);
+    if (existingScript) {
+      renderAffordabilityWidget();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = RAZORPAY_AFFORDABILITY_SCRIPT_SRC;
+    script.async = true;
+    script.onload = renderAffordabilityWidget;
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      if (host.isConnected) host.replaceChildren();
+    };
+  }, [razorpayKey, totalPrice]);
 
   const set = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -174,7 +209,6 @@ export default function Checkout() {
       <section className="container-pad py-16 text-center">
         <Helmet>
           <title>Checkout | EliteDrop</title>
-          <link rel="canonical" href={`${SITE_URL}/checkout`} />
         </Helmet>
         <ShoppingCart className="w-14 h-14 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
@@ -191,7 +225,7 @@ export default function Checkout() {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
-    if (!user || !authToken) {
+    if (!user || !token) {
       toast.error("Please sign in to place an order.");
       navigate(`/signin?redirectTo=${encodeURIComponent(checkoutPath)}`, {
         state: { redirectTo: checkoutPath },
@@ -228,87 +262,230 @@ export default function Checkout() {
 
     setPlacing(true);
     try {
-      const createOrderRes = await fetch(`${API}/checkout/create-order`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({}),
-      });
-
-      const createOrderBody = await readResponseBody(createOrderRes);
-      const createOrderData = createOrderBody.data;
-      if (!createOrderRes.ok || !createOrderData?.checkout_proof) {
-        const message =
-          parseBackendError(createOrderData) ||
-          createOrderBody.raw ||
-          "Could not initialize payment.";
-        console.error("create-order failed", {
-          status: createOrderRes.status,
-          body: createOrderBody.raw,
+      const submitOrder = async ({ notesOverride = null, paymentProof = "", razorpayOrderId = "", razorpayPaymentId = "" } = {}) => {
+        const payload = {
+          ...form,
+          notes: notesOverride ?? form.notes,
+          payment_proof: paymentProof,
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: razorpayPaymentId,
+        };
+        const res = await fetch(`${API}/orders/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         });
-        setOrderFailure(
-          buildOrderFailureNotice({
-            message,
-            statusCode: createOrderRes.status || 500,
-          })
-        );
-        toast.error(message);
-        setPlacing(false);
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const errorMessage = typeof data?.error === "string" ? data.error.toLowerCase() : "";
+          if (res.status === 403 && errorMessage.includes("verify")) {
+            navigate("/verify-email", {
+              state: { email: user.email, redirectTo: "/checkout" },
+            });
+          }
+          const parsedMessage = parseBackendError(data);
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message: parsedMessage,
+              statusCode: res.status,
+              paymentMethod,
+            })
+          );
+          toast.error(parsedMessage);
+          return false;
+        }
+
+        setOrderFailure(null);
+        cart.clearCart?.();
+        toast.success("Order placed successfully!");
+        const orderNumber = data?.order?.order_number;
+        const successPath = orderNumber
+          ? `/checkout/success?order=${encodeURIComponent(orderNumber)}`
+          : "/checkout/success";
+        navigate(successPath, { state: { order: data.order } });
+        return true;
+      };
+
+      const loadRazorpayScript = () => {
+        if (window.Razorpay) return Promise.resolve(true);
+        return new Promise((resolve) => {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      if (paymentMethod === "razorpay") {
+        if (!razorpayKey) {
+          toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID to test payment.");
+          setPlacing(false);
+          return;
+        }
+
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          toast.error("Unable to load Razorpay checkout. Please try again.");
+          setPlacing(false);
+          return;
+        }
+
+        const amountInPaise = Math.round(totalPrice * 100);
+        if (!amountInPaise || amountInPaise < 100) {
+          toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
+          setPlacing(false);
+          return;
+        }
+
+        const createOrderRes = await fetch(`${API}/checkout/create-order`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        });
+
+        const createOrderData = await createOrderRes.json().catch(() => ({}));
+        if (createOrderRes.status === 503) {
+          toast("Online payment is temporarily disabled. Placing order directly.");
+          const placed = await submitOrder();
+          if (!placed) {
+            setPlacing(false);
+          }
+          return;
+        }
+
+        if (!createOrderRes.ok || !createOrderData?.order_id) {
+          const message = parseBackendError(createOrderData) || "Could not initialize payment.";
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message,
+              statusCode: createOrderRes.status || 500,
+              paymentMethod,
+            })
+          );
+          toast.error(message);
+          setPlacing(false);
+          return;
+        }
+
+        const options = {
+          key: razorpayKey,
+          amount: createOrderData.amount,
+          currency: createOrderData.currency,
+          order_id: createOrderData.order_id,
+          name: "EliteDrop",
+          description: "Order payment",
+          prefill: getValidRazorpayPrefill(),
+          theme: {
+            color: "#4f46e5",
+          },
+          retry: {
+            enabled: true,
+          },
+          modal: {
+            ondismiss: () => {
+              toast("Payment cancelled.");
+              setPlacing(false);
+            },
+          },
+          handler: async (response) => {
+            const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response?.razorpay_order_id,
+                razorpay_payment_id: response?.razorpay_payment_id,
+                razorpay_signature: response?.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json().catch(() => ({}));
+            if (!verifyRes.ok || !verifyData?.success) {
+              const message = parseBackendError(verifyData) || "Payment verification failed.";
+              setOrderFailure(
+                buildOrderFailureNotice({
+                  message,
+                  statusCode: verifyRes.status || 400,
+                  paymentMethod,
+                })
+              );
+              toast.error(message);
+              setPlacing(false);
+              return;
+            }
+
+            const paymentProof = verifyData?.payment_proof || "";
+            if (!paymentProof) {
+              const message = "Payment verification proof missing. Please retry payment.";
+              setOrderFailure(
+                buildOrderFailureNotice({
+                  message,
+                  statusCode: 400,
+                  paymentMethod,
+                })
+              );
+              toast.error(message);
+              setPlacing(false);
+              return;
+            }
+
+            await submitOrder({
+              paymentProof,
+              razorpayOrderId: response?.razorpay_order_id || "",
+              razorpayPaymentId: response?.razorpay_payment_id || "",
+            });
+            setPlacing(false);
+          },
+        };
+
+        const razorpay = new window.Razorpay(options);
+        razorpay.on("payment.failed", (resp) => {
+          const gatewayReason = resp?.error?.description || "Payment failed.";
+          const code = resp?.error?.code ? ` (${resp.error.code})` : "";
+          const reason = `${gatewayReason}${code}`;
+          const helpText = isRazorpayTestMode
+            ? "You are in Razorpay test mode. Use only Razorpay test cards/UPI IDs from their docs; real cards can be rejected in test mode."
+            : "Please verify card details, bank limits, and OTP/3DS authentication, then retry.";
+
+          setOrderFailure(
+            buildOrderFailureNotice({
+              message: `${reason} ${helpText}`,
+              statusCode: 402,
+              paymentMethod,
+            })
+          );
+          toast.error(reason);
+          setPlacing(false);
+        });
+        razorpay.open();
         return;
       }
 
-      const paymentProof = createOrderData?.checkout_proof || "";
-      const placed = await fetch(`${API}/orders/`, {
-        method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({
-          ...form,
-          payment_proof: paymentProof,
-          razorpay_order_id: createOrderData?.order_id || "",
-          razorpay_payment_id: createOrderData?.payment_id || "",
-          notes: form.notes,
-          items,
-        }),
-      });
-
-      const placedBody = await readResponseBody(placed);
-      const placedData = placedBody.data;
-      if (!placed.ok) {
-        const message = parseBackendError(placedData) || placedBody.raw || "Could not place order.";
-        console.error("order placement failed", {
-          status: placed.status,
-          body: placedBody.raw,
-        });
-        setOrderFailure(
-          buildOrderFailureNotice({
-            message,
-            statusCode: placed.status || 500,
-          })
-        );
-        toast.error(message);
-        setPlacing(false);
-        return;
-      };
-
-      setOrderFailure(null);
-      cart.clearCart?.();
-      toast.success("Order placed successfully!");
-      const orderNumber = placedData?.order?.order_number;
-      const successPath = orderNumber
-        ? `/checkout/success?order=${encodeURIComponent(orderNumber)}`
-        : "/checkout/success";
-      navigate(successPath, { state: { order: placedData.order } });
-      setPlacing(false);
+      await submitOrder();
     } catch {
       const message = "Network error. Please try again.";
       setOrderFailure(
         buildOrderFailureNotice({
           message,
           statusCode: 0,
+          paymentMethod,
         })
       );
       toast.error(message);
     } finally {
-      setPlacing(false);
+      if (paymentMethod !== "razorpay") {
+        setPlacing(false);
+      }
     }
   };
 
@@ -316,7 +493,6 @@ export default function Checkout() {
     <section className="container-pad py-10">
       <Helmet>
         <title>Checkout | EliteDrop</title>
-        <link rel="canonical" href={`${SITE_URL}/checkout`} />
       </Helmet>
 
       <motion.h1
@@ -471,14 +647,18 @@ export default function Checkout() {
             <div>
               <label className="block text-sm font-medium mb-2">Payment Method</label>
               <div className="rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/20 px-4 py-3 text-sm">
-                Direct checkout enabled
+                Razorpay (Online Payment Only)
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 space-y-3">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Checkout now uses a simple direct order flow without Razorpay.
-              </p>
+              {isRazorpayTestMode && (
+                <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">
+                  Test mode is enabled. Use Razorpay test payment methods only.
+                </p>
+              )}
+              {!razorpayKey && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.
+                </p>
+              )}
             </div>
 
             {!user && (
@@ -538,9 +718,18 @@ export default function Checkout() {
               {placing ? (
                 <><Loader2 size={16} className="animate-spin" /> Placing Order…</>
               ) : (
-                <>Place Order <ArrowRight size={16} /></>
+                <>Pay & Place Order <ArrowRight size={16} /></>
               )}
             </button>
+            <div className="mt-2 flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>Secure payments with</span>
+              <img
+                src="https://cdn.razorpay.com/logo.svg"
+                alt="Razorpay"
+                className="h-4 w-auto"
+                loading="lazy"
+              />
+            </div>
           </motion.div>
 
           {/* Order summary */}
@@ -594,11 +783,14 @@ export default function Checkout() {
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200 dark:border-slate-800">
                 <span>Total</span>
                 <span className="text-indigo-600 dark:text-indigo-400">
-                  {finalPrice > 0 ? formatINR(finalPrice) : "—"}
+                  {totalPrice > 0 ? formatINR(totalPrice) : "—"}
                 </span>
               </div>
               {totalPrice > 0 && razorpayKey && (
-                null
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
+                  <div ref={affordabilityHostRef} />
+                </div>
               )}
             </div>
           </motion.div>
