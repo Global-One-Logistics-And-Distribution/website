@@ -144,12 +144,25 @@ def _frontend_base_url(request):
     return getattr(settings, "STOREFRONT_URL", "").rstrip("/")
 
 
-def _build_trusted_cart_snapshot(user, lock_rows=False):
-    cart_qs = CartItem.objects.filter(user=user).order_by("created_at")
-    if lock_rows:
-        cart_qs = cart_qs.select_for_update(nowait=True)
+def _build_trusted_cart_snapshot(request, lock_rows=False):
+    items_data = request.data.get("items")
+    
+    if items_data is not None:
+        class DummyCartItem:
+            def __init__(self, pid, qty, size):
+                self.product_id = pid
+                self.quantity = qty
+                self.selected_size = size
+        cart_items = [
+            DummyCartItem(i.get("product_id") or i.get("productId"), i.get("quantity", 1), i.get("selected_size") or i.get("selectedSize", ""))
+            for i in items_data
+        ]
+    else:
+        cart_qs = CartItem.objects.filter(user=request.user).order_by("created_at")
+        if lock_rows:
+            cart_qs = cart_qs.select_for_update(nowait=True)
+        cart_items = list(cart_qs)
 
-    cart_items = list(cart_qs)
     if not cart_items:
         return None, Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -333,7 +346,7 @@ def order_list(request):
             data["shipping_email"] = user.email
 
             with transaction.atomic():
-                snapshot, snapshot_error = _build_trusted_cart_snapshot(user, lock_rows=True)
+                snapshot, snapshot_error = _build_trusted_cart_snapshot(request, lock_rows=True)
                 if snapshot_error is not None:
                     return snapshot_error
 
@@ -533,7 +546,7 @@ def return_requests(request):
 @permission_classes([IsAuthenticated])
 @throttle_classes([PaymentCreateOrderThrottle])
 def create_razorpay_order(request):
-    snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=False)
+    snapshot, snapshot_error = _build_trusted_cart_snapshot(request, lock_rows=False)
     if snapshot_error is not None:
         return snapshot_error
 

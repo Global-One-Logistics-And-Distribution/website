@@ -315,6 +315,11 @@ export default function Checkout() {
         const payload = {
           ...form,
           coupon_code: appliedCoupon?.code || "",
+          items: cart.items.map(i => ({ 
+            product_id: i.productId, 
+            quantity: i.quantity, 
+            selected_size: i.selectedSize 
+          })),
           notes: notesOverride ?? form.notes,
           payment_proof: paymentProof,
           razorpay_order_id: razorpayOrderId,
@@ -398,7 +403,15 @@ export default function Checkout() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ amount: finalPrice }),
+          body: JSON.stringify({ 
+            amount: finalPrice, 
+            coupon_code: appliedCoupon?.code || "",
+            items: cart.items.map(i => ({ 
+              product_id: i.productId, 
+              quantity: i.quantity, 
+              selected_size: i.selectedSize 
+            }))
+          }),
         });
 
         const createOrderData = await createOrderRes.json().catch(() => ({}));
