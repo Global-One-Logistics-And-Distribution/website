@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import timedelta
 import hashlib
 import hmac
 import json
@@ -34,10 +35,15 @@ from cart.models import CartItem
 
 
 logger = logging.getLogger(__name__)
+try:
+    import razorpay
+except Exception:  # pragma: no cover - handled at runtime
+    razorpay = None
 SHOE_SIZES = {"7", "8", "9", "10", "11"}
 PROOF_TTL_SECONDS = 15 * 60
 PENDING_ORDER_TTL_SECONDS = 20 * 60
 USED_PAYMENT_TTL_SECONDS = 7 * 24 * 60 * 60
+RETURN_WINDOW_DAYS = 7
 
 
 def _is_shoe_category(category):
@@ -98,6 +104,8 @@ def _coupon_discount_for_user(user, coupon, order_total, product_ids=None):
     return discount, None
 
 
+
+
 class PaymentCreateOrderThrottle(UserRateThrottle):
     scope = "payment_create_order"
 
@@ -121,14 +129,13 @@ def _used_payment_cache_key(payment_id):
 def _get_razorpay_client():
     key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
     key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
-    if not key_id or not key_secret:
+    if not razorpay or not key_id or not key_secret:
         return None
     try:
-        import razorpay
+        return razorpay.Client(auth=(key_id, key_secret))
     except Exception:
-        logger.exception("Razorpay package import failed.")
+        logger.exception("Failed to initialize Razorpay client")
         return None
-    return razorpay.Client(auth=(key_id, key_secret))
 
 
 def _frontend_base_url(request):
@@ -138,16 +145,13 @@ def _frontend_base_url(request):
         if parsed.scheme and parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
 
-    if getattr(settings, "DEBUG", False):
-        return "http://localhost:5173"
-
     return getattr(settings, "STOREFRONT_URL", "").rstrip("/")
 
 
 def _build_trusted_cart_snapshot(user, lock_rows=False):
     cart_qs = CartItem.objects.filter(user=user).order_by("created_at")
     if lock_rows:
-        cart_qs = cart_qs.select_for_update(nowait=True)
+        cart_qs = cart_qs.select_for_update()
 
     cart_items = list(cart_qs)
     if not cart_items:
@@ -158,7 +162,7 @@ def _build_trusted_cart_snapshot(user, lock_rows=False):
         "id", "category", "name", "price", "image_url", "stock", "size_stock"
     )
     if lock_rows:
-        products_qs = products_qs.select_for_update(nowait=True)
+        products_qs = products_qs.select_for_update()
 
     products_by_id = {product.id: product for product in products_qs}
     missing_ids = sorted({product_id for product_id in product_ids if product_id not in products_by_id})
@@ -272,7 +276,7 @@ def order_list(request):
         orders = (
             Order.objects.filter(user=user)
             .select_related("user")
-            .prefetch_related("items")
+            .prefetch_related("items", "return_requests")
         )
         return Response({"orders": OrderSerializer(orders, many=True).data})
 
@@ -337,8 +341,6 @@ def order_list(request):
                 if snapshot_error is not None:
                     return snapshot_error
 
-                # LOOPHOLE PROTECTION: Validate that the cart total matches what was originally calculated for the payment
-                # This prevents the user from altering their cart items in another tab while checkout is active.
                 if snapshot["total_paise"] < 100:
                     return Response(
                         {"error": "Order amount must be at least 100 paise."},
@@ -351,23 +353,6 @@ def order_list(request):
                         {"error": "Payment amount does not match the current cart total."},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-
-                # LOOPHOLE PROTECTION: Atomically decrement coupon usage and lock the coupon database row
-                if proof_coupon_code:
-                    try:
-                        coupon = Coupon.objects.select_for_update().get(code=proof_coupon_code)
-                        # Re-verify eligibility constraints on coupon to make sure limits haven't been exceeded in the in-flight period
-                        discount, discount_error = _coupon_discount_for_user(
-                            user, coupon, snapshot["total"],
-                            product_ids=[item["product_id"] for item in snapshot["normalized_items"]]
-                        )
-                        if discount_error:
-                            return Response({"error": f"Coupon verification failed: {discount_error}"}, status=status.HTTP_400_BAD_REQUEST)
-                        
-                        coupon.usage_count = models.F("usage_count") + 1
-                        coupon.save(update_fields=["usage_count"])
-                    except Coupon.DoesNotExist:
-                        return Response({"error": "Coupon used during checkout is no longer available."}, status=status.HTTP_400_BAD_REQUEST)
 
                 note = (data.get("notes") or "").strip()
                 payment_note = (
@@ -423,14 +408,10 @@ def order_list(request):
 
         except Exception as exc:
             logger.exception("Order placement failed for user_id=%s", getattr(user, "id", None))
-
-            # This forces Python to send the real error straight to your browser network tab!
-            import traceback
             return Response(
                 {
                     "error": "Unable to place order right now. Please try again.",
-                    "EXACT_DATABASE_ERROR": str(exc),
-                    "TRACEBACK_LINE": traceback.format_exc()
+                    **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
@@ -440,28 +421,12 @@ def order_list(request):
 @permission_classes([IsAuthenticated])
 def order_detail(request, order_number):
     try:
-        order = Order.objects.select_related("user").prefetch_related("items").get(
+        order = Order.objects.select_related("user").prefetch_related("items", "return_requests").get(
             user=request.user, order_number=order_number
         )
     except Order.DoesNotExist:
         return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
     return Response({"order": OrderSerializer(order).data})
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def order_invoice_download(request, order_number):
-    try:
-        order = Order.objects.select_related("user").prefetch_related("items").get(
-            user=request.user, order_number=order_number
-        )
-    except Order.DoesNotExist:
-        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    html = build_invoice_html(order)
-    response = HttpResponse(html, content_type="text/html; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="invoice-{order.order_number}.html"'
-    return response
 
 
 @api_view(["POST"])
@@ -473,10 +438,9 @@ def coupon_validate(request):
 
     coupon_code = _normalize_coupon_code(serializer.validated_data["coupon_code"])
     order_total = serializer.validated_data["order_total"]
-
-    coupon = Coupon.objects.filter(code=coupon_code, active=True).first()
+    coupon = Coupon.objects.filter(code=coupon_code).first()
     if not coupon:
-        return Response({"error": "Coupon is invalid or expired."}, status=status.HTTP_4404_NOT_FOUND if False else status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Coupon not found."}, status=status.HTTP_404_NOT_FOUND)
 
     discount, discount_error = _coupon_discount_for_user(request.user, coupon, order_total)
     if discount_error:
@@ -514,6 +478,8 @@ def return_requests(request):
     except Order.DoesNotExist:
         return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
+
+
     existing = ReturnRequest.objects.filter(order=order, user=request.user).first()
     if existing:
         return Response({"request": ReturnRequestSerializer(existing).data}, status=status.HTTP_200_OK)
@@ -529,53 +495,76 @@ def return_requests(request):
     return Response({"request": ReturnRequestSerializer(request_obj).data}, status=status.HTTP_201_CREATED)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def order_invoice_download(request, order_number):
+    try:
+        order = Order.objects.select_related("user").prefetch_related("items", "return_requests").get(
+            user=request.user, order_number=order_number
+        )
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    html = build_invoice_html(order)
+    response = HttpResponse(html, content_type="text/html; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="invoice-{order.order_number}.html"'
+    return response
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @throttle_classes([PaymentCreateOrderThrottle])
 def create_razorpay_order(request):
-    snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=False)
-    if snapshot_error is not None:
-        return snapshot_error
-
-    # LOOPHOLE PROTECTION: Coupon validation and discount computation on checkout initialization
-    coupon_code = _normalize_coupon_code(request.data.get("coupon_code", ""))
-    discount_amount = Decimal("0")
-    coupon_payload = None
-    if coupon_code:
-        coupon = Coupon.objects.filter(code=coupon_code).first()
-        if not coupon:
-            return Response({"error": "Coupon not found."}, status=status.HTTP_404_NOT_FOUND)
-        discount_amount, discount_error = _coupon_discount_for_user(
-            request.user,
-            coupon,
-            snapshot["total"],
-            product_ids=[item["product_id"] for item in snapshot["normalized_items"]],
-        )
-        if discount_error:
-            return Response({"error": discount_error}, status=status.HTTP_400_BAD_REQUEST)
-        coupon_payload = coupon
-
-    final_total = max(Decimal("0"), (snapshot["total"] - discount_amount).quantize(Decimal("0.01")))
-    final_total_paise = int((final_total * 100).to_integral_value())
-
-    if final_total_paise < 100:
-        return Response({"error": "Amount must be at least 100 paise."}, status=status.HTTP_400_BAD_REQUEST)
-
-    client = _get_razorpay_client()
-    if not client:
-        return Response({"error": "Razorpay is not configured on server."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     try:
+        snapshot, snapshot_error = _build_trusted_cart_snapshot(request.user, lock_rows=False)
+        if snapshot_error is not None:
+            return snapshot_error
+
+        coupon_code = _normalize_coupon_code(request.data.get("coupon_code", ""))
+        discount_amount = Decimal("0")
+        coupon_payload = None
+        if coupon_code:
+            coupon = Coupon.objects.filter(code=coupon_code).first()
+            if not coupon:
+                return Response({"error": "Coupon not found."}, status=status.HTTP_404_NOT_FOUND)
+            discount_amount, discount_error = _coupon_discount_for_user(
+                request.user,
+                coupon,
+                snapshot["total"],
+                product_ids=[item["product_id"] for item in snapshot["normalized_items"]],
+            )
+            if discount_error:
+                return Response({"error": discount_error}, status=status.HTTP_400_BAD_REQUEST)
+            coupon_payload = coupon
+
+        final_total = max(Decimal("0"), (snapshot["total"] - discount_amount).quantize(Decimal("0.01")))
+        final_total_paise = int((final_total * 100).to_integral_value())
+
+        if final_total_paise < 100:
+            return Response({"error": "Amount must be at least 100 paise."}, status=status.HTTP_400_BAD_REQUEST)
+
+        key_id = getattr(settings, "RAZORPAY_KEY_ID", "")
+        key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
+        if not key_id or not key_secret:
+            return Response(
+                {"error": "Razorpay is not configured on server."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        client = _get_razorpay_client()
+        if not client:
+            return Response(
+                {"error": "Razorpay is not configured on server."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         receipt = f"rcpt_{request.user.id}_{int(time.time())}"[:40]
         order = client.order.create(
             {
                 "amount": final_total_paise,
                 "currency": snapshot["currency"],
                 "receipt": receipt,
-                "notes": {
-                    "user_id": str(request.user.id),
-                    "coupon_code": coupon_payload.code if coupon_payload else ""
-                },
+                "notes": {"user_id": str(request.user.id), "coupon_code": coupon_payload.code if coupon_payload else ""},
             }
         )
 
@@ -606,16 +595,24 @@ def create_razorpay_order(request):
             status=status.HTTP_200_OK,
         )
     except Exception as exc:
+        logger.exception("Razorpay create order failed for user_id=%s", request.user.id)
         status_code = int(getattr(exc, "status_code", 500) or 500)
         if status_code == 401:
             return Response({"error": "Razorpay authentication failed."}, status=status.HTTP_401_UNAUTHORIZED)
-        logger.exception("Razorpay create order failed for user_id=%s", request.user.id)
+        if status_code == 400:
+            return Response(
+                {
+                    "error": "Razorpay rejected the order request.",
+                    **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(
             {
                 "error": "Failed to create Razorpay order.",
                 **({"debug": str(exc)} if getattr(settings, "DEBUG", False) else {}),
             },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
 
@@ -623,57 +620,57 @@ def create_razorpay_order(request):
 @permission_classes([IsAuthenticated])
 @throttle_classes([PaymentVerifyThrottle])
 def verify_razorpay_payment(request):
-    order_id = request.data.get("razorpay_order_id")
-    payment_id = request.data.get("razorpay_payment_id")
-    signature = request.data.get("razorpay_signature")
-
-    if not order_id or not payment_id or not signature:
-        return Response(
-            {
-                "error": "razorpay_order_id, razorpay_payment_id and razorpay_signature are required.",
-            },
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
-    if not key_secret:
-        return Response(
-            {"error": "Razorpay secret is not configured on server."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
-    pending_payload = cache.get(_pending_order_cache_key(request.user.id, str(order_id)))
-    if not pending_payload:
-        return Response(
-            {"success": False, "error": "Order session expired. Please try payment again."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    payload = f"{order_id}|{payment_id}".encode("utf-8")
-    expected_signature = hmac.new(
-        key_secret.encode("utf-8"), payload, hashlib.sha256
-    ).hexdigest()
-
-    if not hmac.compare_digest(expected_signature, str(signature)):
-        return Response(
-            {"success": False, "error": "Invalid payment signature."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    if cache.get(_used_payment_cache_key(str(payment_id))):
-        return Response(
-            {"success": False, "error": "Payment has already been used."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    client = _get_razorpay_client()
-    if not client:
-        return Response(
-            {"success": False, "error": "Razorpay is not configured on server."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
     try:
+        order_id = request.data.get("razorpay_order_id")
+        payment_id = request.data.get("razorpay_payment_id")
+        signature = request.data.get("razorpay_signature")
+
+        if not order_id or not payment_id or not signature:
+            return Response(
+                {
+                    "error": "razorpay_order_id, razorpay_payment_id and razorpay_signature are required.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        key_secret = getattr(settings, "RAZORPAY_KEY_SECRET", "")
+        if not key_secret:
+            return Response(
+                {"error": "Razorpay secret is not configured on server."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        pending_payload = cache.get(_pending_order_cache_key(request.user.id, str(order_id)))
+        if not pending_payload:
+            return Response(
+                {"success": False, "error": "Order session expired. Please try payment again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payload = f"{order_id}|{payment_id}".encode("utf-8")
+        expected_signature = hmac.new(
+            key_secret.encode("utf-8"), payload, hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected_signature, str(signature)):
+            return Response(
+                {"success": False, "error": "Invalid payment signature."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if cache.get(_used_payment_cache_key(str(payment_id))):
+            return Response(
+                {"success": False, "error": "Payment has already been used."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        client = _get_razorpay_client()
+        if not client:
+            return Response(
+                {"success": False, "error": "Razorpay is not configured on server."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         payment = client.payment.fetch(str(payment_id))
     except Exception as exc:
         logger.exception("Razorpay payment fetch failed for payment_id=%s", payment_id)
@@ -714,8 +711,6 @@ def verify_razorpay_payment(request):
             "payment_id": str(payment_id),
             "amount": gateway_amount,
             "currency": gateway_currency,
-            "coupon_code": pending_payload.get("coupon_code", ""),
-            "coupon_discount": pending_payload.get("coupon_discount", "0"),
         },
         timeout=PROOF_TTL_SECONDS,
     )

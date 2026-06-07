@@ -103,6 +103,14 @@ export default function Checkout() {
   const [placing, setPlacing] = useState(false);
   const paymentMethod = "razorpay";
   const [orderFailure, setOrderFailure] = useState(null);
+  
+  // Coupon logic
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
+
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
   const isRazorpayTestMode = razorpayKey.startsWith("rzp_test_");
   const affordabilityHostRef = useRef(null);
@@ -127,8 +135,49 @@ export default function Checkout() {
     return prefill;
   };
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+    setCouponMessage("");
+
+    try {
+      const res = await fetch(`${API}/orders/validate-coupon/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code: couponCode, order_amount: totalPrice }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        setCouponError(data.error || "Invalid coupon code");
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon(data);
+        setCouponMessage(data.message || "Coupon applied successfully");
+      }
+    } catch (err) {
+      setCouponError("Failed to validate coupon");
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setAppliedCoupon(null);
+    setCouponError("");
+    setCouponMessage("");
+  };
+
+  const discountAmount = appliedCoupon?.discount_amount || 0;
+  const finalPrice = Math.max(0, totalPrice - discountAmount);
+
   useEffect(() => {
-    const amountInPaise = Math.round(totalPrice * 100);
+    const amountInPaise = Math.round(finalPrice * 100);
     const host = affordabilityHostRef.current;
     if (!host) return;
 
@@ -265,6 +314,7 @@ export default function Checkout() {
       const submitOrder = async ({ notesOverride = null, paymentProof = "", razorpayOrderId = "", razorpayPaymentId = "" } = {}) => {
         const payload = {
           ...form,
+          coupon_code: appliedCoupon?.code || "",
           notes: notesOverride ?? form.notes,
           payment_proof: paymentProof,
           razorpay_order_id: razorpayOrderId,
@@ -335,20 +385,20 @@ export default function Checkout() {
           return;
         }
 
-        const amountInPaise = Math.round(totalPrice * 100);
+        const amountInPaise = Math.round(finalPrice * 100);
         if (!amountInPaise || amountInPaise < 100) {
           toast.error("Order amount must be at least Rs. 1.00 for Razorpay checkout.");
           setPlacing(false);
           return;
         }
 
-        const createOrderRes = await fetch(`${API}/checkout/create-order`, {
+        const createOrderRes = await fetch(`${API}/checkout/create-order/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ amount: finalPrice }),
         });
 
         const createOrderData = await createOrderRes.json().catch(() => ({}));
@@ -396,7 +446,7 @@ export default function Checkout() {
             },
           },
           handler: async (response) => {
-            const verifyRes = await fetch(`${API}/checkout/verify-payment`, {
+            const verifyRes = await fetch(`${API}/checkout/verify-payment/`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -772,6 +822,40 @@ export default function Checkout() {
             </div>
 
             <div className="mt-5 pt-5 border-t border-slate-200 dark:border-slate-800 space-y-2 text-sm">
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Coupon Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    disabled={appliedCoupon !== null}
+                    placeholder="Enter coupon code"
+                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                  {appliedCoupon ? (
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="px-3 py-2 rounded-lg bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 font-medium hover:bg-red-100 transition"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={!couponCode.trim() || couponLoading}
+                      className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-60 transition"
+                    >
+                      {couponLoading ? "..." : "Apply"}
+                    </button>
+                  )}
+                </div>
+                {couponError && <p className="mt-1 text-xs text-red-500">{couponError}</p>}
+                {couponMessage && <p className="mt-1 text-xs text-emerald-500">{couponMessage}</p>}
+              </div>
+
               <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>Subtotal</span>
                 <span>{totalPrice > 0 ? formatINR(totalPrice) : "—"}</span>
@@ -780,13 +864,19 @@ export default function Checkout() {
                 <span>Shipping</span>
                 <span className="text-emerald-600 dark:text-emerald-400">Free</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                  <span>Discount ({appliedCoupon.code})</span>
+                  <span>- {formatINR(discountAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200 dark:border-slate-800">
                 <span>Total</span>
                 <span className="text-indigo-600 dark:text-indigo-400">
-                  {totalPrice > 0 ? formatINR(totalPrice) : "—"}
+                  {finalPrice > 0 ? formatINR(finalPrice) : (finalPrice === 0 ? "₹0.00" : "—")}
                 </span>
               </div>
-              {totalPrice > 0 && razorpayKey && (
+              {finalPrice > 0 && razorpayKey && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">EMI & Pay Later options</p>
                   <div ref={affordabilityHostRef} />

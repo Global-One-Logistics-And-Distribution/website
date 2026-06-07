@@ -144,11 +144,6 @@ class CouponSerializer(serializers.ModelSerializer):
         ]
 
 
-class CouponValidationSerializer(serializers.Serializer):
-    coupon_code = serializers.CharField(max_length=50)
-    order_total = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
-
-
 class ReturnRequestSerializer(serializers.ModelSerializer):
     order_number = serializers.CharField(source="order.order_number", read_only=True)
     order_status = serializers.CharField(source="order.get_status_display", read_only=True)
@@ -185,3 +180,8 @@ class CreateReturnRequestSerializer(serializers.Serializer):
         if len(cleaned) < 10:
             raise serializers.ValidationError("Please provide a detailed reason for the return.")
         return cleaned
+
+
+class CouponValidationSerializer(serializers.Serializer):
+    coupon_code = serializers.CharField(max_length=50)
+    order_total = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))

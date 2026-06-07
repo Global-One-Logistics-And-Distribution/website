@@ -10,7 +10,7 @@
 
 ### ✅ 2. Navbar Logo Replacement
 **Status**: Complete
-- **Files Modified**: `dropship-showcase/src/components/Navbar.jsx`
+- **Files Modified**: `dropship-showcase/src/components/Navbar.jsx` 
 - **Changes**: Replaced "EliteDrop" text with empty `<img>` placeholder
 - **Note**: Add your logo image URL to the `src` attribute when ready
 
