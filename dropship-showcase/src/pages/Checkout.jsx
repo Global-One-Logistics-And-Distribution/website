@@ -142,7 +142,7 @@ export default function Checkout() {
     setCouponMessage("");
 
     try {
-      const res = await fetch(`${API}/orders/validate-coupon/`, {
+      const res = await fetch(`${API}/orders/coupons/validate/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
