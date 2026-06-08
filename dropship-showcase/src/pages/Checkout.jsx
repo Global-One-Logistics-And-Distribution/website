@@ -148,15 +148,15 @@ export default function Checkout() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ code: couponCode, order_amount: totalPrice }),
+        body: JSON.stringify({ coupon_code: couponCode, order_total: totalPrice }),
       });
       const data = await res.json();
-      if (!res.ok || !data.valid) {
+      if (!res.ok || data.error) {
         setCouponError(data.error || "Invalid coupon code");
         setAppliedCoupon(null);
       } else {
         setAppliedCoupon(data);
-        setCouponMessage(data.message || "Coupon applied successfully");
+        setCouponMessage(`Coupon applied successfully! You saved ₹${data.discount_amount}`);
       }
     } catch (err) {
       setCouponError("Failed to validate coupon");
