@@ -27,12 +27,58 @@ const STATUS_COLORS = {
   cancelled: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
 };
 
-function TrackingBar({ status }) {
+function TrackingBar({ status, returnRequests = [] }) {
   if (status === "cancelled") {
     return (
-      <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm py-2">
+      <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm py-2 font-medium">
         <XCircle size={16} />
         Order Cancelled
+      </div>
+    );
+  }
+
+  const activeReturn = returnRequests.length > 0 ? returnRequests[returnRequests.length - 1] : null;
+
+  if (activeReturn) {
+    const isResolved = activeReturn.status === 'resolved' || activeReturn.refund_status === 'refunded';
+    const isApproved = activeReturn.status === 'approved' || isResolved;
+    
+    const RETURN_STEPS = [
+      { key: "requested", label: "Requested", icon: RotateCcw },
+      { key: "approved", label: "Approved", icon: CheckCircle },
+      { key: "resolved", label: "Processed", icon: CheckCircle },
+    ];
+    let currentIndex = 0;
+    if (isApproved) currentIndex = 1;
+    if (isResolved) currentIndex = 2;
+
+    return (
+      <div className="relative flex items-center justify-between mt-2 mb-1">
+        <div className="absolute left-0 right-0 top-4 h-0.5 bg-slate-200 dark:bg-slate-700 z-0" />
+        <div
+          className="absolute left-0 top-4 h-0.5 bg-purple-500 z-0 transition-all duration-500"
+          style={{ width: `${(currentIndex / 2) * 100}%` }}
+        />
+        {RETURN_STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const done = idx <= currentIndex;
+          const active = idx === currentIndex;
+          return (
+            <div key={step.key} className="relative z-10 flex flex-col items-center gap-1 flex-1">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all
+                  ${done ? "bg-purple-600 border-purple-600 text-white" : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600 text-slate-400"}
+                  ${active ? "ring-2 ring-purple-300 ring-offset-1" : ""}
+                `}
+              >
+                {done && !active ? <CheckCircle size={16} /> : <Icon size={14} />}
+              </div>
+              <span className={`text-[10px] font-medium text-center leading-tight mt-1 ${done ? "text-purple-600 dark:text-purple-400" : "text-slate-400"}`}>
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -71,7 +117,7 @@ function TrackingBar({ status }) {
                 <Icon size={14} />
               )}
             </div>
-            <span className={`text-[10px] font-medium text-center leading-tight ${done ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`}>
+            <span className={`text-[10px] font-medium text-center leading-tight mt-1 ${done ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`}>
               {step.label}
             </span>
           </div>
@@ -166,6 +212,17 @@ function OrderCard({ order, token, onOrderPatched }) {
     }
   };
 
+  let displayStatus = order.status_display;
+  let displayColor = STATUS_COLORS[order.status] || "";
+  const activeReturn = returnRequests.length > 0 ? returnRequests[returnRequests.length - 1] : null;
+  let isResolved = false;
+
+  if (activeReturn) {
+    isResolved = activeReturn.status === 'resolved' || activeReturn.refund_status === 'refunded';
+    displayStatus = isResolved ? (activeReturn.resolution_display || "Refund") + " Processed" : "Return Pending";
+    displayColor = isResolved ? "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400" : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400";
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -173,22 +230,31 @@ function OrderCard({ order, token, onOrderPatched }) {
       className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden"
     >
       {/* Header */}
-      <div className="w-full p-5 flex items-start justify-between gap-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+      <div className="w-full p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap mb-1">
-            <span className="font-semibold text-sm font-mono">{order.order_number}</span>
-            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status] || ""}`}>
-              {order.status_display}
+          <div className="flex items-center gap-3 flex-wrap mb-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-inner">
+               <Package size={14} className="text-indigo-500" />
+               <span className="font-bold text-sm text-slate-700 dark:text-slate-300 font-mono tracking-wider" title={order.order_number}>
+                 {order.order_number?.length > 12 ? order.order_number.substring(0, 8).toUpperCase() : order.order_number}
+               </span>
+            </div>
+            <span className={`text-xs px-3 py-1.5 rounded-xl font-bold uppercase tracking-wider shadow-sm ${displayColor}`}>
+              {displayStatus}
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {new Date(order.created_at).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}{" "}
-            · {order.items?.length} {order.items?.length === 1 ? "item" : "items"}
-          </p>
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+            <Clock size={14} />
+            <span>
+              {new Date(order.created_at).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+            <span>•</span>
+            <span>{order.items?.length} {order.items?.length === 1 ? "item" : "items"}</span>
+          </div>
         </div>
         <div className="text-right shrink-0 flex flex-col items-end gap-2">
           <p className="font-bold text-base">{formatINR(Number(order.total_amount))}</p>
@@ -208,8 +274,23 @@ function OrderCard({ order, token, onOrderPatched }) {
         <div className="border-t border-slate-100 dark:border-slate-800 p-5 space-y-5">
           {/* Tracking */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">Delivery Tracking</h3>
-            <TrackingBar status={order.status} />
+            <h3 className="text-sm font-semibold mb-3">
+              {activeReturn ? "Return Tracking" : "Delivery Tracking"}
+            </h3>
+            <TrackingBar status={order.status} returnRequests={returnRequests} />
+            {isResolved && activeReturn && (
+              <div className="mt-5 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/30 flex items-start gap-3">
+                <CheckCircle className="text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" size={18} />
+                <div>
+                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                    Resolution: {activeReturn.resolution_display || "Processed"}
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    {activeReturn.notes || "Your return/refund request has been resolved successfully."}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Items */}
@@ -411,20 +492,23 @@ export default function Orders() {
       </section>
     );
   }
-
   if (orders.length === 0) {
     return (
-      <section className="container-pad py-16 text-center">
+      <section className="container-pad py-20 text-center flex flex-col items-center justify-center min-h-[60vh]">
         <Helmet>
           <title>My Orders | EliteDrop</title>
           <link rel="canonical" href={`${SITE_URL}/orders`} />
         </Helmet>
-        <Package className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
-        <h1 className="text-2xl font-bold mb-2">No orders yet</h1>
-        <p className="text-slate-500 dark:text-slate-400 mb-6">Place your first order to see it here.</p>
+        <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
+          <Package className="w-12 h-12 text-indigo-500 dark:text-indigo-400" />
+        </div>
+        <h1 className="text-3xl font-extrabold mb-3 text-slate-900 dark:text-white">No orders yet</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm text-lg">
+          Looks like you haven't made your first purchase yet. Discover our premium collections today.
+        </p>
         <button
           onClick={() => navigate("/products")}
-          className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+          className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white font-bold text-lg hover:from-indigo-700 hover:to-cyan-600 transition shadow-[0_10px_20px_rgba(79,70,229,0.3)]"
         >
           Browse Products
         </button>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { normalizeImageUrl } from "../utils/productsApi";
-
 function createFallbackImage({ accentA, accentB, accentC }) {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Hero slide">
@@ -84,6 +84,11 @@ export default function AdSlider() {
             return {
               id: slide.id,
               image,
+              title: slide.title || "",
+              subtitle: slide.subtitle || "",
+              eyebrow: slide.eyebrow || "",
+              cta_label: slide.cta_label || "",
+              cta_url: slide.cta_url || "",
             };
           })
           .filter(Boolean);
@@ -148,6 +153,9 @@ export default function AdSlider() {
           }}
         />
 
+        <div className="absolute inset-0 bg-black/30" />
+
+
         {/* Prev / Next arrows */}
         <button
           onClick={prev}
@@ -164,11 +172,11 @@ export default function AdSlider() {
           <ChevronRight size={20} />
         </button>
 
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
       </div>
 
       {/* Dots */}
-      <div className="absolute inset-x-0 bottom-5 z-10 flex justify-center gap-2">
+      <div className="absolute inset-x-0 bottom-6 z-10 flex justify-center gap-2">
         {slides.map((_, i) => (
           <button
             key={i}
@@ -177,7 +185,7 @@ export default function AdSlider() {
             className={`h-2 rounded-full transition-all duration-300 ${
               i === current
                 ? "w-8 bg-white"
-                : "w-2 bg-white/60"
+                : "w-2 bg-white/50 hover:bg-white/70"
             }`}
           />
         ))}

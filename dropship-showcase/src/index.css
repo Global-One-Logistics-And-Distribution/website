@@ -19,8 +19,16 @@ body,
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: linear-gradient(to bottom, #fcfcfc 0%, #f3f4f6 100%);
   color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background: linear-gradient(to bottom, #09090b 0%, #111827 100%);
+  color: #f8fafc;
 }
 
 .container-pad {

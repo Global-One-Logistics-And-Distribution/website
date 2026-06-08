@@ -86,32 +86,17 @@ export default function Cart() {
         </span>
       </motion.h1>
 
-      {/* Free delivery progress bar */}
+      {/* Free delivery banner */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3"
       >
-        {freeDelivery ? (
-          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-            <Truck size={16} />
-            🎉 You get <strong>FREE Delivery</strong> on this order!
-          </p>
-        ) : (
-          <>
-            <p className="text-sm text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
-              <Truck size={16} />
-              Add <strong className="mx-1">{formatINR(remaining)}</strong> more for <strong className="ml-1">FREE Delivery</strong>
-            </p>
-            <div className="w-full bg-emerald-200 dark:bg-emerald-900 rounded-full h-1.5">
-              <div
-                className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, (totalPrice / FREE_DELIVERY_THRESHOLD) * 100)}%` }}
-              />
-            </div>
-          </>
-        )}
+        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+          <Truck size={16} />
+          🎉 You get <strong>FREE Delivery</strong> on this order!
+        </p>
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-8">

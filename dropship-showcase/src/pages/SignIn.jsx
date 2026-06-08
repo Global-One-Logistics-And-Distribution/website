@@ -117,14 +117,14 @@ export default function SignIn() {
       <div className="absolute inset-0 -z-10 opacity-60 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:72px_72px]" />
 
       <div className="container-pad relative z-10 grid items-start gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="order-2 lg:order-1 text-slate-700">
-          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-4 py-1 text-[11px] font-semibold tracking-[0.24em] uppercase backdrop-blur-md text-slate-600 shadow-sm">
+        <div className="order-2 lg:order-1 text-slate-700 dark:text-slate-300">
+          <span className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-4 py-1 text-[11px] font-semibold tracking-[0.24em] uppercase backdrop-blur-md text-slate-600 dark:text-slate-400 shadow-sm">
             Premium shopping portal
           </span>
-          <h1 className="mt-5 text-4xl md:text-6xl font-semibold leading-tight max-w-xl text-slate-900">
+          <h1 className="mt-5 text-4xl md:text-6xl font-semibold leading-tight max-w-xl text-slate-900 dark:text-white">
             Sign in to a curated dropship experience.
           </h1>
-          <p className="mt-4 max-w-lg text-slate-600 text-sm md:text-base leading-relaxed">
+          <p className="mt-4 max-w-lg text-slate-600 dark:text-slate-400 text-sm md:text-base leading-relaxed">
             Track orders, save favorites, and shop premium collections inside a polished glass interface built for modern commerce.
           </p>
 
@@ -135,9 +135,9 @@ export default function SignIn() {
               { label: "Secure access", value: "256-bit" },
               { label: "Support", value: "24/7" },
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-slate-200 bg-white/90 p-4 backdrop-blur-xl shadow-[0_18px_40px_rgba(15,23,42,0.10)]">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
-                <p className="mt-2 text-xl font-semibold text-slate-900">{item.value}</p>
+              <div key={item.label} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-4 backdrop-blur-xl shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.4)]">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{item.label}</p>
+                <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
               </div>
             ))}
           </div>
@@ -149,18 +149,18 @@ export default function SignIn() {
           transition={{ duration: 0.4 }}
           className="order-1 lg:order-2 w-full max-w-md mx-auto"
         >
-          <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/92 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-2xl text-slate-900">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.16),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.8),transparent_36%)] pointer-events-none" />
+          <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/92 dark:bg-slate-900/90 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl text-slate-900 dark:text-white">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.16),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.8),transparent_36%)] dark:bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.08),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.8),transparent_36%)] pointer-events-none" />
 
             <div className="relative mb-8 text-center">
-              <LogIn className="w-10 h-10 mx-auto text-indigo-500 mb-3" />
+              <LogIn className="w-10 h-10 mx-auto text-indigo-500 dark:text-indigo-400 mb-3" />
               <h1 className="text-3xl font-bold">Welcome back</h1>
-              <p className="text-slate-500 mt-1 text-sm">Sign in to your EliteDrop account</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Sign in to your EliteDrop account</p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-1.5 text-slate-700">
+                <label htmlFor="email" className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">
                   Email address
                 </label>
                 <div className="relative">
@@ -172,16 +172,16 @@ export default function SignIn() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="you@example.com"
-                    className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${errors.email ? "border-red-400" : "border-slate-200"}`}
+                    className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${errors.email ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"}`}
                   />
                   {errors.email && (
-                    <p className="absolute right-3 top-3 text-xs text-red-600 bg-red-50 px-1 rounded">{errors.email}</p>
+                    <p className="absolute right-3 top-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-1 rounded">{errors.email}</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-1.5 text-slate-700">
+                <label htmlFor="password" className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">
                   Password
                 </label>
                 <div className="relative">
@@ -193,17 +193,17 @@ export default function SignIn() {
                     value={form.password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className={`w-full px-4 py-3 pr-11 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${errors.password ? "border-red-400" : "border-slate-200"}`}
+                    className={`w-full px-4 py-3 pr-11 rounded-2xl border text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${errors.password ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                   {errors.password && (
-                    <p className="absolute right-11 top-3 text-xs text-red-600 bg-red-50 px-1 rounded">{errors.password}</p>
+                    <p className="absolute right-11 top-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-1 rounded">{errors.password}</p>
                   )}
                 </div>
               </div>
@@ -217,19 +217,19 @@ export default function SignIn() {
                 {loading ? "Signing in…" : "Sign In"}
               </motion.button>
 
-              <label className="flex items-center gap-2 text-sm text-slate-600">
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <input
                   type="checkbox"
                   checked={form.rememberMe}
                   onChange={(e) => setForm((prev) => ({ ...prev, rememberMe: e.target.checked }))}
-                  className="rounded border-slate-300 text-cyan-500 focus:ring-cyan-400"
+                  className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-cyan-500 focus:ring-cyan-400"
                 />
                 Keep me logged in
               </label>
 
               <div className="relative py-1">
-                <div className="h-px bg-slate-200" />
-                <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white px-2 text-xs text-slate-500 rounded">
+                <div className="h-px bg-slate-200 dark:bg-slate-800" />
+                <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white dark:bg-slate-900 px-2 text-xs text-slate-500 dark:text-slate-400 rounded">
                   OR
                 </span>
               </div>
@@ -239,7 +239,7 @@ export default function SignIn() {
                   type="button"
                   onClick={handleGoogleSignin}
                   disabled={socialLoading}
-                  className="w-full py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition backdrop-blur-md"
+                  className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-60 transition backdrop-blur-md"
                 >
                   Continue with Google
                 </button>
@@ -247,19 +247,19 @@ export default function SignIn() {
                 <button
                   type="button"
                   disabled
-                  className="w-full py-2.5 rounded-2xl border border-slate-200 text-sm text-slate-400"
+                  className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-400 dark:text-slate-500"
                 >
                   Continue with Google (Firebase not configured)
                 </button>
               )}
             </form>
 
-            <p className="relative mt-6 text-center text-sm text-slate-600">
+            <p className="relative mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
               Don&apos;t have an account?{" "}
               <Link
                 to={`/signup?redirectTo=${encodeURIComponent(from)}`}
                 state={{ redirectTo: from }}
-                className="text-cyan-600 font-medium hover:underline"
+                className="text-cyan-600 dark:text-cyan-400 font-medium hover:underline"
               >
                 Sign up
               </Link>

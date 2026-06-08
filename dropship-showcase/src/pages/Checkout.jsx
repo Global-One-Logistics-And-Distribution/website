@@ -573,20 +573,20 @@ export default function Checkout() {
       </motion.h1>
 
       <form onSubmit={handlePlaceOrder}>
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
           {/* Shipping form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-4"
+            className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] space-y-8"
           >
-            <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-              <MapPin size={18} className="text-indigo-500" />
-              Shipping Details
-            </h2>
-
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                <User size={18} className="text-indigo-500" />
+                Contact Information
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-medium mb-1">Full Name *</label>
                 <div className="relative">
@@ -617,40 +617,47 @@ export default function Checkout() {
                 </div>
               </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Phone *</label>
-              <div className="relative">
-                <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="tel"
-                  value={form.shipping_phone}
-                  onChange={set("shipping_phone")}
-                  placeholder="10-digit mobile number"
-                  maxLength={14}
-                  className={`w-full pl-9 pr-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
-                    errors.shipping_phone
-                      ? "border-red-400 bg-red-50 dark:bg-red-950/20"
-                      : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
-                  }`}
-                />
-              </div>
-              {errors.shipping_phone && (
-                <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.shipping_phone}</p>
-              )}
-            </div>
+          <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                <MapPin size={18} className="text-indigo-500" />
+                Shipping Address
+              </h2>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Phone Number *</label>
+                  <div className="relative">
+                    <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="tel"
+                      value={form.shipping_phone}
+                      onChange={set("shipping_phone")}
+                      placeholder="10-digit mobile number"
+                      maxLength={14}
+                      className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                        errors.shipping_phone
+                          ? "border-red-400 bg-red-50 dark:bg-red-950/20"
+                          : "border-slate-200 dark:border-slate-700"
+                      }`}
+                    />
+                  </div>
+                  {errors.shipping_phone && (
+                    <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.shipping_phone}</p>
+                  )}
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Address *</label>
-              <textarea
-                value={form.shipping_address}
-                onChange={set("shipping_address")}
-                required
-                rows={2}
-                placeholder="House/Flat no., Street, Area"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Street Address *</label>
+                  <textarea
+                    value={form.shipping_address}
+                    onChange={set("shipping_address")}
+                    required
+                    rows={2}
+                    placeholder="House/Flat no., Street, Area"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
+                  />
+                </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
@@ -701,9 +708,11 @@ export default function Checkout() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Order Notes (optional)</label>
+        <div>
+          <label className="block text-sm font-medium mb-1">Order Notes (optional)</label>
               <textarea
                 value={form.notes}
                 onChange={set("notes")}
@@ -806,10 +815,10 @@ export default function Checkout() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.35 }}
-            className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm h-fit"
+            className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] h-fit sticky top-24"
           >
-            <h2 className="text-xl font-bold mb-5">
-              Order Summary ({totalItems} {totalItems === 1 ? "item" : "items"})
+            <h2 className="text-xl font-bold mb-6 text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+              Order Summary <span className="text-slate-500 font-normal text-base ml-1">({totalItems} {totalItems === 1 ? "item" : "items"})</span>
             </h2>
 
             <div className="space-y-3 text-sm">
@@ -889,8 +898,8 @@ export default function Checkout() {
                   <span>- {formatINR(discountAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200 dark:border-slate-800">
-                <span>Total</span>
+              <div className="flex justify-between font-bold text-xl pt-4 border-t border-slate-200 dark:border-slate-800 mt-2">
+                <span className="text-slate-900 dark:text-white">Total</span>
                 <span className="text-indigo-600 dark:text-indigo-400">
                   {finalPrice > 0 ? formatINR(finalPrice) : (finalPrice === 0 ? "₹0.00" : "—")}
                 </span>

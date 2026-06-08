@@ -356,9 +356,9 @@ export default function ProductDetails() {
         <ArrowLeft size={16} /> Back
       </motion.button>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-8 items-start">
         {/* Images */}
-        <div>
+        <div className="sticky top-24">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -427,21 +427,23 @@ export default function ProductDetails() {
           )}
 
           {/* Price */}
-          <div className="mt-4">
+          <div className="mt-5 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
             {hasFakeDiscount ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {formatINR(hydratedProduct.price)}
-                </span>
-                <span className="text-lg text-slate-400 line-through">
-                  {formatINR(fakeMRP)}
-                </span>
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-white bg-green-500 px-2 py-0.5 rounded-md">
-                  <Tag size={13} /> {fakeDiscountPct}% OFF
-                </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    {formatINR(hydratedProduct.price)}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-400 px-2.5 py-1 rounded-md">
+                    <Tag size={14} /> {fakeDiscountPct}% OFF
+                  </span>
+                </div>
+                <div className="text-slate-500 dark:text-slate-400">
+                  MRP: <span className="line-through">{formatINR(fakeMRP)}</span>
+                </div>
               </div>
             ) : (
-              <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+              <div className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Price on request
               </div>
             )}
@@ -616,28 +618,30 @@ export default function ProductDetails() {
           </div>
 
           {/* Action buttons */}
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleAddToCart}
               disabled={isShoe ? !selectedSize || isOutOfStock : isOutOfStock}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 flex justify-center items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white font-bold text-lg hover:from-indigo-700 hover:to-cyan-600 transition shadow-[0_10px_20px_rgba(79,70,229,0.3)] disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed"
             >
-              <ShoppingCart size={18} />
+              <ShoppingCart size={20} />
               Add to Cart
             </motion.button>
 
             <motion.button
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => toggleWishlist(hydratedProduct)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+              className="flex justify-center items-center gap-2 px-6 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm"
             >
               <Heart
-                size={18}
+                size={20}
                 fill={isInWishlist(hydratedProduct.id) ? "currentColor" : "none"}
-                className={isInWishlist(hydratedProduct.id) ? "text-red-500" : ""}
+                className={isInWishlist(hydratedProduct.id) ? "text-rose-500" : ""}
               />
-              {isInWishlist(hydratedProduct.id) ? "In Wishlist" : "Add to Wishlist"}
+              {isInWishlist(hydratedProduct.id) ? "Saved" : "Save"}
             </motion.button>
           </div>
 

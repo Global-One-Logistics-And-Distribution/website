@@ -192,14 +192,14 @@ export default function SignUp() {
       <div className="absolute inset-0 -z-10 opacity-55 bg-[linear-gradient(rgba(15,23,42,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] bg-[size:72px_72px]" />
 
       <div className="container-pad relative z-10 grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="order-2 lg:order-1 text-slate-700 lg:pr-8">
-          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/90 px-4 py-1 text-[11px] font-semibold tracking-[0.24em] uppercase backdrop-blur-md text-slate-600 shadow-sm">
+        <div className="order-2 lg:order-1 text-slate-700 dark:text-slate-300 lg:pr-8">
+          <span className="inline-flex items-center rounded-full border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-4 py-1 text-[11px] font-semibold tracking-[0.24em] uppercase backdrop-blur-md text-slate-600 dark:text-slate-400 shadow-sm">
             Join the marketplace
           </span>
-          <h1 className="mt-5 text-4xl md:text-6xl font-semibold leading-tight max-w-xl text-slate-900">
+          <h1 className="mt-5 text-4xl md:text-6xl font-semibold leading-tight max-w-xl text-slate-900 dark:text-white">
             Create your account and shop with style.
           </h1>
-          <p className="mt-4 max-w-lg text-slate-600 text-sm md:text-base leading-relaxed">
+          <p className="mt-4 max-w-lg text-slate-600 dark:text-slate-400 text-sm md:text-base leading-relaxed">
             Unlock fast checkout, curated collections, and a polished storefront experience built for premium ecommerce.
           </p>
 
@@ -210,9 +210,9 @@ export default function SignUp() {
               { label: "Wishlist sync", value: "Live" },
               { label: "Delivery updates", value: "Auto" },
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-slate-200 bg-white/90 p-4 backdrop-blur-xl shadow-[0_18px_40px_rgba(15,23,42,0.10)]">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.label}</p>
-                <p className="mt-2 text-xl font-semibold text-slate-900">{item.value}</p>
+              <div key={item.label} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 p-4 backdrop-blur-xl shadow-[0_18px_40px_rgba(15,23,42,0.10)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.4)]">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{item.label}</p>
+                <p className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{item.value}</p>
               </div>
             ))}
           </div>
@@ -224,7 +224,7 @@ export default function SignUp() {
               "Member perks",
               "Secure checkout",
             ].map((tag) => (
-              <span key={tag} className="rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm text-slate-700 backdrop-blur-md shadow-sm">
+              <span key={tag} className="rounded-full border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 backdrop-blur-md shadow-sm">
                 {tag}
               </span>
             ))}
@@ -237,13 +237,13 @@ export default function SignUp() {
         transition={{ duration: 0.4 }}
         className="order-1 lg:order-2 w-full max-w-md mx-auto"
       >
-        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/92 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-2xl text-slate-900">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.15),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.8),transparent_36%)] pointer-events-none" />
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/92 dark:bg-slate-900/90 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl text-slate-900 dark:text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.15),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.8),transparent_36%)] dark:bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.08),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.8),transparent_36%)] pointer-events-none" />
 
           <div className="relative mb-8 text-center">
-            <UserPlus className="w-10 h-10 mx-auto text-emerald-500 mb-3" />
+            <UserPlus className="w-10 h-10 mx-auto text-emerald-500 dark:text-emerald-400 mb-3" />
             <h1 className="text-3xl font-bold">Create an account</h1>
-            <p className="text-slate-500 mt-1 text-sm">
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
               Sign up with email and password, then verify your email
             </p>
           </div>
@@ -251,7 +251,7 @@ export default function SignUp() {
           <form onSubmit={handleSubmit} noValidate className="relative space-y-5">
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-1.5 text-slate-700">
+              <label htmlFor="email" className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">
                 Email address
               </label>
               <div className="relative">
@@ -265,17 +265,17 @@ export default function SignUp() {
                   placeholder="you@example.com"
                   aria-invalid={Boolean(errors.email)}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
-                    errors.email ? "border-red-400" : "border-slate-200"
+                  className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
+                    errors.email ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"
                   }`}
                 />
-                {errors.email && <p id="email-error" role="alert" className="absolute right-3 top-3 text-xs text-red-600 bg-red-50 px-1 rounded">{errors.email}</p>}
+                {errors.email && <p id="email-error" role="alert" className="absolute right-3 top-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-1 rounded">{errors.email}</p>}
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1.5 text-slate-700">
+              <label htmlFor="password" className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">
                 Password
               </label>
               <div className="relative">
@@ -287,14 +287,14 @@ export default function SignUp() {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  className={`w-full px-4 py-3 pr-11 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
-                    errors.password ? "border-red-400" : "border-slate-200"
+                  className={`w-full px-4 py-3 pr-11 rounded-2xl border text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
+                    errors.password ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -302,7 +302,7 @@ export default function SignUp() {
               {/* Strength bar */}
               {form.password.length > 0 && (
                 <div className="mt-2">
-                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <motion.div
                       className={`h-full ${strengthColor} rounded-full`}
                       initial={{ width: 0 }}
@@ -310,15 +310,15 @@ export default function SignUp() {
                       transition={{ duration: 0.3 }}
                     />
                   </div>
-                  <p className="text-xs mt-1 text-slate-500">{strengthLabel}</p>
+                  <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">{strengthLabel}</p>
                 </div>
               )}
-              {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
+              {errors.password && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.password}</p>}
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirm" className="block text-sm font-medium mb-1.5 text-slate-700">
+              <label htmlFor="confirm" className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">
                 Confirm Password
               </label>
               <div className="relative">
@@ -332,20 +332,20 @@ export default function SignUp() {
                   aria-invalid={!!errors.confirm}
                   aria-describedby={errors.confirm ? "confirm-error" : undefined}
                   placeholder="Repeat your password"
-                  className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
-                    errors.confirm ? "border-red-400" : "border-slate-200"
+                  className={`w-full px-4 py-3 rounded-2xl border text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-cyan-400/70 transition backdrop-blur-md ${
+                    errors.confirm ? "border-red-400 dark:border-red-500" : "border-slate-200 dark:border-slate-700"
                   }`}
                 />
-                {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-600 bg-red-50 px-1 rounded">{errors.confirm}</p>}
+                {errors.confirm && <p id="confirm-error" className="absolute right-3 top-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-1 rounded">{errors.confirm}</p>}
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-cyan-500 focus:ring-cyan-400"
+                className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-cyan-500 focus:ring-cyan-400"
               />
               Remember me
             </label>
@@ -361,8 +361,8 @@ export default function SignUp() {
             </motion.button>
 
             <div className="relative py-1">
-              <div className="h-px bg-slate-200" />
-              <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white px-2 text-xs text-slate-500 rounded">
+              <div className="h-px bg-slate-200 dark:bg-slate-800" />
+              <span className="absolute inset-x-0 -top-2 mx-auto w-fit bg-white dark:bg-slate-900 px-2 text-xs text-slate-500 dark:text-slate-400 rounded">
                 OR
               </span>
             </div>
@@ -372,7 +372,7 @@ export default function SignUp() {
                 type="button"
                 onClick={handleGoogleSignup}
                 disabled={loading}
-                className="w-full py-2.5 rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 transition backdrop-blur-md"
+                className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-60 transition backdrop-blur-md"
               >
                 Continue with Google
               </button>
@@ -380,20 +380,20 @@ export default function SignUp() {
               <button
                 type="button"
                 disabled
-                className="w-full py-2.5 rounded-2xl border border-slate-200 text-sm text-slate-400"
+                className="w-full py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-400 dark:text-slate-500"
               >
                 Continue with Google (Firebase not configured)
               </button>
             )}
-            {errors.form && <p className="text-xs text-red-600 text-right">{errors.form}</p>}
+            {errors.form && <p className="text-xs text-red-600 dark:text-red-400 text-right">{errors.form}</p>}
           </form>
 
-          <p className="relative mt-6 text-center text-sm text-slate-600">
+          <p className="relative mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
             Already have an account?{" "}
             <Link
               to={`/signin?redirectTo=${encodeURIComponent(redirectTo)}`}
               state={{ redirectTo }}
-              className="text-cyan-600 font-medium hover:underline"
+              className="text-cyan-600 dark:text-cyan-400 font-medium hover:underline"
             >
               Sign in
             </Link>

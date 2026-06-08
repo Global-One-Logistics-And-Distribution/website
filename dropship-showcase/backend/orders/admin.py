@@ -93,7 +93,7 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = [
-        "order_number",
+        "short_order_number",
         "user_email",
         "shipping_name",
         "status_badge",
@@ -180,6 +180,11 @@ class OrderAdmin(admin.ModelAdmin):
         return obj.shipping_email
     user_email.short_description = "Customer Email"
     user_email.admin_order_field = "user__email"
+
+    def short_order_number(self, obj):
+        return obj.order_number[:8].upper() if obj.order_number else ""
+    short_order_number.short_description = "Order #"
+    short_order_number.admin_order_field = "order_number"
 
     def status_badge(self, obj):
         colors = {
@@ -290,7 +295,7 @@ class CouponAdmin(admin.ModelAdmin):
 class ReturnRequestAdmin(admin.ModelAdmin):
     list_display = [
         "id",
-        "order_number",
+        "short_order_number",
         "customer_email",
         "resolution",
         "status",
@@ -309,9 +314,10 @@ class ReturnRequestAdmin(admin.ModelAdmin):
         ("Timestamps", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
     )
 
-    def order_number(self, obj):
-        return obj.order.order_number
-    order_number.short_description = "Order #"
+    def short_order_number(self, obj):
+        return obj.order.order_number[:8].upper() if obj.order and obj.order.order_number else ""
+    short_order_number.short_description = "Order #"
+    short_order_number.admin_order_field = "order__order_number"
 
     def customer_email(self, obj):
         return obj.user.email
