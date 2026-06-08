@@ -58,6 +58,8 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         if not self.order_number:
             self.order_number = self._generate_order_number()
+        if not self.invoice_number:
+            self.invoice_number = self.order_number
         super().save(*args, **kwargs)
 
     def _generate_order_number(self):
