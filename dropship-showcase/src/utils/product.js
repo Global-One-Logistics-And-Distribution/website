@@ -9,10 +9,14 @@ export function getDiscount(id) {
   return DISCOUNT_TABLE[Number(id) % DISCOUNT_TABLE.length];
 }
 
-/** Computes a fake MRP rounded to the nearest ₹50. */
 export function getMRP(price, id) {
   const pct = getDiscount(id);
-  return Math.round(price / (1 - pct / 100) / 50) * 50;
+  const rawMrp = price / (1 - pct / 100);
+  let mrp = Math.round(rawMrp / 50) * 50;
+  if (mrp <= price) {
+    mrp = Math.ceil(rawMrp);
+  }
+  return mrp;
 }
 
 /** Returns a deterministic fake review count based on product id. */

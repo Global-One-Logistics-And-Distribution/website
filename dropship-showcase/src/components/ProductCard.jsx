@@ -27,7 +27,7 @@ export default function ProductCard({ product }) {
 
   const price = Number(product.price) || 0;
   const discountPct = getDiscount(product.id);
-  const mrp = getMRP(price, discountPct);
+  const mrp = getMRP(price, product.id);
   const savings = mrp - price;
   const reviewCount = getReviewCount(product.id);
   const { label: stockLabel, cls: stockCls } = stockInfo(product.stock);

@@ -43,6 +43,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         from orders.models import AdminLog
+        from django.core.cache import cache
         if change:
             action = "product_update"
             description = f"Updated product: {obj.name} (ID: {obj.id})"
@@ -51,6 +52,7 @@ class ProductAdmin(admin.ModelAdmin):
             description = f"Created product: {obj.name} (ID: {obj.id})"
 
         super().save_model(request, obj, form, change)
+        cache.clear()
 
         AdminLog.objects.create(
             user=request.user,
@@ -63,9 +65,11 @@ class ProductAdmin(admin.ModelAdmin):
 
     def delete_model(self, request, obj):
         from orders.models import AdminLog
+        from django.core.cache import cache
         product_name = obj.name
         product_id = obj.id
         super().delete_model(request, obj)
+        cache.clear()
 
         AdminLog.objects.create(
             user=request.user,
