@@ -95,6 +95,8 @@ export default function ProductListing() {
   const { products, loading } = useProducts();
   const [searchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
+  const brandFromUrl = searchParams.get("brand");
+  const searchFromUrl = searchParams.get("q") || searchParams.get("search");
   const siteUrl = useMemo(() => {
     const envSite = import.meta.env.VITE_SITE_URL;
     if (typeof envSite === "string" && envSite.trim()) return envSite.trim().replace(/\/$/, "");
@@ -124,12 +126,26 @@ export default function ProductListing() {
   }, [maxProductPrice]);
 
   useEffect(() => {
-    if (categoryFromUrl && categories.includes(categoryFromUrl)) {
-      setSelectedCategory(categoryFromUrl);
+    if (categoryFromUrl) {
+      const match = categories.find(c => c.toLowerCase() === categoryFromUrl.toLowerCase());
+      if (match) setSelectedCategory(match);
     } else {
       setSelectedCategory("All");
     }
   }, [categoryFromUrl, categories]);
+
+  useEffect(() => {
+    if (brandFromUrl) {
+      const match = brands.find(b => b.toLowerCase() === brandFromUrl.toLowerCase());
+      if (match) setSelectedBrand(match);
+    } else {
+      setSelectedBrand("All");
+    }
+  }, [brandFromUrl, brands]);
+
+  useEffect(() => {
+    if (searchFromUrl) setSearch(searchFromUrl);
+  }, [searchFromUrl]);
 
   const filtered = useMemo(() => {
     let data = products.filter(
