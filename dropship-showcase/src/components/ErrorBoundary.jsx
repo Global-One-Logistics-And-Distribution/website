@@ -6,8 +6,22 @@ export default class ErrorBoundary extends Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    const isChunkLoadError = 
+      error?.message?.includes("Failed to fetch dynamically imported module") || 
+      error?.message?.includes("Importing a module script failed");
+      
+    if (isChunkLoadError) {
+      const lastReload = sessionStorage.getItem("vite-chunk-reload");
+      const now = Date.now();
+      // Only reload if we haven't reloaded in the last 10 seconds to prevent infinite loops
+      if (!lastReload || now - parseInt(lastReload) > 10000) {
+        sessionStorage.setItem("vite-chunk-reload", now.toString());
+        window.location.reload();
+        return { hasError: true, reloading: true };
+      }
+    }
+    return { hasError: true, reloading: false };
   }
 
   componentDidCatch(error, info) {
@@ -20,6 +34,13 @@ export default class ErrorBoundary extends Component {
   };
 
   render() {
+    if (this.state.reloading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 p-8">
+          <div className="text-center text-slate-500">Updating application...</div>
+        </div>
+      );
+    }
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 p-8">

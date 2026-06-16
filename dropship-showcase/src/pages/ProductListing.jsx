@@ -179,7 +179,7 @@ export default function ProductListing() {
     if (sortBy === "nameAZ") data = [...data].sort((a, b) => a.name.localeCompare(b.name));
 
     return data;
-  }, [search, selectedCategory, selectedBrand, sortBy, maxPrice, minRating]);
+  }, [products, search, selectedCategory, selectedBrand, sortBy, maxPrice, minRating]);
 
   const hasActiveFilters =
     search !== "" || selectedCategory !== "All" || selectedBrand !== "All" ||
