@@ -311,14 +311,14 @@ def google_merchant_feed(request):
     for product in products:
         item = ET.SubElement(channel, "item")
         ET.SubElement(item, "g:id").text = str(product.id)
-        ET.SubElement(item, "g:title").text = (product.name or "").strip()[:150]
+        ET.SubElement(item, "title").text = (product.name or "").strip()[:150]
 
         description = (product.short_description or product.description or "").strip()
         if not description:
             description = product.name or ""
-        ET.SubElement(item, "g:description").text = description[:5000]
+        ET.SubElement(item, "description").text = description[:5000]
 
-        ET.SubElement(item, "g:link").text = _build_storefront_product_url(storefront_url, product)
+        ET.SubElement(item, "link").text = _build_storefront_product_url(storefront_url, product)
 
         image_url = _pick_primary_image(product)
         if image_url:
@@ -343,7 +343,7 @@ def google_merchant_feed(request):
             shipping = ET.SubElement(item, "g:shipping")
             ET.SubElement(shipping, "g:country").text = country
             ET.SubElement(shipping, "g:service").text = shipping_service_name
-            ET.SubElement(shipping, "g:price").text = f"{product.price:.2f} {feed_currency}"
+            ET.SubElement(shipping, "g:price").text = f"0.00 {feed_currency}"
 
     xml_payload = ET.tostring(root, encoding="utf-8", xml_declaration=True)
     cache.set("feeds:google-merchant-xml", xml_payload, MERCHANT_FEED_CACHE_TTL)

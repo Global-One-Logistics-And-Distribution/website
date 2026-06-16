@@ -374,7 +374,7 @@ export default function ProductDetails() {
 
       <div className="grid lg:grid-cols-2 gap-8 items-start">
         {/* Images */}
-        <div className="sticky top-24">
+        <div className="lg:sticky lg:top-24 z-10">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -387,7 +387,7 @@ export default function ProductDetails() {
               loading="eager"
               decoding="async"
               onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
-              className="w-full h-auto object-contain"
+              className="w-full h-auto max-h-[50vh] lg:max-h-[450px] object-contain"
             />
           </motion.div>
 

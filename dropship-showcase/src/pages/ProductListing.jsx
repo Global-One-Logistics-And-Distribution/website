@@ -104,9 +104,6 @@ export default function ProductListing() {
     return "https://www.elitedrop.net.in";
   }, []);
 
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedBrand, setSelectedBrand] = useState("All");
   const [sortBy, setSortBy] = useState("default");
   const [maxPrice, setMaxPrice] = useState(13000);
   const [minRating, setMinRating] = useState(0);
@@ -125,54 +122,46 @@ export default function ProductListing() {
     setMaxPrice(maxProductPrice);
   }, [maxProductPrice]);
 
-  useEffect(() => {
-    if (categoryFromUrl) {
-      const match = categories.find(c => c.toLowerCase() === categoryFromUrl.toLowerCase());
-      if (match) setSelectedCategory(match);
-    } else {
-      setSelectedCategory("All");
-    }
+  const selectedCategory = useMemo(() => {
+    if (!categoryFromUrl) return "All";
+    const match = categories.find(c => c.toLowerCase() === categoryFromUrl.toLowerCase());
+    return match || "All";
   }, [categoryFromUrl, categories]);
 
-  useEffect(() => {
-    if (brandFromUrl) {
-      const match = brands.find(b => b.toLowerCase() === brandFromUrl.toLowerCase());
-      if (match) setSelectedBrand(match);
-    } else {
-      setSelectedBrand("All");
-    }
+  const selectedBrand = useMemo(() => {
+    if (!brandFromUrl) return "All";
+    const match = brands.find(b => b.toLowerCase() === brandFromUrl.toLowerCase());
+    return match || "All";
   }, [brandFromUrl, brands]);
 
-  useEffect(() => {
-    if (searchFromUrl) setSearch(searchFromUrl);
-  }, [searchFromUrl]);
+  const search = searchFromUrl || "";
 
-  // Sync state back to URL
-  useEffect(() => {
-    if (loading) return; // Wait until products (and initial state) load
+  const setSearch = (val) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (val) p.set("q", val);
+      else { p.delete("q"); p.delete("search"); }
+      return p;
+    }, { replace: true });
+  };
 
-    const currentCat = searchParams.get("category");
-    const currentBrand = searchParams.get("brand");
-    const currentQ = searchParams.get("q") || searchParams.get("search");
+  const setSelectedCategory = (val) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (val && val !== "All") p.set("category", val);
+      else p.delete("category");
+      return p;
+    });
+  };
 
-    const catMatch = selectedCategory === "All" ? !currentCat : currentCat?.toLowerCase() === selectedCategory.toLowerCase();
-    const brandMatch = selectedBrand === "All" ? !currentBrand : currentBrand?.toLowerCase() === selectedBrand.toLowerCase();
-    const qMatch = !search ? !currentQ : currentQ === search;
-
-    if (!catMatch || !brandMatch || !qMatch) {
-      const params = new URLSearchParams(searchParams);
-      if (selectedCategory !== "All") params.set("category", selectedCategory);
-      else params.delete("category");
-
-      if (selectedBrand !== "All") params.set("brand", selectedBrand);
-      else params.delete("brand");
-
-      if (search) params.set("q", search);
-      else { params.delete("q"); params.delete("search"); }
-
-      setSearchParams(params, { replace: true });
-    }
-  }, [selectedCategory, selectedBrand, search, searchParams, setSearchParams, loading]);
+  const setSelectedBrand = (val) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (val && val !== "All") p.set("brand", val);
+      else p.delete("brand");
+      return p;
+    });
+  };
 
   const filtered = useMemo(() => {
     let data = products.filter(
@@ -197,9 +186,14 @@ export default function ProductListing() {
     sortBy !== "default" || maxPrice < maxProductPrice || minRating > 0;
 
   const clearAllFilters = () => {
-    setSearch("");
-    setSelectedCategory("All");
-    setSelectedBrand("All");
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      p.delete("category");
+      p.delete("brand");
+      p.delete("q");
+      p.delete("search");
+      return p;
+    });
     setSortBy("default");
     setMaxPrice(maxProductPrice);
     setMinRating(0);

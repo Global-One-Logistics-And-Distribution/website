@@ -63,10 +63,12 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def _generate_order_number(self):
-        # Keep order number <= 20 chars to match field constraint.
-        timestamp = int(time.time())
-        random_part = uuid.uuid4().hex[:7].upper()
-        return f"ORD{timestamp}{random_part}"
+        import random
+        import string
+        # Generate 7 random alphanumeric characters (A-Z, 0-9)
+        chars = string.ascii_uppercase + string.digits
+        random_part = ''.join(random.choice(chars) for _ in range(7))
+        return f"ORD-{random_part}"
 
     def __str__(self):
         customer = self.user.email if self.user else self.shipping_email
