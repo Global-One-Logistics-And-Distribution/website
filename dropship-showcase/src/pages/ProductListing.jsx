@@ -93,7 +93,7 @@ function ListProductCard({ product }) {
 
 export default function ProductListing() {
   const { products, loading } = useProducts();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
   const brandFromUrl = searchParams.get("brand");
   const searchFromUrl = searchParams.get("q") || searchParams.get("search");
@@ -146,6 +146,33 @@ export default function ProductListing() {
   useEffect(() => {
     if (searchFromUrl) setSearch(searchFromUrl);
   }, [searchFromUrl]);
+
+  // Sync state back to URL
+  useEffect(() => {
+    if (loading) return; // Wait until products (and initial state) load
+
+    const currentCat = searchParams.get("category");
+    const currentBrand = searchParams.get("brand");
+    const currentQ = searchParams.get("q") || searchParams.get("search");
+
+    const catMatch = selectedCategory === "All" ? !currentCat : currentCat?.toLowerCase() === selectedCategory.toLowerCase();
+    const brandMatch = selectedBrand === "All" ? !currentBrand : currentBrand?.toLowerCase() === selectedBrand.toLowerCase();
+    const qMatch = !search ? !currentQ : currentQ === search;
+
+    if (!catMatch || !brandMatch || !qMatch) {
+      const params = new URLSearchParams(searchParams);
+      if (selectedCategory !== "All") params.set("category", selectedCategory);
+      else params.delete("category");
+
+      if (selectedBrand !== "All") params.set("brand", selectedBrand);
+      else params.delete("brand");
+
+      if (search) params.set("q", search);
+      else { params.delete("q"); params.delete("search"); }
+
+      setSearchParams(params, { replace: true });
+    }
+  }, [selectedCategory, selectedBrand, search, searchParams, setSearchParams, loading]);
 
   const filtered = useMemo(() => {
     let data = products.filter(
