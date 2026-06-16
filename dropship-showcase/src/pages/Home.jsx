@@ -81,12 +81,12 @@ export default function Home() {
       </Helmet>
 
       {/* Ad / Promo Slider */}
-      <div className="-mt-24 md:-mt-28">
+      <div className="hidden md:block -mt-24 md:-mt-28">
         <AdSlider />
       </div>
 
       {/* Trust badges strip */}
-      <section className="relative -mt-8 md:-mt-12">
+      <section className="hidden md:block relative md:-mt-12">
         <div className="container-pad">
           <div className="rounded-3xl border border-slate-200 bg-white/95 backdrop-blur-xl shadow-[0_18px_50px_rgba(15,23,42,0.10)] px-4 py-5 md:px-6 md:py-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -111,7 +111,7 @@ export default function Home() {
       </section>
 
       {/* Categories */}
-      <section className="container-pad py-8">
+      <section className="container-pad pt-0 pb-8 md:pt-8 md:pb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Shop by Category</h2>
           <Link to="/products" className="text-sm text-indigo-600 hover:underline flex items-center gap-1">
