@@ -379,7 +379,7 @@ export default function ProductDetails() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.35 }}
-            className="w-full aspect-[4/3] rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden"
+            className="w-full rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden"
           >
             <img
               src={activeImage || fallbackImage}
@@ -387,7 +387,7 @@ export default function ProductDetails() {
               loading="eager"
               decoding="async"
               onError={(e) => { e.target.onerror = null; e.target.src = fallbackImage; }}
-              className="max-h-full max-w-full object-contain"
+              className="w-full h-auto object-contain"
             />
           </motion.div>
 
