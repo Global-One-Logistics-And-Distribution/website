@@ -145,13 +145,29 @@ export default function ProductDetails() {
       if (selectedVariant?.images?.length) return selectedVariant.images;
       if (selectedVariant?.image) return [selectedVariant.image];
     }
-    // Support both JSON (gallery/image) and backend (gallery_urls/image_url) field names
     const gallery = hydratedProduct.gallery_urls || hydratedProduct.gallery;
     const mainImage = hydratedProduct.image_url || hydratedProduct.image;
-    if (Array.isArray(gallery) && gallery.length) return gallery.filter(Boolean);
-    if (Array.isArray(mainImage) && mainImage.length) return mainImage.filter(Boolean);
-    if (mainImage) return [mainImage];
-    return [fallbackImage];
+    
+    const resolveUrl = (url) => {
+      if (!url) return null;
+      if (url.startsWith("/") && !url.startsWith("//")) {
+        const baseUrl = (import.meta.env.VITE_API_URL || "https://admin.elitedrop.net.in/api").replace(/\/api\/?$/, "");
+        return `${baseUrl}${url}`;
+      }
+      return url;
+    };
+
+    let resolvedImages = [];
+    if (Array.isArray(gallery) && gallery.length) {
+      resolvedImages = gallery.filter(Boolean).map(resolveUrl);
+    } else if (Array.isArray(mainImage) && mainImage.length) {
+      resolvedImages = mainImage.filter(Boolean).map(resolveUrl);
+    } else if (mainImage) {
+      resolvedImages = [resolveUrl(mainImage)];
+    } else {
+      resolvedImages = [fallbackImage];
+    }
+    return resolvedImages;
   }, [hydratedProduct, hasVariants, selectedVariant]);
 
   const [activeImage, setActiveImage] = useState(images[0]);

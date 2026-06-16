@@ -23,7 +23,11 @@ export default function ProductCard({ product }) {
 
   const fallbackImage = "https://placehold.co/600x400?text=No+Image";
   const rawImage = product.image_url || product.image;
-  const imageUrl = Array.isArray(rawImage) ? rawImage[0] : rawImage || fallbackImage;
+  let imageUrl = Array.isArray(rawImage) ? rawImage[0] : rawImage || fallbackImage;
+  if (imageUrl && imageUrl.startsWith("/") && !imageUrl.startsWith("//")) {
+    const baseUrl = (import.meta.env.VITE_API_URL || "https://admin.elitedrop.net.in/api").replace(/\/api\/?$/, "");
+    imageUrl = `${baseUrl}${imageUrl}`;
+  }
 
   const price = Number(product.price) || 0;
   const discountPct = getDiscount(product.id);

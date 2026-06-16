@@ -64,8 +64,13 @@ function isLocalNetworkHost(hostname) {
 }
 
 export function normalizeImageUrl(url) {
-  const value = toString(url);
+  let value = toString(url);
   if (!value) return "";
+
+  if (value.startsWith("/") && !value.startsWith("//")) {
+    const baseUrl = (import.meta.env.VITE_API_URL || "https://admin.elitedrop.net.in/api").replace(/\/api\/?$/, "");
+    value = `${baseUrl}${value}`;
+  }
 
   try {
     const parsed = new URL(value);
