@@ -223,6 +223,7 @@ STORAGES = {
         ),
     },
 }
+WHITENOISE_MANIFEST_STRICT = False
 
 # ── Email (ZeptoMail API) ─────────────────────────────────────────────────────
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
