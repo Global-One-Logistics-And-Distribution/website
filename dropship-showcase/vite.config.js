@@ -10,6 +10,9 @@ export default defineConfig({
     viteCompression({ algorithm: "gzip", ext: ".gz" }),
     viteCompression({ algorithm: "brotliCompress", ext: ".br" }),
   ],
+  resolve: {
+    dedupe: ["react", "react-dom"],
+  },
   build: {
     minify: "esbuild",
     cssMinify: true,
