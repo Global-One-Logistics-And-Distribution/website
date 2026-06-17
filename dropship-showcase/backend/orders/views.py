@@ -437,14 +437,8 @@ def order_list(request):
         except Exception as exc:
             logger.exception("Order placement failed for user_id=%s", getattr(user, "id", None))
 
-            # This forces Python to send the real error straight to your browser network tab!
-            import traceback
             return Response(
-                {
-                    "error": "Unable to place order right now. Please try again.",
-                    "EXACT_DATABASE_ERROR": str(exc),
-                    "TRACEBACK_LINE": traceback.format_exc()
-                },
+                {"error": "Unable to place order right now. Please try again."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
