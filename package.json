@@ -1,6 +1,5 @@
 {
   "overrides": {
-    "lodash": "4.17.21"
   },
   "dependencies": {
     "cloudinary": "^2.9.0",
