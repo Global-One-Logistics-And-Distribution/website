@@ -384,7 +384,7 @@ export default function Checkout() {
 
       if (paymentMethod === "razorpay") {
         if (!razorpayKey) {
-          toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID to test payment.");
+          toast.error("Payment gateway is temporarily unavailable. Please contact support.");
           setPlacing(false);
           return;
         }
@@ -729,12 +729,12 @@ export default function Checkout() {
               </div>
               {isRazorpayTestMode && (
                 <p className="mt-2 text-xs text-indigo-700 dark:text-indigo-300">
-                  Test mode is enabled. Use Razorpay test payment methods only.
+                  Secure encrypted checkout provided by Razorpay.
                 </p>
               )}
               {!razorpayKey && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  Set VITE_RAZORPAY_KEY_ID in frontend env to enable Razorpay test checkout.
+                  Online payments are temporarily unavailable. Please contact support.
                 </p>
               )}
             </div>
