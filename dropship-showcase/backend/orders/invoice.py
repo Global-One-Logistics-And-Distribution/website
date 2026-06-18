@@ -50,6 +50,8 @@ def build_invoice_text(order):
     return "\n".join(lines)
 
 
+from pathlib import Path
+
 def build_invoice_html(order):
     created = timezone.localtime(order.created_at).strftime("%d %b %Y, %I:%M %p")
     due_date = created # For prepaid ecommerce, due date is same as invoice date
@@ -87,152 +89,170 @@ def build_invoice_html(order):
         )
 
     company_name = getattr(settings, "COMPANY_NAME", "EliteDrop")
+    logo_path = str((Path(settings.BASE_DIR).parent / "public" / "logo.svg").resolve()).replace("\\", "/")
+    
+    discount_html = ""
+    if order.discount_amount > 0:
+        discount_html = f"""
+          <tr>
+            <td>Item Discount ({order.coupon_code})</td>
+            <td style="color: #10b981;">- INR {_money(order.discount_amount)}</td>
+          </tr>
+        """
+        
     return f"""<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tax Invoice - {order.order_number}</title>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-      body {{ font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 40px; background-color: #f8fafc; color: #0f172a; line-height: 1.5; }}
-      .invoice-container {{ max-width: 800px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e2e8f0; }}
-      .header {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }}
-      .brand {{ display: flex; flex-direction: column; }}
-      .brand h1 {{ margin: 0; font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; }}
-      .logo {{ max-width: 150px; margin-bottom: 10px; }}
-      .invoice-details {{ text-align: right; }}
-      .invoice-details h2 {{ margin: 0 0 8px 0; font-size: 20px; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }}
-      .invoice-details p {{ margin: 0; color: #475569; font-size: 13px; }}
-      .billing-section {{ display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }}
-      .billing-card {{ flex: 1; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; }}
-      .billing-card h3 {{ margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }}
-      .billing-card strong {{ display: block; margin-bottom: 4px; color: #0f172a; font-size: 14px; }}
-      .billing-card p {{ margin: 0; color: #475569; }}
-      table {{ width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; }}
-      th, td {{ padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }}
-      th {{ text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; background: #f1f5f9; }}
-      th:first-child {{ border-top-left-radius: 6px; border-bottom-left-radius: 6px; }}
-      th:last-child {{ border-top-right-radius: 6px; border-bottom-right-radius: 6px; }}
-      td {{ font-size: 13px; color: #334155; }}
-      .item-name {{ font-weight: 500; color: #0f172a; }}
-      .text-muted {{ color: #64748b; font-size: 11px; }}
-      .center {{ text-align: center; }}
-      .right {{ text-align: right; }}
-      .totals-container {{ display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; }}
-      .payment-info {{ width: 45%; font-size: 13px; color: #475569; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }}
-      .payment-info h4 {{ margin: 0 0 8px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }}
-      .totals {{ width: 350px; border-top: 2px solid #e2e8f0; padding-top: 16px; }}
-      .total-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #475569; }}
-      .total-row.grand-total {{ font-size: 18px; font-weight: 700; color: #0f172a; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }}
-      .total-row.amount-paid {{ font-size: 14px; font-weight: 600; color: #10b981; }}
-      .total-row.amount-due {{ font-size: 14px; font-weight: 600; color: #ef4444; }}
-      .footer {{ text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; line-height: 1.6; }}
-      .footer p {{ margin: 4px 0; }}
+      @page {{
+        size: a4;
+        margin: 1.5cm;
+      }}
+      body {{ font-family: Helvetica, Arial, sans-serif; font-size: 12px; color: #333; line-height: 1.4; }}
+      table {{ width: 100%; border-collapse: collapse; }}
+      td, th {{ vertical-align: top; }}
+      
+      .header-table {{ margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }}
+      .company-logo {{ max-height: 45px; max-width: 250px; margin-bottom: 5px; }}
+      .company-info {{ font-size: 11px; color: #64748b; }}
+      .invoice-title {{ font-size: 20px; font-weight: bold; color: #333; text-align: right; text-transform: uppercase; }}
+      .invoice-meta {{ text-align: right; font-size: 11px; color: #64748b; margin-top: 5px; }}
+      
+      .billing-table {{ margin-bottom: 20px; }}
+      .billing-table td {{ width: 48%; padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 11px; }}
+      .billing-spacer {{ width: 4%; }}
+      .billing-title {{ font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block; }}
+      
+      .items-table {{ margin-bottom: 20px; border: 1px solid #e2e8f0; }}
+      .items-table th {{ background-color: #f1f5f9; padding: 10px; text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }}
+      .items-table td {{ padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }}
+      .items-table th.center, .items-table td.center {{ text-align: center; }}
+      .items-table th.right, .items-table td.right {{ text-align: right; }}
+      .item-name {{ font-weight: bold; color: #0f172a; }}
+      .item-sku {{ color: #64748b; font-size: 10px; }}
+      
+      .footer-table td {{ vertical-align: top; }}
+      .payment-info {{ padding: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; font-size: 11px; color: #475569; border-radius: 4px; }}
+      .payment-info-title {{ font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }}
+      
+      .totals-table {{ width: 100%; border-collapse: collapse; }}
+      .totals-table td {{ padding: 6px 10px; text-align: right; font-size: 11px; color: #475569; }}
+      .totals-table tr.border-top td {{ border-top: 1px solid #e2e8f0; padding-top: 8px; }}
+      .totals-table tr.grand-total td {{ font-size: 14px; font-weight: bold; color: #0f172a; border-top: 2px solid #e2e8f0; padding-top: 8px; }}
+      .totals-table tr.amount-paid td {{ color: #10b981; font-weight: bold; }}
+      .totals-table tr.amount-due td {{ color: #ef4444; font-weight: bold; }}
+      
+      .notes {{ margin-top: 40px; text-align: center; color: #64748b; font-size: 10px; border-top: 1px solid #e2e8f0; padding-top: 15px; }}
     </style>
   </head>
   <body>
-    <div class="invoice-container">
-      <div class="header">
-        <div class="brand">
-          <!-- Logo Placeholder -->
-          <div style="font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #4f46e5, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px;">{company_name}</div>
-          <p style="margin:0; font-size: 12px; color: #64748b;">
-            EliteDrop<br>
-            Navi Mumbai, Maharashtra 400001<br>
-            GSTIN: 27ABCFG1029Q1Z6<br>
+    <table class="header-table">
+      <tr>
+        <td>
+          <img src="{logo_path}" class="company-logo" alt="{company_name}" />
+          <div class="company-info">
+            Navi Mumbai, Maharashtra 400001<br/>
+            GSTIN: 27ABCFG1029Q1Z6<br/>
             support@elitedrop.net.in
-          </p>
-        </div>
-        <div class="invoice-details">
-          <h2>TAX INVOICE</h2>
-          <p><strong>Invoice #:</strong> {order.order_number}</p>
-          <p><strong>Date Issued:</strong> {created}</p>
-          <p><strong>Due Date:</strong> {due_date}</p>
-        </div>
-      </div>
+          </div>
+        </td>
+        <td style="text-align: right;">
+          <div class="invoice-title">TAX INVOICE</div>
+          <div class="invoice-meta">
+            <strong>Invoice #:</strong> {order.order_number}<br/>
+            <strong>Date Issued:</strong> {created}<br/>
+            <strong>Due Date:</strong> {due_date}
+          </div>
+        </td>
+      </tr>
+    </table>
 
-      <div class="billing-section">
-        <div class="billing-card">
-          <h3>Billed To</h3>
-          <strong>{order.shipping_name}</strong>
-          <p>{order.shipping_email}</p>
-          <p>{order.shipping_phone}</p>
-        </div>
-        <div class="billing-card">
-          <h3>Shipped To</h3>
-          <strong>{order.shipping_name}</strong>
-          <p>{order.shipping_address}</p>
-          <p>{order.shipping_city}, {order.shipping_state} - {order.shipping_pincode}</p>
-        </div>
-      </div>
+    <table class="billing-table">
+      <tr>
+        <td>
+          <span class="billing-title">Billed To</span>
+          <strong>{order.shipping_name}</strong><br/>
+          {order.shipping_email}<br/>
+          {order.shipping_phone}
+        </td>
+        <td class="billing-spacer"></td>
+        <td>
+          <span class="billing-title">Shipped To</span>
+          <strong>{order.shipping_name}</strong><br/>
+          {order.shipping_address}<br/>
+          {order.shipping_city}, {order.shipping_state} - {order.shipping_pincode}
+        </td>
+      </tr>
+    </table>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Item & Description</th>
-            <th class="center">Qty</th>
-            <th class="center">Size</th>
-            <th class="right">Unit Price</th>
-            <th class="right">Net Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {''.join(item_rows)}
-        </tbody>
-      </table>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Item & Description</th>
+          <th class="center">Qty</th>
+          <th class="center">Size</th>
+          <th class="right">Unit Price</th>
+          <th class="right">Net Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {''.join(item_rows)}
+      </tbody>
+    </table>
 
-      <div class="totals-container">
-        <div class="payment-info">
-          <h4>Payment Information</h4>
-          <p><strong>Method:</strong> {payment_method}</p>
-          <p><strong>Transaction ID:</strong> {transaction_id}</p>
-          <p><strong>Status:</strong> {order.get_status_display()}</p>
-        </div>
+    <table class="footer-table">
+      <tr>
+        <td style="width: 45%;">
+          <div class="payment-info">
+            <div class="payment-info-title">Payment Information</div>
+            <strong>Method:</strong> {payment_method}<br/>
+            <strong>Transaction ID:</strong> {transaction_id}<br/>
+            <strong>Status:</strong> {order.get_status_display()}
+          </div>
+        </td>
+        <td style="width: 10%;"></td>
+        <td style="width: 45%;">
+          <table class="totals-table">
+            <tr>
+              <td>Net Amount (Before Tax)</td>
+              <td>INR {_money(base_amount + order.discount_amount)}</td>
+            </tr>
+            {discount_html}
+            <tr>
+              <td>CGST (9%)</td>
+              <td>INR {_money(cgst)}</td>
+            </tr>
+            <tr>
+              <td>SGST (9%)</td>
+              <td>INR {_money(sgst)}</td>
+            </tr>
+            <tr>
+              <td>Shipping Fees</td>
+              <td>INR 0.00</td>
+            </tr>
+            <tr class="grand-total">
+              <td>Grand Total</td>
+              <td>INR {_money(order.total_amount)}</td>
+            </tr>
+            <tr class="amount-paid">
+              <td>Amount Paid</td>
+              <td>INR {_money(order.total_amount)}</td>
+            </tr>
+            <tr class="amount-due">
+              <td>Balance Due</td>
+              <td>INR 0.00</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-        <div class="totals">
-          <div class="total-row">
-            <span>Net Amount (Before Tax)</span>
-            <span>INR {_money(base_amount + order.discount_amount)}</span>
-          </div>
-          """ + (f"""
-          <div class="total-row">
-            <span>Item Discount ({order.coupon_code})</span>
-            <span style="color: #10b981;">- INR {_money(order.discount_amount)}</span>
-          </div>
-          """ if order.discount_amount > 0 else "") + f"""
-          <div class="total-row">
-            <span>CGST (9%)</span>
-            <span>INR {_money(cgst)}</span>
-          </div>
-          <div class="total-row">
-            <span>SGST (9%)</span>
-            <span>INR {_money(sgst)}</span>
-          </div>
-          <div class="total-row">
-            <span>Shipping Fees</span>
-            <span>INR 0.00</span>
-          </div>
-          <div class="total-row grand-total">
-            <span>Grand Total</span>
-            <span>INR {_money(order.total_amount)}</span>
-          </div>
-          <div class="total-row amount-paid">
-            <span>Amount Paid</span>
-            <span>INR {_money(order.total_amount)}</span>
-          </div>
-          <div class="total-row amount-due">
-            <span>Balance Due</span>
-            <span>INR 0.00</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">
-        <p><strong>Thank you for your business!</strong></p>
-        <p>Return Policy: Items can be returned within 7 days of delivery. Visit our website for more details.</p>
-        <p>This is a computer-generated invoice and does not require a physical signature.</p>
-      </div>
+    <div class="notes">
+      <strong>Thank you for your business!</strong><br/>
+      Return Policy: Items can be returned within 7 days of delivery. Visit our website for more details.<br/>
+      This is a computer-generated invoice and does not require a physical signature.
     </div>
   </body>
 </html>
