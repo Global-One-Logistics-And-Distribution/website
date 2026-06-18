@@ -4,6 +4,8 @@ import hmac
 import json
 import logging
 import secrets
+from io import BytesIO
+from xhtml2pdf import pisa
 import time
 from urllib.parse import urlsplit
 from django.conf import settings
@@ -466,9 +468,16 @@ def order_invoice_download(request, order_number):
         return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
     html = build_invoice_html(order)
-    response = HttpResponse(html, content_type="text/html; charset=utf-8")
-    response["Content-Disposition"] = f'attachment; filename="invoice-{order.order_number}.html"'
-    return response
+    
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("utf-8")), result)
+    
+    if not pdf.err:
+        response = HttpResponse(result.getvalue(), content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="invoice-{order.order_number}.pdf"'
+        return response
+    else:
+        return Response({"error": "Error generating PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["POST"])

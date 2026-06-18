@@ -11,9 +11,7 @@ import { getProductSlug } from "../utils/slug";
 const SITE_URL = import.meta.env.VITE_SITE_URL || "https://www.elitedrop.net.in";
 
 function estimatedDelivery() {
-  const d = new Date();
-  d.setDate(d.getDate() + 4);
-  return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  return "7-15 days";
 }
 
 const FREE_DELIVERY_THRESHOLD = 0;

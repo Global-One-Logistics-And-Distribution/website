@@ -159,7 +159,7 @@ function OrderCard({ order, token, onOrderPatched }) {
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `invoice-${order.order_number}.html`;
+      anchor.download = `invoice-${order.order_number}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -347,7 +347,7 @@ function OrderCard({ order, token, onOrderPatched }) {
 
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Invoice: HTML download
+              Invoice: PDF download
             </p>
             <button
               type="button"

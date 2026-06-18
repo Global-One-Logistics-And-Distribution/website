@@ -115,7 +115,7 @@ export default function CheckoutSuccess() {
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `invoice-${order.order_number}.html`;
+      anchor.download = `invoice-${order.order_number}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -154,7 +154,7 @@ export default function CheckoutSuccess() {
           </p>
         )}
         <p className="text-slate-500 dark:text-slate-400 mb-8">
-          Thank you for your purchase. Your invoice is available below as an HTML download.
+          Thank you for your purchase. Your invoice is available below as a PDF download.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button

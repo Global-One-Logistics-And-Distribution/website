@@ -41,8 +41,7 @@ export default function ShippingPolicy() {
           <article className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 bg-white/80 dark:bg-slate-900/60">
             <h2 className="text-lg font-semibold">3. Estimated Delivery Time</h2>
             <ul className="mt-2 list-disc pl-5 space-y-1.5">
-              <li>Metro cities: 2 to 5 business days</li>
-              <li>Other locations: 4 to 8 business days</li>
+              <li>All locations: 7 to 15 days</li>
             </ul>
             <p className="mt-2">
               Timelines are estimates and may vary during peak demand, weather, or logistics disruptions.
