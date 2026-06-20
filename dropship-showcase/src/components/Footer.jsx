@@ -95,7 +95,7 @@ export default function Footer() {
               EliteDrop
             </Link>
             <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
-              Your premium destination for authentic luxury goods — handbags, watches, shoes, and accessories delivered straight to your door.
+              Your premium destination for authentic luxury goods — accessories delivered straight to your door.
             </p>
 
             {/* Contact info */}
