@@ -42,11 +42,7 @@ const HELP_LINKS = [
 ];
 
 const CATEGORIES = [
-  "Luxury Bags",
-  "Luxury Watches",
-  "Luxury Shoes",
-  "Sunglasses",
-  "Accessories",
+  "Perfumes"
 ];
 
 const SOCIALS = [
